@@ -37,4 +37,59 @@ A function to automatically perform the raster arithmetic
 necessary to calculate the cost-of-travel for paths with multiple
 waypoints, and the predicted cost of taking a detour to any
 arbitrary point in the landscape (a 'corridor').
+\link[lbmech]{getCosts} must have been run before this tool can be used.
+}
+\examples{
+# Generate a DEM
+n <- 5
+dem <- expand.grid(list(x = 1:(n * 100),
+                        y = 1:(n * 100))) / 100
+dem <- as.data.table(dem)
+dem[, z := 250 * exp(-(x - n/2)^2) + 
+      250 * exp(-(y - n/2)^2)]
+dem <- rasterFromXYZ(dem)
+extent(dem) <- c(10000, 20000, 30000, 40000)
+crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
+
+# Export it so it doesn't just exist on the memory
+dir <- tempdir()
+writeRaster(dem, paste0(dir,"\\\\DEM.tif"),format="GTiff",overwrite=TRUE)
+
+
+# Import raster, get the grid
+dem <- raster(paste0(dir,"\\\\DEM.tif"))
+grid <- makeGrid(dem = dem, nx = n, ny = n)
+
+# Import the data lying between x = (12000,16000) and y = (32000,36000)
+region <- extent(c(12000,16000,32000,36000))
+region <- as(region,"SpatialPolygons")
+crs(region) <- crs(grid)
+
+
+# Use the canonical parameters for a human in Tobler's Function
+world <- calculateCosts(world = grid, m = 60, v_max = 1.5,
+                        k = 3.5, alpha = -0.05, BMR = 93,
+                        l_s = 1.6, L = 0.8, region = region, z_fix = dem,
+                        cut_slope = 0.5, dir = dir)
+                        
+# Generate five random points that fall within the region
+points <- data.table(ID = 1:5,
+                     x = runif(5, extent(region)[1], extent(region)[2]),
+                     y = runif(5, extent(region)[3], extent(region)[4]))
+                     
+# Calculate cost rasters
+costRasters <- getCosts(world = world, from = points, z_fix = dem,
+                        destination = 'all', costs = 'all',
+                        output = c("object","file"), dir = dir)
+                        
+#### Example 1:
+# Calculating the corridors from a list of RasterStacks,
+# with path 1 -> 2 -> 4 -> 1 -> 5
+corridors <- makeCorridor(rasters = costRasters, order = c(1,2,4,1,5))
+
+#### Example 2:
+# Calculating the corridors from a workspace directory
+# with path 1 -> 2 -> 4 -> 1 -> 5
+corridors <- makeCorridor(rasters = dir, order = c(1,2,4,1,5))
+
 }

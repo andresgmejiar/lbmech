@@ -6,18 +6,18 @@
 \usage{
 getVelocity(
   data,
-  x,
-  y,
-  z,
-  dt,
-  ID,
+  x = "x",
+  y = "y",
+  z = "z",
+  dt = "dt",
+  ID = "ID",
   tau = NULL,
   tau_vmax = 0.995,
-  tau_nlrq = 0.995,
+  tau_nlrq = 0.95,
   k_init = 3.5,
   alpha_init = -0.1,
   tile_id = "TILEID",
-  dem = "location",
+  vals = "location",
   dir = tempdir()
 )
 }
@@ -36,6 +36,9 @@ object. If character string, it represents the data column containing the 'z'
 coordinates/elevations in meters. If RasterLayer, a DEM containing
 the elevation in meters. If SpatialPolygonsDataFrame, it must represent the
 sectors and filepaths/URLs (see the output of \link[lbmech]{makeGrid})}
+
+\item{dt}{A character string representing the data column containing the
+time difference from the previous observation in seconds.}
 
 \item{ID}{A character string representing the data column containing the
 unique ID for each observed trajectory. In other words, each set of points
@@ -65,9 +68,9 @@ maximum velocity at which to initiate the nonlinear regression. Default is
 in the \code{z} polygon containing the unique Tile IDs. Ignored if elevations are
 provided as a column or RasterLayer. Otherwise default is \code{tile_id = 'TILEID'}.}
 
-\item{dem}{A character string or a RasterLayer object. Required only if the
+\item{vals}{A character string or a RasterLayer object. Required only if the
 \code{z} parameter is a polygon NOT the output of the \link[lbmech]{makeGrid} function as the default is
-the character string \code{'location'}. If not, the \code{dem} parameter should be
+the character string \code{'location'}. If not, the \code{vals} parameter should be
 set to the column name containing the URL or file path to the DEM for that
 sector.}
 
@@ -96,4 +99,51 @@ model from the nonlinear quantitative regression.
 \description{
 Calculate the velocity function for an animal from \emph{(x,y,z,t)} data
 such as from GPS collars, assuming a function of form Tobler (see ####)
+}
+\examples{
+# Note that the output results should be senseless since they
+# are computed on random data
+
+#### Example 1:
+# If the data contains an 'elevation' or 'z' column
+data <- data.table(x = runif(10000,10000,20000),
+                   y = runif(10000,30000,40000),
+                   elevation = runif(10000,0,200),
+                   dt = 120,
+                   ID = rep(1:10,each=1000))
+velocity <- getVelocity(data = data, z = 'elevation')
+
+
+#### Example 2:
+# If the data do not contain elevation, and 'z' is a RasterLayer
+data$z <- NULL
+
+# Generate a DEM
+n <- 5
+dem <- expand.grid(list(x = 1:(n * 100),
+                        y = 1:(n * 100))) / 100
+dem <- as.data.table(dem)
+dem[, z := 250 * exp(-(x - n/2)^2) + 
+      250 * exp(-(y - n/2)^2)]
+dem <- rasterFromXYZ(dem)
+extent(dem) <- c(10000, 20000, 30000, 40000)
+crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
+
+velocity <- getVelocity(data = data, z = dem)
+
+
+### Example 3:
+# If the data do not contain elevation, and 'z' is a sector grid pointing
+# to file locations
+
+# Export the DEM so it's not just stored on the memory
+dir <- tempdir()
+writeRaster(dem, paste0(dir,"\\\\DEM.tif"),format="GTiff",overwrite=TRUE)
+
+# Import raster, get the grid
+dem <- raster(paste0(dir,"\\\\DEM.tif"))
+grid <- makeGrid(dem = dem, nx = n, ny = n)
+
+velocity <- getVelocity(data = data, z = grid, dir = dir)
+
 }

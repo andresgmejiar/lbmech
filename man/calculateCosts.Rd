@@ -98,3 +98,58 @@ A function that for a given world of possible movement calculates
 the transition cost for each in terms of caloric work, caloric energy,
 and time.
 }
+\examples{
+
+#### Example 1:
+# Running importWorld before calculating costs
+# Generate a DEM
+n <- 5
+dem <- expand.grid(list(x = 1:(n * 100),
+                        y = 1:(n * 100))) / 100
+dem <- as.data.table(dem)
+dem[, z := 250 * exp(-(x - n/2)^2) + 
+      250 * exp(-(y - n/2)^2)]
+dem <- rasterFromXYZ(dem)
+extent(dem) <- c(10000, 20000, 30000, 40000)
+crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
+
+# Export it so it doesn't just exist on the memory
+dir <- tempdir()
+writeRaster(dem, paste0(dir,"\\\\DEM.tif"),format="GTiff",overwrite=TRUE)
+
+
+# Import raster, get the grid
+dem <- raster(paste0(dir,"\\\\DEM.tif"))
+grid <- makeGrid(dem = dem, nx = n, ny = n)
+
+# Import the data lying between x = (12000,16000) and y = (32000,36000)
+region <- extent(c(12000,16000,32000,36000))
+region <- as(region,"SpatialPolygons")
+crs(region) <- crs(grid)
+
+world <- importWorld(region = region, polys = grid,
+                     cut_slope = 0.5, z_fix = dem, dir = dir)
+
+# We'll run calculateCosts using the canonical parameters for Tobler's 
+# function on a human being. 
+world <- calculateCosts(world = world, m = 60, v_max = 1.5,
+                        BMR = 93, k = 3, alpha = -0.05, l_s = 1.6, L = 0.8)
+                        
+                        
+#### Example 2:
+# Running all of the previous steps within calculateCosts
+# We'll first get velocity parameters from the getVelocity function
+data <- data.table(x = runif(10000,10000,20000),
+                   y = runif(10000,30000,40000),
+                   elevation = runif(10000,0,200),
+                   dt = 120,
+                   ID = rep(1:10,each=1000))
+velocity <- getVelocity(data = data, z = 'elevation')
+
+# Run calculateCosts
+world <- calculateCosts(world = grid, m = 60, v_max = velocity$vmax,
+                        k = velocity$k, alpha = velocity$alpha, BMR = 93,
+                        l_s = 1.6, L = 0.8, region = region, z_fix = dem,
+                        cut_slope = 0.5, dir = dir)
+
+}

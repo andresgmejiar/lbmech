@@ -40,7 +40,7 @@ times it is highly recommended to define a permanent workspace.}
 \item{...}{Additional arguments to pass to \link[lbmech]{makeWorld}}
 }
 \value{
-an object of class data.table containing three columns:
+An object of class data.table containing three columns:
 
 (1) \code{$from}, a character string of all possible origin cells in format "x,y",
 rounded to the next-lowest integer
@@ -55,4 +55,34 @@ A function that for a given region imports all cells from the
 transition \code{.gz} files. If such files have not yet been generated,
 they can be created by passing along the necessary parameters to this
 function as with \link[lbmech]{makeWorld}.
+}
+\examples{
+
+# Generate a DEM
+n <- 5
+dem <- expand.grid(list(x = 1:(n * 100),
+                        y = 1:(n * 100))) / 100
+dem <- as.data.table(dem)
+dem[, z := 250 * exp(-(x - n/2)^2) + 
+      250 * exp(-(y - n/2)^2)]
+dem <- rasterFromXYZ(dem)
+extent(dem) <- c(10000, 20000, 30000, 40000)
+crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
+
+# Export it so it doesn't just exist on the memory
+dir <- tempdir()
+writeRaster(dem, paste0(dir,"\\\\DEM.tif"),format="GTiff",overwrite=TRUE)
+
+
+# Import raster, get the grid
+dem <- raster(paste0(dir,"\\\\DEM.tif"))
+grid <- makeGrid(dem = dem, nx = n, ny = n)
+
+# Import the data lying between x = (12000,16000) and y = (32000,36000)
+region <- extent(c(12000,16000,32000,36000))
+region <- as(region,"SpatialPolygons")
+crs(region) <- crs(grid)
+
+world <- importWorld(region = region, polys = grid,
+                     cut_slope = 0.5, z_fix = dem, dir = dir)
 }

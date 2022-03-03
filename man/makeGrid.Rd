@@ -8,7 +8,10 @@ makeGrid(dem, nx, ny, crs = NULL, prefix = "SECTOR_")
 }
 \arguments{
 \item{dem}{A raster object containing the elevations for the maximum possible
-extent imaginable for a study}
+extent imaginable for a study. Note that this only works for rasters that
+have been read in, not those that exist exclusively in the memory. If you
+have just generated the raster and it is in memory, export it first with
+\link[raster]{writeRaster} then re-import it with \link[raster]{raster}.}
 
 \item{nx}{The integer-number of columns in the output grid}
 
@@ -24,7 +27,8 @@ Default is \code{prefix = "SECTOR_"}}
 An object of class SpatialPolygonsDataFrame representing the individual sectors ('tiles'),
 with a dataframe containing three columns: the "TILEID", the raster's filepath,
 and a dummy column indicating that the grid was made using the makeGrid function.
-This will be necessary for future functions.
+This will be necessary for future functions. The object MUST be stored 
+on the disk, it should not be stored in the memory
 }
 \description{
 Generate a partitioning grid for a single raster source representing regional
@@ -32,4 +36,25 @@ elevations. Smaller partitioning grids (i.e. a greater value of \code{nx * ny})
 results in a greater number of saved files and a greater number of
 read-write operations in future operations, but reduces the amount of
 memory employed.
+}
+\examples{
+# Generate a DEM, export it
+n <- 5
+dem <- expand.grid(list(x = 1:(n * 100),
+                        y = 1:(n * 100))) / 100
+dem <- as.data.table(dem)
+dem[, z := 250 * exp(-(x - n/2)^2) + 
+      250 * exp(-(y - n/2)^2)]
+dem <- rasterFromXYZ(dem)
+extent(dem) <- c(10000, 20000, 30000, 40000)
+crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
+
+dir <- tempdir()
+writeRaster(dem, paste0(dir,"\\\\DEM.tif"),format="GTiff",overwrite=TRUE)
+
+
+# Import raster, get the grid
+dem <- raster(paste0(dir,"\\\\DEM.tif"))
+grid <- makeGrid(dem = dem, nx = n, ny = n)
+
 }

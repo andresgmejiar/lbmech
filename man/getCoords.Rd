@@ -26,3 +26,22 @@ in the same order as the input data.
 \description{
 Function to get the coordinates in "x,y" format for a given set of points
 }
+\examples{
+# Generate a DEM
+n <- 5
+dem <- expand.grid(list(x = 1:(n * 100),
+                        y = 1:(n * 100))) / 100
+dem <- as.data.table(dem)
+dem[, z := 250 * exp(-(x - n/2)^2) + 
+      250 * exp(-(y - n/2)^2)]
+dem <- rasterFromXYZ(dem)
+extent(dem) <- c(10000, 20000, 30000, 40000)
+crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
+
+# Generate five random points that fall within the DEM
+points <- data.table(x = runif(5, extent(dem)[1], extent(dem)[2]),
+                     y = runif(5, extent(dem)[3], extent(dem)[4]))
+
+# Get the coordinates
+points$Cell <- getCoords(points, z_fix = dem)
+}

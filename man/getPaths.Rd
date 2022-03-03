@@ -7,9 +7,9 @@
 getPaths(
   world,
   nodes,
+  z_fix,
   id = "ID",
   order = NULL,
-  z_fix = NULL,
   x = "x",
   y = "y",
   region = NULL,
@@ -24,6 +24,9 @@ SpatialPolygonsDataFrame representing the locations.
 If object is of class SpatialPolygonsDataFrame, the location will be taken at the
 centroid.}
 
+\item{z_fix}{A RasterLayer with the same origin and resolution as the
+\code{z_fix} used to generate the 'world' with \link[lbmech]{makeWorld}.}
+
 \item{id}{A character string representing the column containing each \code{node}
 location's unique ID.}
 
@@ -32,9 +35,6 @@ order of visited nodes by ID. For example, to visit "A" then "B" then "C" then "
 the vector would be \code{c("A","B","C","A")}. If this is not provided,
 the function assumes that \code{nodes} is already sorted in the desired
 order.}
-
-\item{z_fix}{A RasterLayer with the same origin and resolution as the
-\code{z_fix} used to generate the 'world' with \link[lbmech]{makeWorld}.}
 
 \item{x}{A character vector representing the column containing the 'x' coordinates.
 Required if \code{data} is not Spatial*.}
@@ -62,5 +62,59 @@ a list of SpatialLinesDataFrame with one slot for each \code{cost} is returned.
 }
 \description{
 Get the shortest path for a given trip that requires travel through a
-set of nodes.
+set of nodes. Use is like \link[lbmech]{getCosts}, but with 
+\code{nodes} and {order} parameters and no \code{from} or \code{to}.
+}
+\examples{
+# Generate a DEM
+n <- 5
+dem <- expand.grid(list(x = 1:(n * 100),
+                        y = 1:(n * 100))) / 100
+dem <- as.data.table(dem)
+dem[, z := 250 * exp(-(x - n/2)^2) + 
+      250 * exp(-(y - n/2)^2)]
+dem <- rasterFromXYZ(dem)
+extent(dem) <- c(10000, 20000, 30000, 40000)
+crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
+
+# Export it so it doesn't just exist on the memory
+dir <- tempdir()
+writeRaster(dem, paste0(dir,"\\\\DEM.tif"),format="GTiff",overwrite=TRUE)
+
+
+# Import raster, get the grid
+dem <- raster(paste0(dir,"\\\\DEM.tif"))
+grid <- makeGrid(dem = dem, nx = n, ny = n)
+
+# Import the data lying between x = (12000,16000) and y = (32000,36000)
+region <- extent(c(12000,16000,32000,36000))
+region <- as(region,"SpatialPolygons")
+crs(region) <- crs(grid)
+
+
+# Use the canonical parameters for a human in Tobler's Function
+world <- calculateCosts(world = grid, m = 60, v_max = 1.5,
+                        k = 3.5, alpha = -0.05, BMR = 93,
+                        l_s = 1.6, L = 0.8, region = region, z_fix = dem,
+                        cut_slope = 0.5, dir = dir)
+                        
+# Generate five random points that fall within the region
+points <- data.table(ID = 1:5,
+                     x = runif(5, extent(region)[1], extent(region)[2]),
+                     y = runif(5, extent(region)[3], extent(region)[4]))
+                     
+                     
+# Calculate the path from 1 -> 2 -> 5 -> 1 -> 4 
+pathOrder <- c(1,2,5,1,4)
+
+paths <- getPaths(world = world, nodes = points, z_fix = dem,
+                          order = pathOrder,
+                          costs = c('time','work','energy'))
+                        
+#getCosts(world = world, from = points, z_fix = dem,
+#                        destination = 'all', costs = 'all',
+#                        output = 'file', dir = dir)                       
+#corridors <- makeCorridor(rasters = dir, order = pathOrder)
+#plot(corridors$time)
+#plot(paths$time,add=TRUE)
 }

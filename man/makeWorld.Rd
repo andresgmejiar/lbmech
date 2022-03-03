@@ -7,13 +7,13 @@
 makeWorld(
   tiles,
   polys,
-  tile_id,
+  tile_id = "TILEID",
   cut_slope,
   z_fix,
   directions = 16,
   neighbor_distance = 100,
   unit = "m",
-  dem = "location",
+  vals = "location",
   dir = tempdir()
 )
 }
@@ -50,7 +50,7 @@ on raster size.}
 \item{unit}{One of \code{c("m", "km", "ft", "mi")}, representing the unit of the DEM.
 All will be converted to meters, which is the default.}
 
-\item{dem}{A character string or a RasterLayer object. Ignored unless the
+\item{vals}{A character string or a RasterLayer object. Ignored unless the
 \code{polys} parameter is a polygon NOT the output of the \link[lbmech]{makeGrid}
 function as the default is the character string \code{'location'},
 AND the appropriate world \code{.gz} file is NOT
@@ -81,4 +81,34 @@ time-intensive function. It first checks to see if the required transition \code
 files have already been created in the \code{dir} workspace. If not, it checks to see if the
 DEMs required to generate the transition \code{.gz} files have been downloaded/cropped,
 and generates the latter if so. If not, it downloads/crops them and proceeds.
+}
+\examples{
+# Generate a DEM
+n <- 5
+dem <- expand.grid(list(x = 1:(n * 100),
+                        y = 1:(n * 100))) / 100
+dem <- as.data.table(dem)
+dem[, z := 250 * exp(-(x - n/2)^2) + 
+      250 * exp(-(y - n/2)^2)]
+dem <- rasterFromXYZ(dem)
+extent(dem) <- c(10000, 20000, 30000, 40000)
+crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
+
+# Export it so it doesn't just exist on the memory
+dir <- tempdir()
+writeRaster(dem, paste0(dir,"\\\\DEM.tif"),format="GTiff",overwrite=TRUE)
+
+
+# Import raster, get the grid
+dem <- raster(paste0(dir,"\\\\DEM.tif"))
+grid <- makeGrid(dem = dem, nx = n, ny = n)
+
+# Select all tiles that exist between x = (12000,16000) and y = (32000,36000)
+tiles <- extent(c(12000,16000,32000,36000))
+tiles <- as(tiles,"SpatialPolygons")
+crs(tiles) <- crs(grid)
+tiles <- whichTiles(region = tiles, polys = grid)
+
+makeWorld(tiles = tiles, polys = grid,
+          cut_slope = 0.5, z_fix = dem, dir = dir)
 }

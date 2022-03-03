@@ -20,3 +20,23 @@ location as the input 'region'.
 Function that converts raster and SpatialPolygon* objects
 to a list of cells that fall within such a region.
 }
+\examples{
+# Generate a DEM
+n <- 5
+dem <- expand.grid(list(x = 1:(n * 100),
+                        y = 1:(n * 100))) / 100
+dem <- as.data.table(dem)
+dem[, z := 250 * exp(-(x - n/2)^2) + 
+      250 * exp(-(y - n/2)^2)]
+dem <- rasterFromXYZ(dem)
+extent(dem) <- c(10000, 20000, 30000, 40000)
+crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
+
+# Generate a polygon that falls within the DEM's extent
+region <- extent(c(12500,12600,32500,32700))
+region <- as(region,"SpatialPolygons")
+crs(region) <- crs(dem)
+
+maskedCells <- regionMask(region = region, z_fix = dem)
+
+}

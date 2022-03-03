@@ -36,3 +36,26 @@ Get the names of tiles that would be needed to perform an analysis
 over a given region-of-interest within the maximum possible extent defined
 by a source grid.
 }
+\examples{
+
+#### Example 1:
+# If the grid is the product if the makeGrid function
+# Make the grid
+n <- 6
+dem <- raster(ncol = n * 6000, nrow = n * 6000)
+extent(dem) <- c(10000, 20000, 30000, 40000)
+crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
+grid <- makeGrid(dem = dem, nx = n, ny = n)
+
+# Select five random points that fall within the grid
+points <- data.table(x = runif(5, extent(dem)[1], extent(dem)[2]),
+                     y = runif(5, extent(dem)[3], extent(dem)[4]))
+                     
+tile_list <- whichTiles(region = points, polys = grid)
+
+#### Example 2 (Do not execute):
+## If it is a custom polygon "polys", where Tile IDs are stored in 
+## a "NAME" column, and coordinates in "Easting" and "Northing"
+# tile_list <- whichTiles(region = points, grid = polys, 
+#                         tile_id = "NAME", x = "Easting", y = "Northing")
+}

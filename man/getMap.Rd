@@ -4,7 +4,7 @@
 \alias{getMap}
 \title{Download or crop necessary DEMs}
 \usage{
-getMap(tiles, polys, tile_id = "TILEID", dem = "location", dir = tempdir())
+getMap(tiles, polys, tile_id = "TILEID", vals = "location", dir = tempdir())
 }
 \arguments{
 \item{tiles}{A character vector--such as the output to
@@ -18,9 +18,9 @@ output of the \link[lbmech]{makeGrid} function.}
 \item{tile_id}{a character string representing the name of the column
 in the 'polys' polygon containing the unique Tile IDs. Default is \code{tile_id = 'TILEID'}}
 
-\item{dem}{A character string or a RasterLayer object. Optional if the
+\item{vals}{A character string or a RasterLayer object. Optional if the
 \code{polys} polygon is the output of the \link[lbmech]{makeGrid} function as the default is
-the character string \code{'location'}. If not, the \code{dem} parameter should be
+the character string \code{'location'}. If not, the \code{vals} parameter should be
 set to the column name containing the URL or filepath to the DEM for that
 sector.}
 
@@ -35,4 +35,34 @@ such that the necessary DEM files are downloaded/cropped and accessible.
 \description{
 A function that checks if the DEMs for a given set of sectors exist
 in the workspace, and if not downloads them or crops them from a larger file
+}
+\examples{
+# Generate a DEM, export it
+n <- 5
+dem <- expand.grid(list(x = 1:(n * 100),
+                        y = 1:(n * 100))) / 100
+dem <- as.data.table(dem)
+dem[, z := 250 * exp(-(x - n/2)^2) + 
+      250 * exp(-(y - n/2)^2)]
+dem <- rasterFromXYZ(dem)
+extent(dem) <- c(10000, 20000, 30000, 40000)
+crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
+
+dir <- tempdir()
+writeRaster(dem, paste0(dir,"\\\\DEM.tif"),format="GTiff",overwrite=TRUE)
+
+
+# Import raster, get the grid
+dem <- raster(paste0(dir,"\\\\DEM.tif"))
+grid <- makeGrid(dem = dem, nx = n, ny = n)
+
+
+# Generate five random points that fall within the grid
+points <- data.table(x = runif(5, extent(dem)[1], extent(dem)[2]),
+                     y = runif(5, extent(dem)[3], extent(dem)[4]))
+               
+                           
+# Run whichTiles and getMap to prepare appropriate sector files
+tile_list <- whichTiles(region = points, polys = grid) 
+getMap(tiles = tile_list, polys = grid, dir = dir)
 }
