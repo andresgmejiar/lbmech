@@ -50,11 +50,11 @@ extent(dem) <- c(10000, 20000, 30000, 40000)
 crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
 
 dir <- tempdir()
-writeRaster(dem, paste0(dir,"\\\\DEM.tif"),format="GTiff",overwrite=TRUE)
+writeRaster(dem, paste0(dir,"/DEM.tif"),format="GTiff",overwrite=TRUE)
 
 
 # Import raster, get the grid
-dem <- raster(paste0(dir,"\\\\DEM.tif"))
+dem <- raster(paste0(dir,"/DEM.tif"))
 grid <- makeGrid(dem = dem, nx = n, ny = n)
 
 }

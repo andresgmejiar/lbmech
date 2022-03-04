@@ -53,11 +53,11 @@ crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
 
 # Export it so it doesn't just exist on the memory
 dir <- tempdir()
-writeRaster(dem, paste0(dir,"\\\\DEM.tif"),format="GTiff",overwrite=TRUE)
+writeRaster(dem, paste0(dir,"/DEM.tif"),format="GTiff",overwrite=TRUE)
 
 
 # Import raster, get the grid
-dem <- raster(paste0(dir,"\\\\DEM.tif"))
+dem <- raster(paste0(dir,"/DEM.tif"))
 grid <- makeGrid(dem = dem, nx = n, ny = n)
 
 # Import the data lying between x = (12000,16000) and y = (32000,36000)
@@ -85,11 +85,10 @@ costRasters <- getCosts(world = world, from = points, z_fix = dem,
 #### Example 1:
 # Calculating the corridors from a list of RasterStacks,
 # with path 1 -> 2 -> 4 -> 1 -> 5
-corridors <- makeCorridor(rasters = costRasters, order = c(1,2,4,1,5))
+corridors <- makeCorridor(rasters = costRasters, order = c(1,2,5,1,4))
 
 #### Example 2:
 # Calculating the corridors from a workspace directory
 # with path 1 -> 2 -> 4 -> 1 -> 5
-corridors <- makeCorridor(rasters = dir, order = c(1,2,4,1,5))
-
+corridors <- makeCorridor(rasters = dir, order = c(1,2,5,1,4))
 }

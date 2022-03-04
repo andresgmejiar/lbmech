@@ -138,10 +138,10 @@ velocity <- getVelocity(data = data, z = dem)
 
 # Export the DEM so it's not just stored on the memory
 dir <- tempdir()
-writeRaster(dem, paste0(dir,"\\\\DEM.tif"),format="GTiff",overwrite=TRUE)
+writeRaster(dem, paste0(dir,"/DEM.tif"),format="GTiff",overwrite=TRUE)
 
 # Import raster, get the grid
-dem <- raster(paste0(dir,"\\\\DEM.tif"))
+dem <- raster(paste0(dir,"/DEM.tif"))
 grid <- makeGrid(dem = dem, nx = n, ny = n)
 
 velocity <- getVelocity(data = data, z = grid, dir = dir)

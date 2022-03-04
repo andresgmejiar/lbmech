@@ -40,11 +40,11 @@
 #' crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
 #' 
 #' dir <- tempdir()
-#' writeRaster(dem, paste0(dir,"\\DEM.tif"),format="GTiff",overwrite=TRUE)
+#' writeRaster(dem, paste0(dir,"/DEM.tif"),format="GTiff",overwrite=TRUE)
 #' 
 #' 
 #' # Import raster, get the grid
-#' dem <- raster(paste0(dir,"\\DEM.tif"))
+#' dem <- raster(paste0(dir,"/DEM.tif"))
 #' grid <- makeGrid(dem = dem, nx = n, ny = n)
 #' 
 #' @export
@@ -56,7 +56,7 @@ makeGrid <- function(dem, nx, ny, crs = NULL, prefix = "SECTOR_"){
   # If the DEM to be used is a single large DEM,
   # it's necessary to make a grid that will define
   # the extent of each sector.
-
+  
   # The code snippet within was taken from  Jelmer (2016)'s
   # response in the following stackoverflow thread, accessed 27 January 2021:
   # https://stackoverflow.com/questions/29784829/
@@ -66,21 +66,21 @@ makeGrid <- function(dem, nx, ny, crs = NULL, prefix = "SECTOR_"){
   # otherwise inaccessible were there no buffer. It is also used to generate
   # a polygon grid and not directly clip rasters.
   # That'll happen in the getMap function.
-
-  filepath <- dem@file@name
+  
+  filepath <- normalizePath(dem@file@name)
   if (!is.null(crs)){
     dem <- extent(dem)
     dem <- methods::as(dem,"SpatialPolygons")
     dem <- sp::spTransform(dem,crs)
   }
-
-
+  
+  
   dx     <- (extent(dem)[2]- extent(dem)[1])/ nx  ## extent of one tile in x
   dy     <- (extent(dem)[4]- extent(dem)[3])/ ny  ## extent of one tile in y
   xs     <- seq(extent(dem)[1], by= dx, length= nx) ## lower left x-coordinate
   ys     <- seq(extent(dem)[3], by= dy, length= ny) ## lower left y-coordinate
   cS     <- expand.grid(x= xs, y= ys)
-
+  
   # Get the eastings/northings of the extent limits
   cS <- as.data.table(cS)
   cS[, `:=`(left = x,
@@ -88,7 +88,7 @@ makeGrid <- function(dem, nx, ny, crs = NULL, prefix = "SECTOR_"){
             bottom = y,
             top = y + ..dy)]
   ### END CODE SNIPPET ###
-
+  
   # Convert the data.table to an SPDF and assign it a unique TILEID
   polys <- apply(cS[,.(left,right,bottom,top)],
                  1, FUN = function(x) methods::as(extent(x), "SpatialPolygons"))
@@ -96,20 +96,18 @@ makeGrid <- function(dem, nx, ny, crs = NULL, prefix = "SECTOR_"){
   polys <- SpatialPolygonsDataFrame(polys,
                                     data.frame("TILEID" =
                                                  paste0(prefix,1:length(polys))))
-
+  
   # Apply the source projection
   proj4string(polys) <- crs(dem)
-
+  
   # Set the location of the data to the filepath of the original raster
   polys$location <- filepath
-
+  
   # If the output SPDF is input into getMap, this tells getMap that the source
   # DEM is a single file and it should crop; not download.
   polys$makeGrid <- TRUE
   return(polys)
 }
-
-
 
 #' Get the names of tiles that would be needed to perform an analysis
 #' over a given region-of-interest within the maximum possible extent defined
@@ -185,7 +183,6 @@ whichTiles <- function(region, polys, tile_id = "TILEID", x = "x", y = "y"){
 }
 
 
-
 #' A function that checks if the DEMs for a given set of sectors exist
 #' in the workspace, and if not downloads them or crops them from a larger file
 #'
@@ -224,11 +221,11 @@ whichTiles <- function(region, polys, tile_id = "TILEID", x = "x", y = "y"){
 #' crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
 #' 
 #' dir <- tempdir()
-#' writeRaster(dem, paste0(dir,"\\DEM.tif"),format="GTiff",overwrite=TRUE)
+#' writeRaster(dem, paste0(dir,"/DEM.tif"),format="GTiff",overwrite=TRUE)
 #' 
 #' 
 #' # Import raster, get the grid
-#' dem <- raster(paste0(dir,"\\DEM.tif"))
+#' dem <- raster(paste0(dir,"/DEM.tif"))
 #' grid <- makeGrid(dem = dem, nx = n, ny = n)
 #' 
 #' 
@@ -248,33 +245,50 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
   # DEM
   dir <- normalizePath(dir)
   # Check to see if elevations directory exists. If not, make it
-  rd <- paste0(dir,"\\Elevations\\")
+  rd <- normalizePath(paste0(dir,"/Elevations"),mustWork=FALSE)
   if(!dir.exists(rd)){
     dir.create(rd)
   }
-
+  
   # Check to see if the file exists; if not add to "down" vector
   down <- c()
-
+  
   for (tile_name in tiles){
-    if (!file.exists(paste0(rd,tile_name,".zip"))){
+    if (!file.exists(normalizePath(paste0(rd,"/",tile_name,".gz"),
+                                   mustWork=FALSE))){
       down <- c(down,which(polys@data[,tile_id] == tile_name))
     }
   }
-
+  
   # Skip the rest if we have all the needed tiles
   if (!is.null(down)){
-
+    
     # If what we provide is a polygon with URLs to the source,
     # download the file
     if ((class(vals) != "RasterLayer") & is.null(polys$makeGrid)){
       for (i in 1:length(down)){
         tile_name <- tile_id[down[i]]
-        file_path <- paste0(rd,tile_name,".zip")
         print(paste0("Downloading Tile ",tile_name," (",
                      i+1," of ",length(down),")"))
+        extension <- stringr::str_split_fixed(polys@data[down[i],vals],"/.")[2]
+        file_path <- normalizePath(paste0(rd,tile_name),mustWork = FALSE)
         utils::download.file(url=polys@data[down[i],vals],
-                      destfile=file_path)
+                             destfile=paste0(file_path,".",extension))
+        
+        # For compatibility with the PA vignette--which downloads tiles
+        # as zip files, if the download is a zip, unzip and convert to .gz.
+        # This will likely fail in Linux systems
+        if (extension == 'zip'){
+          utils::unzip(paste0(file_path,".zip"), 
+                       exdir = paste0(rd,"/",tile_name),
+                       junkpaths = TRUE)        
+          newFile <- unlist(list.files(paste0(rd,tile_name), full.names = TRUE))
+          R.utils::gzip(filename = newFile,
+                        destname = paste0(file_path,".gz"),
+                        remove = FALSE,
+                        overwrite = TRUE)
+          unlink(newFile,recursive=TRUE)
+        } 
       }
       # If what we provide is a polygon and a RasterLayer or a path to a singular
       # DEM as the source, crop the necessary DEM
@@ -288,23 +302,27 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
           dem <- vals
         }
       }
-
+      
       # For every tile that needs to be acquired...
       for (i in 1:length(down)){
-
+        
         # Get the unique tile id, and define the output filepath
         tile_name <- polys@data[down[i],tile_id]
-        file_path <- paste0(rd,tile_name)
+        file_path <- normalizePath(paste0(rd,"/",tile_name),mustWork=FALSE)
         print(paste0("Cropping Tile ",tile_name," (",
                      i," of ",length(down),")"))
-
+        
         # Select the singular tile, and use it to crop the dem.
         # Save it to the above filepath, zip it, and delete the tiff.
+        
+        
         poly <- which(polys@data[,tile_id] == tile_name)
         clip <- crop(dem,polys[poly,], snap = 'in')
         writeRaster(clip, filename = paste0(file_path,".tif"))
-        utils::zip(zipfile = paste0(file_path,".zip"),
-            files = paste0(file_path,".tif"))
+        R.utils::gzip(filename = paste0(file_path,".tif"),
+                      destname = paste0(file_path,".gz"),
+                      remove = FALSE,
+                      overwrite = TRUE)
         unlink(paste0(file_path,".tif"),recursive=TRUE)
       }
     }
@@ -418,10 +436,10 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
 #' 
 #' # Export the DEM so it's not just stored on the memory
 #' dir <- tempdir()
-#' writeRaster(dem, paste0(dir,"\\DEM.tif"),format="GTiff",overwrite=TRUE)
+#' writeRaster(dem, paste0(dir,"/DEM.tif"),format="GTiff",overwrite=TRUE)
 #' 
 #' # Import raster, get the grid
-#' dem <- raster(paste0(dir,"\\DEM.tif"))
+#' dem <- raster(paste0(dir,"/DEM.tif"))
 #' grid <- makeGrid(dem = dem, nx = n, ny = n)
 #' 
 #' velocity <- getVelocity(data = data, z = grid, dir = dir)
@@ -435,66 +453,73 @@ getVelocity <- function(data, x = 'x', y ='y', z = 'z',
   # This bit is to silence the CRAN check warnings for literal column names
   ..x=..y=..z=..ID=..dt=..z_vals=Order=dl=dx=dy=dz=dl_dt=NULL
   #
-
+  
   # Standardize filepath names
   dir <- normalizePath(dir)
-  rd <- paste0(dir,"\\Elevations\\")
-
+  rd <- normalizePath(paste0(dir,"/Elevations"),mustWork = FALSE)
+  
   data <- as.data.table(data)
-
+  
   # If z is a raster layer, its simply extracting the z points from xy locations
   if ("RasterLayer" %in% class(z)){
     dem <- z
     z <- dem[cellFromXY(dem,data[,.(get(..x),get(..y))])]
     data[,z := ..z]
     data <- data[,.(ID = get(..ID),x = get(..x),y = get(..y),z,dt = get(..dt))]
-
+    
     # If z is a character, do nothing; just rename columns
   } else if ("character" %in% class(z)){
-
+    
     data <- data[,.(ID = get(..ID),x = get(..x),y = get(..y),z = get(..z),dt = get(..dt))]
-
+    
     # If z is a polygon defining sector locations...
   } else if ("SpatialPolygonsDataFrame" %in% class(z)){
-
+    
     # Create an FID to keep the observations in order since the process will
     # shuffle them
     data$Order <- 1:nrow(data)
-
+    
     # If z locations have already been provided but the input contains a DEM,
     # warn the user
     if (!is.null(data$z)){
       warning("Data contains a 'z' column which will be ignored")
       data[, z:= NULL]
     }
-
+    
     # Create a SPDF object to detect which tiles will be employed
     data_points <- SpatialPointsDataFrame(data[,.(get(..x),get(..y))], data=data,
                                           proj4string = crs(z))
     data_points <- as.data.table(intersect(data_points,z)@data)
     tiles <- unique(data_points[,get(tile_id)])
-
+    
     # Make sure that the necessary files exist
     getMap(tiles=tiles,polys=z,tile_id=tile_id,vals=vals,dir=dir)
-
+    
     # Create an empty data.table in which to store extracted values. There's a
     # small chance some points will land in two sectors, so we'll have
     # to collect all and consolidate
     data_new <- data.table()
     for (tile in tiles){
       # Unzip the source dem tile-by-tile, import it, and extract the elevation
-      utils::unzip(paste0(rd,tile,".zip"), exdir = stringr::str_remove(rd,"\\\\$"),junkpaths=TRUE)
-      elevs <- raster(paste0(rd,tile,".tif"))
-
+      R.utils::decompressFile(filename = normalizePath(paste0(rd,"/",tile,".gz"),
+                                                       mustWork = FALSE), 
+                              destname = normalizePath(paste0(rd,"/",tile,'.tif'),
+                                                       mustWork = FALSE),
+                              overwrite = TRUE,
+                              remove = FALSE,
+                              FUN = gzfile,
+                              ext = 'gz')
+      elevs <- raster(normalizePath(paste0(rd,"/",tile,".tif"),mustWork=FALSE))
+      
       d <- data_points[get(tile_id) == tile]
       z_vals <- elevs[cellFromXY(elevs,d[,.(get(..x),get(..y))])]
       d[,z := ..z_vals]
-
+      
       # Add it to the empty data.table, and remove the uncompressed tiff.
       data_new <- rbind(data_new,d)
-      unlink(paste0(rd,tile,".tif"),recursive=TRUE)
+      unlink(normalizePath(paste0(rd,"/",tile,".tif")),recursive=TRUE)
     }
-
+    
     # Group by all columns that ARE NOT z, setting z equal to the mean of all
     # non-NA values. This makes sure we have one row per observation and lets
     # us handle edge cases where multiple z values were assigned to points on
@@ -505,9 +530,9 @@ getVelocity <- function(data, x = 'x', y ='y', z = 'z',
     data <- data_new[order(Order)
     ][,.(ID = get(..ID),x = get(..x),y = get(..y),z,dt = get(..dt))
     ][]
-
+    
   }
-
+  
   # Calculate displacement, then speed and slope
   data[, `:=`(dx = x - data.table::shift(x),
               dy = y - data.table::shift(y),
@@ -516,7 +541,7 @@ getVelocity <- function(data, x = 'x', y ='y', z = 'z',
   ][, dl := sqrt(dx^2 + dy^2)
   ][, `:=`(dl_dt = dl / dt,
            dz_dl = dz / dl)]
-
+  
   # The user can set a global tau, or a tau for the maximum velocity
   # and the non-linear quantile regression independently. This section
   # lets us deal with the event that the user sets all three or a global
@@ -530,27 +555,27 @@ getVelocity <- function(data, x = 'x', y ='y', z = 'z',
     tau_nlrq <- tau
     tau_vmax <- tau
   }
-
+  
   # Get the maximum velocity as the tauth_vmax quantile
   v_max <- as.numeric(stats::quantile(data[,dl_dt],tau_vmax,na.rm=TRUE))
   data$v_max <- v_max
-
-
+  
+  
   # And obtain the other coefficients through an nlrq of the form proposed
   # by Tobler (exponential decay from an optimal angle)
   velocity <- quantreg::nlrq(dl_dt ~ v_max * exp(-k * abs(dz_dl - alpha)),
-                   data = data, tau = tau_vmax, start=list(k=k_init,alpha=-alpha_init))
+                             data = data, tau = tau_vmax, start=list(k=k_init,alpha=-alpha_init))
   data$v_max <- NULL
-
-
+  
+  
   # We'll store the output in a list. Best practices would usually suggest a
   # unique class, but it's not necessary and would require the user to load
   # nlrq even if they don't employ this function.
-
+  
   # Setting the velocity always throws an unnecessary warning, so quiet it temporarily
   defaultW <- getOption("warn")
   options(warn = -1)
-
+  
   out <- list(
     model = velocity,
     vmax = as.numeric(v_max),
@@ -563,7 +588,7 @@ getVelocity <- function(data, x = 'x', y ='y', z = 'z',
   # Return the environment to what it was
   options(warn = defaultW)
   return(out)
-
+  
 }
 
 
@@ -651,11 +676,11 @@ getVelocity <- function(data, x = 'x', y ='y', z = 'z',
 #' 
 #' # Export it so it doesn't just exist on the memory
 #' dir <- tempdir()
-#' writeRaster(dem, paste0(dir,"\\DEM.tif"),format="GTiff",overwrite=TRUE)
+#' writeRaster(dem, paste0(dir,"/DEM.tif"),format="GTiff",overwrite=TRUE)
 #' 
 #'
 #' # Import raster, get the grid
-#' dem <- raster(paste0(dir,"\\DEM.tif"))
+#' dem <- raster(paste0(dir,"/DEM.tif"))
 #' grid <- makeGrid(dem = dem, nx = n, ny = n)
 #' 
 #' # Select all tiles that exist between x = (12000,16000) and y = (32000,36000)
@@ -675,6 +700,8 @@ makeWorld <- function(tiles,polys,tile_id = 'TILEID',cut_slope,z_fix,
   from=to=..dem=z_f=z_i=x_f=x_i=y_f=y_i=dz=NULL
   #
   
+  
+  dir <- normalizePath(dir)
   units <- c("m","km","ft","mi")
   if (!(unit %in% units)){
     stop("Error: Unknown units. Only m, km, ft, and mi allowed.
@@ -688,27 +715,40 @@ makeWorld <- function(tiles,polys,tile_id = 'TILEID',cut_slope,z_fix,
   } else{
     contiguity <- base::ceiling(max(nrow(directions),ncol(directions)))
   }
-
-
-  rd <- paste0(dir,"\\Tensors\\")
+  
+  
+  rd <- normalizePath(paste0(dir,"/Tensors"),mustWork=FALSE)
   for (i in tiles){
-    if (!file.exists(paste0(rd,i,"_Tensor.gz"))){
+    if (!file.exists(normalizePath(paste0(rd,"/",i,"_Tensor.gz"),mustWork=FALSE))){
       # Get the appropriate polygon and name; create a temporary folder
-      tensors <- paste0(rd,i)
+      tensors <- normalizePath(paste0(rd,"/",i),mustWork=FALSE)
       poly <- which(polys@data[,tile_id] == i)
       poly <- polys[poly,]
       dir.create(tensors)
       l_p <- res(z_fix)[[1]]
-
+      
       # Get the neighboring sectors and unzip them into temp folder
       poly_buff <- rgeos::gBuffer(poly,byid=TRUE,width=neighbor_distance)
       mzip <- intersect(poly_buff,polys)@data[,paste0(tile_id,".2")]
-
+      
       getMap(mzip, polys = polys, tile_id = tile_id, vals = vals,dir = dir)
-
-      mzip <- paste0(dir,"\\Elevations\\",mzip,".zip")
-      lapply(mzip,utils::unzip,exdir=tensors,junkpaths=TRUE)
-
+      
+      mzip <- as.list(mzip)
+      
+      for (j in mzip){
+        R.utils::decompressFile(
+          filename = normalizePath(paste0(dir,"/Elevations/",j,".gz"),
+                                   mustWork = FALSE), 
+          destname = normalizePath(paste0(tensors,"/",j,".tif"),
+                                   mustWork=FALSE),
+          ext = 'gz',
+          FUN = gzfile,
+          remove = FALSE,
+          overwrite = TRUE
+        )
+      }
+      
+      
       # Get list of rasters; put them into the same projection,
       # resample them, then mosaic them
       dem <- list.files(path=tensors,pattern=".tif$",full.names=TRUE)
@@ -716,11 +756,11 @@ makeWorld <- function(tiles,polys,tile_id = 'TILEID',cut_slope,z_fix,
       dem_temp <- lapply(dem,projectRaster,to=dem[[1]],alignOnly=TRUE)
       dem_temp$fun <- mean
       dem_temp <- do.call(mosaic,dem_temp)
-
+      
       dem <- lapply(dem,projectRaster,to=dem_temp)
       dem$fun <- mean
       dem <- do.call(mosaic,dem)
-
+      
       # Fix the units if they weren't provided in meters
       if (unit == "km"){
         dem <- dem / 1000
@@ -729,7 +769,7 @@ makeWorld <- function(tiles,polys,tile_id = 'TILEID',cut_slope,z_fix,
       } else if (unit == "mi"){
         dem <- dem*5280*12*2.54/100
       }
-
+      
       # Create a cropping polygon. This is equivalent to the extent of the
       # tile shape, expanded in the X and Y directions by the
       # pixel size times the connectivity contiguity. This has to be
@@ -743,22 +783,22 @@ makeWorld <- function(tiles,polys,tile_id = 'TILEID',cut_slope,z_fix,
       poly <- extent(poly)
       poly <- methods::as(poly,"SpatialPolygons")
       crs(poly) <- crs(dem)
-
+      
       # Crop the mosaiced raster by the cropping polygon, project it
       dem <- crop(dem,poly)
       dem_temp <- projectRaster(dem,to=z_fix,alignOnly = TRUE)
       dem <- projectRaster(dem,to=dem_temp,method='bilinear')
-
+      
       name <- i
-
+      
       nas <- which(!is.na(getValues(dem)))
-
+      
       # Get pairs of adjacent all adjacent cells; drop those that
       # correspond to NA
       adj <- adjacent(dem,1:ncell(dem),directions=directions,pairs=TRUE,sort=TRUE)
       adj <- as.data.table(adj)
       adj <- adj[from %in% nas | to %in% nas,]
-
+      
       # Calculate the change in elevation between every accessible cell pairs,
       # then drop all values that would require movement over the
       # cut slope.
@@ -772,13 +812,13 @@ makeWorld <- function(tiles,polys,tile_id = 'TILEID',cut_slope,z_fix,
       ][, `:=`(from = paste(x_i,y_i,sep=","),
                to = paste(x_f,y_f,sep=","))
       ]
-
+      
       adj <- stats::na.omit(adj)
-
+      
       # This exports the cost tensor so that it can be called later by
       # the lbm.distance tool to calculate paths and catchments
       fwrite(adj[,.(from,to,dz)],
-             file = paste0(rd,i,"_Tensor.gz"))
+             file = normalizePath(paste0(rd,"/",i,"_Tensor.gz"),mustWork=FALSE))
       unlink(tensors,recursive=TRUE)
     }
   }
@@ -887,11 +927,11 @@ regionMask <- function(region, z_fix){
 #' 
 #' # Export it so it doesn't just exist on the memory
 #' dir <- tempdir()
-#' writeRaster(dem, paste0(dir,"\\DEM.tif"),format="GTiff",overwrite=TRUE)
+#' writeRaster(dem, paste0(dir,"/DEM.tif"),format="GTiff",overwrite=TRUE)
 #' 
 #'
 #' # Import raster, get the grid
-#' dem <- raster(paste0(dir,"\\DEM.tif"))
+#' dem <- raster(paste0(dir,"/DEM.tif"))
 #' grid <- makeGrid(dem = dem, nx = n, ny = n)
 #' 
 #' # Import the data lying between x = (12000,16000) and y = (32000,36000)
@@ -911,14 +951,15 @@ importWorld <- function(region, z_fix, polys, banned = NULL,
   # First determine which tiles to import,
   # download maps and make tensors if needed
   dir <- normalizePath(dir)
-
+  
   tiles <- whichTiles(region = region, polys = polys,
                       tile_id = tile_id)
   makeWorld(tiles = tiles, polys = polys, tile_id = tile_id, dir = dir,
             z_fix = z_fix, ...)
-
-  tiles <- paste0(dir,"\\Tensors\\",tiles,"_Tensor.gz")
-
+  
+  tiles <- normalizePath(paste0(dir,"/Tensors/",tiles,"_Tensor.gz"),
+                         mustWork=FALSE)
+  
   # Convert the regions into a list of the allowable cells
   region <- regionMask(region, z_fix)
   if (!is.null(banned)){
@@ -926,12 +967,12 @@ importWorld <- function(region, z_fix, polys, banned = NULL,
   } else{
     banned <- c("NULL")
   }
-
+  
   # Create an empty data.table to which to add the imported tensors
   Edges <- data.table()
-
+  
   pb <- utils::txtProgressBar(max = length(tiles), style = 3)
-
+  
   # Import tensors one-by-one, keeping only the allowable cells
   for (i in 1:length(tiles)) {
     import <- fread(tiles[i])
@@ -1024,11 +1065,11 @@ importWorld <- function(region, z_fix, polys, banned = NULL,
 #' 
 #' # Export it so it doesn't just exist on the memory
 #' dir <- tempdir()
-#' writeRaster(dem, paste0(dir,"\\DEM.tif"),format="GTiff",overwrite=TRUE)
+#' writeRaster(dem, paste0(dir,"/DEM.tif"),format="GTiff",overwrite=TRUE)
 #' 
 #'
 #' # Import raster, get the grid
-#' dem <- raster(paste0(dir,"\\DEM.tif"))
+#' dem <- raster(paste0(dir,"/DEM.tif"))
 #' grid <- makeGrid(dem = dem, nx = n, ny = n)
 #' 
 #' # Import the data lying between x = (12000,16000) and y = (32000,36000)
@@ -1075,7 +1116,7 @@ calculateCosts <- function(world, method = 'kuo', m = NULL, v_max = NULL,
   if("SpatialPolygonsDataFrame" %in% class(world)){
     world <- importWorld(polys = world, ...)
   }
-
+  
   # Calculate the transition costs. This is broken up into three
   # principal transformations.
   ## (1) Convert the cell names into coordinates, calculate distances,
@@ -1092,7 +1133,7 @@ calculateCosts <- function(world, method = 'kuo', m = NULL, v_max = NULL,
   ][, dt := dl_t ^ -1 * dl #* ..l_p / ..l_s
   ][, dU_l := ..m * ..g * dz
   ][dU_l < 0, dU_l := 0]
-
+  
   ## (2) Calculate the work based on a user-selected function
   if (method == 'kuo'){
     # Kuo's function for human movement
@@ -1103,11 +1144,11 @@ calculateCosts <- function(world, method = 'kuo', m = NULL, v_max = NULL,
   } else if (method == 'oscillator'){
     world[, dK_l := 2 * ..m * dl_t ^2 * ..gamma * dl / ..l_s]
   }
-
+  
   ## (3) Finally, calculate the total work and energy
   world[, dW_l := (dU_l + dK_l) / ..epsilon
   ][, dE_l := dW_l + ..BMR * dt][]
-
+  
   return(world)
 }
 
@@ -1269,11 +1310,11 @@ getCoords <- function(data, x = "x", y = "y", z_fix){
 #' 
 #' # Export it so it doesn't just exist on the memory
 #' dir <- tempdir()
-#' writeRaster(dem, paste0(dir,"\\DEM.tif"),format="GTiff",overwrite=TRUE)
+#' writeRaster(dem, paste0(dir,"/DEM.tif"),format="GTiff",overwrite=TRUE)
 #' 
 #'
 #' # Import raster, get the grid
-#' dem <- raster(paste0(dir,"\\DEM.tif"))
+#' dem <- raster(paste0(dir,"/DEM.tif"))
 #' grid <- makeGrid(dem = dem, nx = n, ny = n)
 #' 
 #' # Import the data lying between x = (12000,16000) and y = (32000,36000)
@@ -1311,7 +1352,7 @@ getCosts <- function(world, from, to = NULL, id = 'ID', z_fix = NULL, x = "x", y
   # This bit is to silence the CRAN check warnings for literal column names
   ..id=..x=..y=dt=dW_l=dE_l=Var2=value=Var1=Cell=From_ID=ID=..cost=..d=Value=NULL
   #
-
+  
   dir <- normalizePath(dir)
   # First, "all" and "energetics" are just shorthand for a vector
   # of multiple cost types. Fix that.
@@ -1320,7 +1361,7 @@ getCosts <- function(world, from, to = NULL, id = 'ID', z_fix = NULL, x = "x", y
   } else if (all(costs == "energetics")){
     costs <- c("work","energy")
   }
-
+  
   id2 <- 1
   # If no Unique ID column is given, make one
   if (is.null(id)){
@@ -1328,7 +1369,7 @@ getCosts <- function(world, from, to = NULL, id = 'ID', z_fix = NULL, x = "x", y
     id <- "Node_ID"
     id2 <- NULL
   }
-
+  
   # We need to coerce everything to an (x,y) list stored as a data.table
   # First, if the input are polygons we'll just find the centroid
   if (sum(class(from) %in% 
@@ -1338,7 +1379,7 @@ getCosts <- function(world, from, to = NULL, id = 'ID', z_fix = NULL, x = "x", y
   # Coerce to data.table
   from <- as.data.table(from)[,.(ID = get(..id), x = get(..x), y = get(..y))]
   from$Cell <- getCoords(from, z_fix = z_fix)
-
+  
   # Do the same for the destination UNLESS it's set as "all".
   # If it's empty, then from is the same as to.
   if (destination != "all"){
@@ -1350,7 +1391,7 @@ getCosts <- function(world, from, to = NULL, id = 'ID', z_fix = NULL, x = "x", y
         }
         to <- rgeos::gCentroid(to, byid = TRUE, id = id)
       }
-
+      
       to <- as.data.table(to)[,.(ID = get(..id), x = get(..x), y = get(..y))]
       to$Cell <- getCoords(to, z_fix = z_fix)
     } else {
@@ -1366,27 +1407,27 @@ getCosts <- function(world, from, to = NULL, id = 'ID', z_fix = NULL, x = "x", y
       to <- NULL
     }
   }
-
+  
   # If a region further constraining the world more than what was previosly
   # provided is input, then drop those observations from the dataframe
   if (!is.null(region)){
     region <- regionMask(region, z_fix = z_fix)
     world <- world[(from %in% region) & (to %in% region),]
   }
-
+  
   # If direction is set to both, we'll need to create a "to"
   # and "from" category
   if (all(direction == "both")){
     direction <- c("in","out")
   }
-
+  
   # Create a list object to which we'll append either the matrices or
   # rasterstacks representing the costs
   outList <- list()
-
+  
   pb <- txtProgressBar(min = 0, max = length(costs) * length(direction), style=3)
   iter = 0
-
+  
   # We first iterate over the desired costs. Each desired cost will
   # create one or two entries (depending on the number of directions)
   # in the output list.
@@ -1402,50 +1443,50 @@ getCosts <- function(world, from, to = NULL, id = 'ID', z_fix = NULL, x = "x", y
     if (all(cost == "energy")){
       Graph <- igraph::graph_from_data_frame(world[,.(from,to,weight = dE_l)])
     }
-
+    
     costVals <- data.table()
-
+    
     # Now we also iterate over each desired direction
     for (d in direction){
-
+      
       # This section is if the desired output is a *matrix*
       # and we are not storing the rasters
       if (all(destination == 'pairs')){
         # Calculate the distances
         Distances <- igraph::distances(Graph,
-                               v = from$Cell,
-                               to = to$Cell,
-                               mode = d)
-
+                                       v = from$Cell,
+                                       to = to$Cell,
+                                       mode = d)
+        
         # Convert to data.table
         Distances <- as.data.table(reshape2::melt(Distances))
-
+        
         # Append the appropriate names/ID
         Distances <- merge(Distances[,.(Var2,value,Cell = Var1)],
                            from[,.(Cell,From_ID = get(..id))],
                            on="Cell")[, Cell := NULL][]
-
+        
         Distances <- merge(Distances[,.(From_ID,value,Cell = Var2)],
                            to[,.(Cell,To_ID = get(..id))],
                            on="Cell")[, Cell := NULL][]
-
+        
         # Convert to distance matrix with xtabs,
         # Add to the output list
         outList[[paste0(cost,"_",d)]] <- stats::xtabs(value~.,Distances)
-
+        
       }
-
+      
       # This section is if the desired costs are from a set of
       # cells to every location on the landscape (a raster of costs)
       if (all(destination == 'all')){
         # Calculate the distances
         Distances <- igraph::distances(Graph,
-                               v = from$Cell,
-                               mode = d)
-
+                                       v = from$Cell,
+                                       mode = d)
+        
         # Convert to data.table
         Distances <- as.data.table(reshape2::melt(Distances))
-
+        
         # Append the appropriate IDs to each origin/destination node
         # then get the x,y coordinates from the cell name
         Distances <- merge(Distances[,.(Var2,value,Cell = Var1)],
@@ -1455,7 +1496,7 @@ getCosts <- function(world, from, to = NULL, id = 'ID', z_fix = NULL, x = "x", y
                                 Direction = ..d,Value = value)]
         Distances[, c("x","y") := tstrsplit(Cell,",")
         ][, c("x","y") := lapply(.SD,as.numeric), .SDcols = c("x","y")]
-
+        
         # We'll add all of the generated rasters to a stack
         outStack <- stack()
         for (i in unique(Distances$ID)){
@@ -1464,35 +1505,36 @@ getCosts <- function(world, from, to = NULL, id = 'ID', z_fix = NULL, x = "x", y
                                rasterFromXYZ(Distances[ID == i,.(x,y,z=Value)],
                                              crs=crs(z_fix)))
         }
-
+        
         # Select the appropriate prefix names for the filepaths/layer names
         if (all(d == "out")){
           names(outStack) <- paste0("From_",unique(Distances$ID))
         } else if (all(d == "in")){
           names(outStack) <- paste0("To_",unique(Distances$ID))
         }
-
+        
         # If we want to output a rasterstack, add it to the list
         if ("object" %in% output){
           outList[[paste0(cost,"_",d)]] <- outStack
         }
-
+        
         # If we want to export the file, save it
         if ("file" %in% output){
-          dir.create(paste0(dir,"\\CostRasters\\"),showWarnings=FALSE)
+          dir.create(normalizePath(paste0(dir,"/CostRasters/"),mustWork=FALSE),
+                     showWarnings=FALSE)
           writeRaster(outStack,
-                      filename=paste0(dir,"\\CostRasters\\",
-                                      stringr::str_to_sentence(cost),"_",
-                                      names(outStack),".tif"),
+                      filename=normalizePath(paste0(dir,"/CostRasters/",
+                                                    stringr::str_to_sentence(cost),"_",
+                                                    names(outStack),".tif"),mustWork=FALSE),
                       bylayer=TRUE,format="GTiff",overwrite=TRUE)
         }
-
-
+        
+        
       }
       iter <- iter + 1
       setTxtProgressBar(pb,iter)
     }
-
+    
   }
   # Return the output list if it exists
   if (length(outList) > 0) {
@@ -1501,7 +1543,7 @@ getCosts <- function(world, from, to = NULL, id = 'ID', z_fix = NULL, x = "x", y
     }
     return(outList)
   }
-
+  
 }
 
 #' A function to automatically perform the raster arithmetic
@@ -1548,11 +1590,11 @@ getCosts <- function(world, from, to = NULL, id = 'ID', z_fix = NULL, x = "x", y
 #' 
 #' # Export it so it doesn't just exist on the memory
 #' dir <- tempdir()
-#' writeRaster(dem, paste0(dir,"\\DEM.tif"),format="GTiff",overwrite=TRUE)
+#' writeRaster(dem, paste0(dir,"/DEM.tif"),format="GTiff",overwrite=TRUE)
 #' 
 #'
 #' # Import raster, get the grid
-#' dem <- raster(paste0(dir,"\\DEM.tif"))
+#' dem <- raster(paste0(dir,"/DEM.tif"))
 #' grid <- makeGrid(dem = dem, nx = n, ny = n)
 #' 
 #' # Import the data lying between x = (12000,16000) and y = (32000,36000)
@@ -1580,13 +1622,12 @@ getCosts <- function(world, from, to = NULL, id = 'ID', z_fix = NULL, x = "x", y
 #' #### Example 1:
 #' # Calculating the corridors from a list of RasterStacks,
 #' # with path 1 -> 2 -> 4 -> 1 -> 5
-#' corridors <- makeCorridor(rasters = costRasters, order = c(1,2,4,1,5))
+#' corridors <- makeCorridor(rasters = costRasters, order = c(1,2,5,1,4))
 #' 
 #' #### Example 2:
 #' # Calculating the corridors from a workspace directory
 #' # with path 1 -> 2 -> 4 -> 1 -> 5
-#' corridors <- makeCorridor(rasters = dir, order = c(1,2,4,1,5))
-#' 
+#' corridors <- makeCorridor(rasters = dir, order = c(1,2,5,1,4))
 #' @export
 makeCorridor <- function(rasters = tempdir(), order, costs = "all"){
   # Unlike getCosts, makeCorridor only works if the previous steps have
@@ -1598,16 +1639,16 @@ makeCorridor <- function(rasters = tempdir(), order, costs = "all"){
   } else if (all(costs == "energetics")){
     costs <- c("work","energy")
   }
-
+  
   # Get the names of files/RasterLayers that will be needed for each leg
   starts <- paste0("From_",order[1:(length(order)-1)])
   stops <-  paste0("To_",order[2:length(order)])
-
+  
   # Empty output list, as in getCosts
   outList <- list()
   for (cost in costs){
     # Iterate over costs, again as in getCosts
-
+    
     if (class(rasters) == "list"){
       # If the input is a list of RasterStacks, then we can just
       # get the appropriate rasters from the keys
@@ -1616,33 +1657,37 @@ makeCorridor <- function(rasters = tempdir(), order, costs = "all"){
     } else if (class(rasters) == 'character'){
       # If the input is a directory with RasterLayers, then we need to import
       # each individual raster and stack them
-      rd <- paste0(normalizePath(rasters),"\\CostRasters\\")
-
-      from <- paste0(rd,stringr::str_to_sentence(cost),"_",starts,".tif")
-      to <- paste0(rd,stringr::str_to_sentence(cost),"_",stops,".tif")
-
+      rd <- normalizePath(paste0(rasters,"/CostRasters"),mustWork=FALSE)
+      
+      from <- normalizePath(paste0(rd,"/",
+                                   stringr::str_to_sentence(cost),"_",
+                                   starts,".tif"))
+      to <- normalizePath(paste0(rd,"/",
+                                 stringr::str_to_sentence(cost),"_",
+                                 stops,".tif"))
+      
       from <- lapply(from,raster)
       from <- stack(unlist(from))
-
+      
       to <- lapply(to,raster)
       to <- stack(unlist(to))
-
+      
     }
-
+    
     # The cost for each leg is From Origin + To Destination
     corridor <- from + to
     mins <- minValue(corridor)
-
+    
     # To ensure that the path from the first origin to the last destination
     # contains the same minimum travel cost, subtract the minimum cost per
     # leg from each leg's raster
     corridor <- corridor - mins
-
+    
     # The total corridor is the minimum value at each cell from each
     # leg's raster. Add the sum of the minimums to represent the total
     # minimum cost, not just detour.
     corridor <- min(corridor) + sum(mins)
-
+    
     # Add to the output list
     outList[[cost]] <- corridor
   }
@@ -1712,11 +1757,11 @@ makeCorridor <- function(rasters = tempdir(), order, costs = "all"){
 #' 
 #' # Export it so it doesn't just exist on the memory
 #' dir <- tempdir()
-#' writeRaster(dem, paste0(dir,"\\DEM.tif"),format="GTiff",overwrite=TRUE)
+#' writeRaster(dem, paste0(dir,"/DEM.tif"),format="GTiff",overwrite=TRUE)
 #' 
 #'
 #' # Import raster, get the grid
-#' dem <- raster(paste0(dir,"\\DEM.tif"))
+#' dem <- raster(paste0(dir,"/DEM.tif"))
 #' grid <- makeGrid(dem = dem, nx = n, ny = n)
 #' 
 #' # Import the data lying between x = (12000,16000) and y = (32000,36000)
@@ -1756,7 +1801,7 @@ getPaths <- function(world, nodes, z_fix, id = "ID", order = NULL, x = "x",
   # This bit is to silence the CRAN check warnings for literal column names
   from=to=..id=..x=..y=ID=Cell=V1=V2=TempID=dt=dW_l=dE_l=NULL
   #
-
+  
   # First, "all" and "energetics" are just shorthand for a vector
   # of multiple cost types. Fix that.
   if (all(costs == 'all')){
@@ -1764,40 +1809,40 @@ getPaths <- function(world, nodes, z_fix, id = "ID", order = NULL, x = "x",
   } else if (all(costs == "energetics")){
     costs <- c("work","energy")
   }
-
-
+  
+  
   # If region is provided, filter out those values
   if (!is.null(region)){
     region <- regionMask(region, z_fix = z_fix)
     world <- world[(from %in% region) & (to %in% region),]
   }
-
+  
   # Put everything in XY format, calculating centroids if polygons are provided
   if (sum(class(nodes) %in% 
-           c("SpatialPolygons","SpatialPolygonsDataFrame")) > 1){
+          c("SpatialPolygons","SpatialPolygonsDataFrame")) > 1){
     nodes <- rgeos::gCentroid(nodes, byid = TRUE, id = id)
   }
   # Coerce to data.table
   nodes <- as.data.table(nodes)[,.(ID = get(..id), x = get(..x), y = get(..y))]
   nodes$Cell <- getCoords(nodes, z_fix = z_fix)
-
+  
   # If no order is given, assume the node object is already in the desired order
   if (is.null(order)){
     order <- unlist(nodes[[id]])
   }
-
+  
   # Get the IDs of nodes that will be needed for each leg
   starts <- order[1:(length(order)-1)]
   stops <-  order[2:length(order)]
   order <- paste0(starts,"_to_",stops)
-
+  
   # We only need to do the calculations once for each origin node,
   # but we need to keep the order of the above vectors
   origins <- unique(starts)
-
+  
   # We'll store each path inside a list
   pathList <- list()
-
+  
   # Iterate over every cost, adding each result as an entry in pathList
   for (cost in costs){
     if (cost == "time"){
@@ -1809,51 +1854,51 @@ getPaths <- function(world, nodes, z_fix, id = "ID", order = NULL, x = "x",
     if (cost == "energy"){
       Graph <- igraph::graph_from_data_frame(world[,.(from,to,weight = dE_l)])
     }
-
+    
     # Store each *segment* (leg) of each path in a list,
     # Since they're out-of-order, document the name of the iterated leg
     legList <- list()
     nameList <- c()
-
+    
     # Calculate the shortest path ONCE for each origin node...
     for (i in origins){
       # ...destination node pair storing it in the above list/vector
       dests <- unique(stops[which(starts == i)])
       legs <- igraph::shortest_paths(Graph,from=nodes[ID == i,Cell],
-                             to = nodes[ID %in% dests,Cell],
-                             mode='out', output='vpath')$vpath
+                                     to = nodes[ID %in% dests,Cell],
+                                     mode='out', output='vpath')$vpath
       legList <- append(legList, legs)
       nameList <- c(nameList,paste0(i,"_to_",dests))
     }
-
+    
     # Convert the output igraph object to the cell names, convert to
     # a numeric datatable containing XY coordinates for each traversed cell
     legList <- lapply(legList, igraph::as_ids)
     legList <- lapply(legList, tstrsplit, ",")
     legList <- rbindlist(legList,idcol="TempID")
     legList[,`:=`(x = as.numeric(V1), y = as.numeric(V2), V1 = NULL, V2 = NULL)]
-
+    
     # Convert the XY list to SpatialPoints, then SpatialLines
     lineList <- list()
     for (i in unique(legList$TempID)){
       lineList <- append(lineList,
                          SpatialPoints(legList[TempID==i,.(x,y)],
                                        proj4string = crs(z_fix)))
-
+      
     }
     lineList <- lapply(lineList,methods::as,"SpatialLines")
     lineList <- do.call(rbind,lineList)
-
+    
     # Add the information about what segment each leg represents
     lineList <- SpatialLinesDataFrame(lineList,
                                       data = data.table(segment = nameList),
                                       match.ID = FALSE)
     # And place it in the originally-requested order
     lineList <- lineList[match(order, nameList),]
-
+    
     # Save to the output pathList
     pathList[[cost]] <- lineList
-
+    
   }
   if (length(pathList) > 0) {
     if (length(pathList) == 1 ){
