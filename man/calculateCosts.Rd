@@ -29,7 +29,7 @@ output of the \link[lbmech]{makeGrid} function.}
 \item{method}{one of either \code{'kuo'}, \code{'heglund'}, or \code{'oscillator'} defining
 the method by which to calculate work per stride; see details below.}
 
-\item{m}{The mass of the animal moving across the landscape}
+\item{m}{The mass of the animal moving across the landscape, in kilograms.}
 
 \item{v_max}{The maximum velocity of the animal moving across the landscape,
 in meters per second; see \link[lbmech]{getVelocity}.}

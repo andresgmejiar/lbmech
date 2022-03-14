@@ -724,7 +724,7 @@ makeWorld <- function(tiles,polys,tile_id = 'TILEID',cut_slope,z_fix,
       tensors <- normalizePath(paste0(rd,"/",i),mustWork=FALSE)
       poly <- which(polys@data[,tile_id] == i)
       poly <- polys[poly,]
-      dir.create(tensors)
+      dir.create(tensors,recursive=TRUE)
       l_p <- res(z_fix)[[1]]
       
       # Get the neighboring sectors and unzip them into temp folder
@@ -753,11 +753,14 @@ makeWorld <- function(tiles,polys,tile_id = 'TILEID',cut_slope,z_fix,
       # resample them, then mosaic them
       dem <- list.files(path=tensors,pattern=".tif$",full.names=TRUE)
       dem <- lapply(dem,raster)
-      dem_temp <- lapply(dem,projectRaster,to=dem[[1]],alignOnly=TRUE)
+      dem_temp <- suppressWarnings(lapply(dem,
+                                          projectRaster,
+                                          to=dem[[1]],
+                                          alignOnly=TRUE))
       dem_temp$fun <- mean
       dem_temp <- do.call(mosaic,dem_temp)
       
-      dem <- lapply(dem,projectRaster,to=dem_temp)
+      dem <- suppressWarnings(lapply(dem,projectRaster,to=dem_temp))
       dem$fun <- mean
       dem <- do.call(mosaic,dem)
       
@@ -786,8 +789,8 @@ makeWorld <- function(tiles,polys,tile_id = 'TILEID',cut_slope,z_fix,
       
       # Crop the mosaiced raster by the cropping polygon, project it
       dem <- crop(dem,poly)
-      dem_temp <- projectRaster(dem,to=z_fix,alignOnly = TRUE)
-      dem <- projectRaster(dem,to=dem_temp,method='bilinear')
+      dem_temp <- suppressWarnings(projectRaster(dem,to=z_fix,alignOnly = TRUE))
+      dem <- suppressWarnings(projectRaster(dem,to=dem_temp,method='bilinear'))
       
       name <- i
       
@@ -995,7 +998,7 @@ importWorld <- function(region, z_fix, polys, banned = NULL,
 #' output of the \link[lbmech]{makeGrid} function.
 #' @param method one of either \code{'kuo'}, \code{'heglund'}, or \code{'oscillator'} defining
 #' the method by which to calculate work per stride; see details below.
-#' @param m The mass of the animal moving across the landscape
+#' @param m The mass of the animal moving across the landscape, in kilograms.
 #' @param v_max The maximum velocity of the animal moving across the landscape,
 #' in meters per second; see \link[lbmech]{getVelocity}.
 #' @param epsilon The biomechanical efficiency factor for an animal moving across
@@ -1219,16 +1222,17 @@ getCoords <- function(data, x = "x", y = "y", z_fix){
 #' values
 #'
 #' (2) If you wish to generate a RasterStack of costs from and/or to all nodes
-#' in the \code{from} object, set the \code{output == 'object'}.
+#' in the \code{from} object, set the \code{output = 'object'} and 
+#' \code{destination = 'all'}.
 #'
 #' (3) You may also save the rasters as a series of \code{.tif} files in the same workspace
 #' directory as the transition \code{.gz} tensor files and the cropped/downloaded
 #' DEMs. This allows us to use \code{getCosts} within a loop for large numbers of origin
 #' nodes without running into random access memory limitations. Do this by
-#' setting \code{output == 'file'}.
+#' setting \code{output = 'file'} and \code{destination = 'all'}.
 #'
 #' (4) You may perform (2) and (3) simultaneously by setting
-#' \code{output == c('file','object')}.
+#' \code{output == c('file','object')} and \code{destination = 'all'}.
 #'
 #' @title Get cost of travel
 #' @param world The data.table output of the \link[lbmech]{calculateCosts} function.
@@ -1906,4 +1910,33 @@ getPaths <- function(world, nodes, z_fix, id = "ID", order = NULL, x = "x",
     }
     return(pathList)
   }
+}
+
+#' Create a raster that can be used to define
+#' the resolution, origin, and projection to be 
+#' employed for all least-cost analyses. If a source
+#' DEM has such properties you may use that.
+#' 
+#' @title Define the sampling grid
+#' @param res An integer representing the spatial resolution
+#' @param crs A \link[raster]{CRS} object or character string containing
+#' projection information.
+#' @param dx The horizontal offset from the origin (see \link[raster]{origin}).
+#' Default is 0.
+#' @param dy The vertical offset from the origin (see \link[raster]{origin}).
+#' Default is 0.
+#' @return A RasterLayer object consisting of one cell, with resolution `res` and
+#'  the origin at `x = nx` and `y = ny`.
+#' @importFrom raster rasterFromXYZ
+#' @importFrom raster origin
+#' @importFrom data.table data.table
+#' @examples 
+#' projection <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
+#' z_fix <- fix_z(res = 2, crs = projection)
+#' @export
+fix_z <- function(res, crs, dx = 0, dy = 0){
+  z <- data.table(x = 0, y = 0, z = 1)
+  z <- rasterFromXYZ(z, res = res, crs=crs)
+  origin(z) <- c(dx,dy)
+  return(z)
 }

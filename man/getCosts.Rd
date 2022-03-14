@@ -106,16 +106,17 @@ multiple times, it is highly recommended to generate the rasters as below and ex
 values
 
 (2) If you wish to generate a RasterStack of costs from and/or to all nodes
-in the \code{from} object, set the \code{output == 'object'}.
+in the \code{from} object, set the \code{output = 'object'} and 
+\code{destination = 'all'}.
 
 (3) You may also save the rasters as a series of \code{.tif} files in the same workspace
 directory as the transition \code{.gz} tensor files and the cropped/downloaded
 DEMs. This allows us to use \code{getCosts} within a loop for large numbers of origin
 nodes without running into random access memory limitations. Do this by
-setting \code{output == 'file'}.
+setting \code{output = 'file'} and \code{destination = 'all'}.
 
 (4) You may perform (2) and (3) simultaneously by setting
-\code{output == c('file','object')}.
+\code{output == c('file','object')} and \code{destination = 'all'}.
 }
 \examples{
 #### Example 1:
