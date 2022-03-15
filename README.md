@@ -183,17 +183,16 @@ humans and animals tend to prefer to walk at predictable speeds at a
 given slope. The maximum speed is generally achieved at one particular
 slope, and speed would tend to decrease exponentially as the distance to
 this ideal slope increases. Mathematically, this is described by
-Tobler’s Hiking function:
-
-$$\\frac{d\\ell}{dt} = v\_{\\mathrm{max}} e^{-k | \\frac{dz}{d\\ell} - \\alpha |},$$
-where ℓ is horizontal displacement, *t* time, $\\frac{d\\ell}{dt}$
-horizontal speed, *v*<sub>*m**a**x*</sub> the maximum walking speed,
-$\\frac{dz}{d\\ell}$ the change in elevation versus the change in
-horizontal distance (dimensionless slope, or arctan *θ* where *θ* is the
-slope in degrees or radians), *α* the ideal slope of maximum walking
-speed, and *k* a parameter controling how sensitive changes in speed are
-to changes in slope. Canonical applications of this function to humans
-set *v*<sub>*m**a**x*</sub> = 1.5 m/s, *k* = 3.5, and
+Tobler’s Hiking function
+*d*ℓ/*d**t* = *v*<sub>*m**a**x*</sub>*e*<sup> − *k*|*d**z*/*d*ℓ − *α*|</sup>,
+where ℓ is horizontal displacement, *t* time, *d*ℓ/*d**t* horizontal
+speed, *v*<sub>*m**a**x*</sub> the maximum walking speed, *d**z*/*d*ℓ
+the change in elevation versus the change in horizontal distance
+(dimensionless slope, or arctan *θ* where *θ* is the slope in degrees or
+radians), *α* the ideal slope of maximum walking speed, and *k* a
+parameter controling how sensitive changes in speed are to changes in
+slope. Canonical applications of this function to humans set
+*v*<sub>*m**a**x*</sub> = 1.5 m/s, *k* = 3.5, and
 *α* =  − 0.05 = tan ( − 2.83<sup>∘</sup>).
 
 `lbmech` provides the getVelocity function by which these parameters can
