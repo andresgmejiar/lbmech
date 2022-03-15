@@ -350,124 +350,14 @@ current `velocity` object was generated with random data and thus the
 parameters are nonsensical. Taking a look at the `world` object now
 shows an additional nine columns:
 
-<table>
-<colgroup>
-<col style="width: 10%" />
-<col style="width: 10%" />
-<col style="width: 9%" />
-<col style="width: 5%" />
-<col style="width: 5%" />
-<col style="width: 7%" />
-<col style="width: 7%" />
-<col style="width: 7%" />
-<col style="width: 7%" />
-<col style="width: 8%" />
-<col style="width: 8%" />
-<col style="width: 8%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">from</th>
-<th style="text-align: left;">to</th>
-<th style="text-align: right;">dz</th>
-<th style="text-align: right;">x_i</th>
-<th style="text-align: right;">y_i</th>
-<th style="text-align: right;">dl</th>
-<th style="text-align: right;">dl_t</th>
-<th style="text-align: right;">dt</th>
-<th style="text-align: right;">dU_l</th>
-<th style="text-align: right;">dK_l</th>
-<th style="text-align: right;">dW_l</th>
-<th style="text-align: right;">dE_l</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">12010,34130</td>
-<td style="text-align: left;">12030,34130</td>
-<td style="text-align: right;">0.8184357</td>
-<td style="text-align: right;">12010</td>
-<td style="text-align: right;">34130</td>
-<td style="text-align: right;">20.00000</td>
-<td style="text-align: right;">1.141907</td>
-<td style="text-align: right;">17.51456</td>
-<td style="text-align: right;">481.7312</td>
-<td style="text-align: right;">977.9639</td>
-<td style="text-align: right;">7298.476</td>
-<td style="text-align: right;">8927.330</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">12010,34130</td>
-<td style="text-align: left;">12010,34110</td>
-<td style="text-align: right;">-1.7999878</td>
-<td style="text-align: right;">12010</td>
-<td style="text-align: right;">34130</td>
-<td style="text-align: right;">20.00000</td>
-<td style="text-align: right;">1.330383</td>
-<td style="text-align: right;">15.03326</td>
-<td style="text-align: right;">0.0000</td>
-<td style="text-align: right;">1327.4394</td>
-<td style="text-align: right;">6637.197</td>
-<td style="text-align: right;">8035.290</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">12010,34130</td>
-<td style="text-align: left;">12030,34110</td>
-<td style="text-align: right;">-0.9815521</td>
-<td style="text-align: right;">12010</td>
-<td style="text-align: right;">34130</td>
-<td style="text-align: right;">28.28427</td>
-<td style="text-align: right;">1.432720</td>
-<td style="text-align: right;">19.74167</td>
-<td style="text-align: right;">0.0000</td>
-<td style="text-align: right;">2177.2016</td>
-<td style="text-align: right;">10886.008</td>
-<td style="text-align: right;">12721.983</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">12010,34130</td>
-<td style="text-align: left;">12050,34110</td>
-<td style="text-align: right;">-0.1442108</td>
-<td style="text-align: right;">12010</td>
-<td style="text-align: right;">34130</td>
-<td style="text-align: right;">44.72136</td>
-<td style="text-align: right;">1.303612</td>
-<td style="text-align: right;">34.30572</td>
-<td style="text-align: right;">0.0000</td>
-<td style="text-align: right;">2849.9886</td>
-<td style="text-align: right;">14249.943</td>
-<td style="text-align: right;">17440.375</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">12010,34130</td>
-<td style="text-align: left;">12030,34090</td>
-<td style="text-align: right;">-2.8067932</td>
-<td style="text-align: right;">12010</td>
-<td style="text-align: right;">34130</td>
-<td style="text-align: right;">44.72136</td>
-<td style="text-align: right;">1.443657</td>
-<td style="text-align: right;">30.97782</td>
-<td style="text-align: right;">0.0000</td>
-<td style="text-align: right;">3495.2198</td>
-<td style="text-align: right;">17476.099</td>
-<td style="text-align: right;">20357.037</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">12030,34130</td>
-<td style="text-align: left;">12010,34130</td>
-<td style="text-align: right;">-0.8184357</td>
-<td style="text-align: right;">12030</td>
-<td style="text-align: right;">34130</td>
-<td style="text-align: right;">20.00000</td>
-<td style="text-align: right;">1.459699</td>
-<td style="text-align: right;">13.70145</td>
-<td style="text-align: right;">0.0000</td>
-<td style="text-align: right;">1598.0415</td>
-<td style="text-align: right;">7990.208</td>
-<td style="text-align: right;">9264.443</td>
-</tr>
-</tbody>
-</table>
+    head(world)
+    #>           from          to         dz   x_i   y_i       dl     dl_t       dt     dU_l      dK_l      dW_l      dE_l
+    #> 1: 12010,34130 12030,34130  0.8184357 12010 34130 20.00000 1.141907 17.51456 481.7312  977.9639  7298.476  8927.330
+    #> 2: 12010,34130 12010,34110 -1.7999878 12010 34130 20.00000 1.330383 15.03326   0.0000 1327.4394  6637.197  8035.290
+    #> 3: 12010,34130 12030,34110 -0.9815521 12010 34130 28.28427 1.432720 19.74167   0.0000 2177.2016 10886.008 12721.983
+    #> 4: 12010,34130 12050,34110 -0.1442108 12010 34130 44.72136 1.303612 34.30572   0.0000 2849.9886 14249.943 17440.375
+    #> 5: 12010,34130 12030,34090 -2.8067932 12010 34130 44.72136 1.443657 30.97782   0.0000 3495.2198 17476.099 20357.037
+    #> 6: 12030,34130 12010,34130 -0.8184357 12030 34130 20.00000 1.459699 13.70145   0.0000 1598.0415  7990.208  9264.443
 
 `$x_i` and `$y_i` give the numeric x and y coordinates of the first part
 of the movement/transition. `$dl` gives the distance, `$dl_t` the
@@ -637,18 +527,13 @@ point.
 `'file'` was also listed in the `output` parameter for `getCosts`, the
 raster files were also exported to a `'CostRasters'` folder in `dir`.
 
-\[1\] “Energy\_From\_1.tif” “Energy\_From\_2.tif” “Energy\_From\_3.tif”
-“Energy\_From\_4.tif” “Energy\_From\_5.tif” \[6\] “Energy\_To\_1.tif”
-“Energy\_To\_2.tif” “Energy\_To\_3.tif” “Energy\_To\_4.tif”
-“Energy\_To\_5.tif”  
-\[11\] “Time\_From\_1.tif” “Time\_From\_2.tif” “Time\_From\_3.tif”
-“Time\_From\_4.tif” “Time\_From\_5.tif”  
-\[16\] “Time\_To\_1.tif” “Time\_To\_2.tif” “Time\_To\_3.tif”
-“Time\_To\_4.tif” “Time\_To\_5.tif”  
-\[21\] “Work\_From\_1.tif” “Work\_From\_2.tif” “Work\_From\_3.tif”
-“Work\_From\_4.tif” “Work\_From\_5.tif”  
-\[26\] “Work\_To\_1.tif” “Work\_To\_2.tif” “Work\_To\_3.tif”
-“Work\_To\_4.tif” “Work\_To\_5.tif”
+    print(list.files(normalizePath(paste0(dir,"/CostRasters"))))
+    #>  [1] "Energy_From_1.tif" "Energy_From_2.tif" "Energy_From_3.tif" "Energy_From_4.tif" "Energy_From_5.tif"
+    #>  [6] "Energy_To_1.tif"   "Energy_To_2.tif"   "Energy_To_3.tif"   "Energy_To_4.tif"   "Energy_To_5.tif"  
+    #> [11] "Time_From_1.tif"   "Time_From_2.tif"   "Time_From_3.tif"   "Time_From_4.tif"   "Time_From_5.tif"  
+    #> [16] "Time_To_1.tif"     "Time_To_2.tif"     "Time_To_3.tif"     "Time_To_4.tif"     "Time_To_5.tif"    
+    #> [21] "Work_From_1.tif"   "Work_From_2.tif"   "Work_From_3.tif"   "Work_From_4.tif"   "Work_From_5.tif"  
+    #> [26] "Work_To_1.tif"     "Work_To_2.tif"     "Work_To_3.tif"     "Work_To_4.tif"     "Work_To_5.tif"
 
 These rasters—be they stored as an object on the memory with
 `'object' %in% output` or on the hard drive with `'file' %in% object'`

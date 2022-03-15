@@ -24,226 +24,6 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r, include = FALSE}
-# Knested list function taken from 
-# https://gist.github.com/billdenney/5ef10d82e6bcdbcac4f0f38562c23b53
-# This is so the lists of Rasterstacks can be displayed on Github
-knested_list <- function(x,
-                         listtype=c("bullet", "numbered", "definition"),
-                         use.names=listtype %in% "definition",
-                         format=c(NA, "html", "latex", "txt"),
-                         ...) {
-  listtype <- match.arg(listtype)
-  use.names <- as.logical(use.names[1])
-  # Choose the output format
-  format <- tolower(match.arg(format))
-  if (is.na(format)) {
-    format <- knitr:::pandoc_to()
-    if (is.null(format)) {
-      format <- knitr:::out_format()
-    }
-    if (is.null(format)) {
-      format <- "txt"
-    }
-  }
-  format <- tolower(format)
-  if (!(format %in% c("html", "latex"))) {
-    format <- "txt"
-  }
-  liststyling <-
-    list(
-      html=
-        list(
-          bullet=
-            list(list.prefix="<ul>\n",
-                 list.suffix="</ul>\n",
-                 name.prefix="<li>",
-                 name.suffix=": ",
-                 item.with.name.prefix="",
-                 item.no.name.prefix="<li>",
-                 item.suffix="</li>\n"),
-          numbered=
-            list(list.prefix="<ol>\n",
-                 list.suffix="</ol>\n",
-                 name.prefix="<li>",
-                 name.suffix=": ",
-                 item.with.name.prefix="",
-                 item.no.name.prefix="<li>",
-                 item.suffix="</li>\n"),
-          definition=
-            list(list.prefix="<dl>\n",
-                 list.suffix="</dl>\n",
-                 name.prefix="<dt>",
-                 name.suffix="</dt>\n",
-                 item.with.name.prefix="<dd>",
-                 item.no.name.prefix="<dd>",
-                 item.suffix="</dd>\n")),
-      latex=
-        list(
-          bullet=
-            list(list.prefix="\n\\begin{itemize}\n",
-                 list.suffix="\n\\end{itemize}\n",
-                 name.prefix="\\item ",
-                 name.suffix=": ",
-                 item.with.name.prefix="",
-                 item.no.name.prefix="\\item ",
-                 item.suffix="\n"),
-          numbered=
-            list(list.prefix="\n\\begin{enumerate}\n",
-                 list.suffix="\n\\end{enumerate}\n",
-                 name.prefix="\\item ",
-                 name.suffix=": ",
-                 item.with.name.prefix="",
-                 item.no.name.prefix="\\item ",
-                 item.suffix="\n"),
-          definition=
-            list(list.prefix="\n\\begin{description}\n",
-                 list.suffix="\n\\end{description}\n",
-                 name.prefix="\\item[",
-                 name.suffix="]",
-                 item.with.name.prefix=" ",
-                 item.no.name.prefix="\\item",
-                 item.suffix="\n")),
-      txt=
-        list(
-          bullet=
-            list(list.prefix="\n",
-                 list.suffix=NA,
-                 name.prefix="* ",
-                 name.suffix=": ",
-                 item.with.name.prefix="",
-                 item.no.name.prefix="* ",
-                 item.suffix="\n",
-                 indent="    "),
-          numbered=
-            list(list.prefix="\n",
-                 list.suffix=NA,
-                 name.prefix="1. ",
-                 name.suffix=": ",
-                 item.with.name.prefix="",
-                 item.no.name.prefix="1. ",
-                 item.suffix="\n",
-                 indent="    "),
-          definition= # almost the same as bullet
-            list(list.prefix="\n",
-                 list.suffix=NA,
-                 name.prefix="* ",
-                 name.suffix=": ",
-                 item.with.name.prefix="",
-                 item.no.name.prefix="* ",
-                 item.suffix="\n",
-                 indent="    ")))
-  # Generate the output
-  knested_list_helper(x, use.names=use.names,
-                      styling=liststyling[[format]][[listtype]],
-                      indent=0,
-                      ...)
-}
-
-knested_list_indent <- function(indent, styling) {
-  if (indent > 0 && ("indent" %in% names(styling)) && !is.na(styling$indent)) {
-    styling$indent
-  }  else {
-    ""
-  }
-}
-
-knested_list_item_prefix <- function(use.names, has.name, styling) {
-  if (use.names & has.name) {
-    styling$item.with.name.prefix
-  } else {
-    styling$item.no.name.prefix
-  }
-}
-
-knested_list_name_prefix <- function(use.names, has.name, styling) {
-  if (use.names & has.name) {
-    styling$name.prefix
-  } else {
-    ""
-  }
-}
-
-knested_list_name_suffix <- function(use.names, has.name, styling) {
-  if (use.names & has.name) {
-    styling$name.suffix
-  } else {
-    ""
-  }
-}
-
-knested_list_helper <- function(x, use.names, styling, indent, ...)
-  UseMethod("knested_list_helper")
-
-knested_list_helper.list <- function(x, use.names, styling, indent, ...) {
-  if (!is.na(styling$list.prefix)) {
-    prefix <- styling$list.prefix
-  } else {
-    prefix <- ""
-  }
-  if (!is.na(styling$list.suffix)) {
-    suffix <- styling$list.suffix
-  } else {
-    suffix <- ""
-  }
-  if (!use.names || is.null(names(x))) {
-    has.name <- rep(FALSE, length(x))
-    name.text <- rep("", length(x))
-  } else  {
-    name.text <- names(x)
-    has.name <- !(name.text %in% "")
-  }
-  retitems <-
-    lapply(X=seq_along(x),
-           FUN=function(i) {
-             indent.text <- knested_list_indent(indent, styling)
-             name.prefix <- knested_list_name_prefix(use.names, has.name[i], styling)
-             name.text <- as.character(name.text[i])
-             name.suffix <- knested_list_name_suffix(use.names, has.name[i], styling)
-             item.prefix <- knested_list_item_prefix(use.names, has.name[i], styling)
-             item.text <- knested_list_helper(x[[i]], use.names, styling, indent=indent + 1, ...)
-             item.suffix <- styling$item.suffix
-             paste0(indent.text,
-                    name.prefix, name.text, name.suffix,
-                    item.prefix, item.text, item.suffix)
-           })
-  paste0(prefix,
-         do.call(paste0, unname(retitems)),
-         suffix)
-}
-
-knested_list_helper.character <- function(x, use.names, styling, indent,
-                                          sep=" ", collapse=", ", ...) {
-  if (length(x) == 0) {
-    "''"
-  } else if (length(x) == 1) {
-    x
-  } else {
-    paste(x, sep=sep, collapse=collapse)
-  }
-}
-
-knested_list_helper.data.frame <- function(x, use.names, styling, indent, ...) {
-  # I'm not sure that this is a good idea...
-  knitr::kable(x, ...)
-}
-
-knested_list_helper.default <- function(x, use.names, styling, indent, ...) {
-  knested_list_helper(as.character(x, ...), use.names, styling, indent, ...)
-}
-
-for (fmt in c("txt", "html", "latex")) {
-  for (listfmt in c("bullet", "numbered", "definition")) {
-    cat(fmt, listfmt, "\n\n")
-    cat(
-      knested_list(list(a=1, b=list(c="c", d=factor("D"))),
-                   format=fmt,
-                   listtype=listfmt))
-    cat("\n")
-  }
-}
-
-```
 # lbmech
 
 <!-- badges: start -->
@@ -470,7 +250,7 @@ structure anyways:
 ```{r velocity, results = 'hide', echo = TRUE}
 print(velocity)
 ```
-```{r, echo = FALSE}
+```{r velocityPrint, echo = FALSE}
 print(velocityPrint)
 ```
 The velocity list contains seven entries: 
@@ -543,8 +323,8 @@ current `velocity` object was generated with random data and thus the parameters
 are nonsensical. Taking a look at the `world` object now shows an additional
 nine columns:
 
-```{r costs, results = 'asis', echo = F}
-knitr::kable(head(world))
+```{r costs}
+head(world)
 ```
 
 `$x_i` and `$y_i` give the numeric x and y coordinates of the
@@ -619,7 +399,7 @@ Since `'file'` was also listed in the `output` parameter for `getCosts`, the
 raster files were also exported to a `'CostRasters'` folder in `dir`. 
 
 
-```{r raster-dir, results = 'asis', echo = F}
+```{r raster-dir}
 print(list.files(normalizePath(paste0(dir,"/CostRasters"))))
 ```
 
