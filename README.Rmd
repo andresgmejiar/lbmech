@@ -2,6 +2,7 @@
 output: 
 github_document:
     toc: true
+    pandoc_args: --webtex
 pdf_document:
     keep_tex: true
 ---
@@ -127,7 +128,7 @@ an as-needed basis. You can use the `whichTiles` and `getMap` functions
 to identify which tile(s) might be needed, and download or crop any such tiles
 that haven't been prepared:
 
-```{r getMap, results = 'asis', echo = F}
+```{r getMap}
 # Generate five random points that fall within the grid
 points <- data.table(x = runif(5, extent(dem)[1], extent(dem)[2]),
                      y = runif(5, extent(dem)[3], extent(dem)[4]))
@@ -372,7 +373,7 @@ costRasters <- getCosts(world = world, from = points, z_fix = dem,
 
 ```
 Let's take a look at the structure of the costRasters:
-```{r raster-structure results = 'asis', echo = F}
+```{r raster-structure, results = 'asis', echo = F}
 structure(costRasters)
 ```
 It's a list of RasterStacks, each in a slot named after the type of cost
