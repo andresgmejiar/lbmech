@@ -1,10 +1,13 @@
 ---
 output: 
+md_document:
+    variant: markdown_github
 github_document:
     toc: true
-    pandoc_args: --webtex
+    pandoc_args: --webtex https://latex.codecogs.com/svg.latex?
 pdf_document:
     keep_tex: true
+
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
