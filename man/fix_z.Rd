@@ -9,7 +9,7 @@ fix_z(res, crs, dx = 0, dy = 0)
 \arguments{
 \item{res}{An integer representing the spatial resolution}
 
-\item{crs}{A \link[raster]{CRS} object or character string containing
+\item{crs}{A \link[raster]{crs} object or character string containing
 projection information.}
 
 \item{dx}{The horizontal offset from the origin (see \link[raster]{origin}).

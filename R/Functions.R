@@ -1919,7 +1919,7 @@ getPaths <- function(world, nodes, z_fix, id = "ID", order = NULL, x = "x",
 #' 
 #' @title Define the sampling grid
 #' @param res An integer representing the spatial resolution
-#' @param crs A \link[raster]{CRS} object or character string containing
+#' @param crs A \link[raster]{crs} object or character string containing
 #' projection information.
 #' @param dx The horizontal offset from the origin (see \link[raster]{origin}).
 #' Default is 0.
@@ -1928,13 +1928,16 @@ getPaths <- function(world, nodes, z_fix, id = "ID", order = NULL, x = "x",
 #' @return A RasterLayer object consisting of one cell, with resolution `res` and
 #'  the origin at `x = nx` and `y = ny`.
 #' @importFrom raster rasterFromXYZ
-#' @importFrom raster origin
+#' @importFrom raster origin<-
 #' @importFrom data.table data.table
 #' @examples 
 #' projection <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
 #' z_fix <- fix_z(res = 2, crs = projection)
 #' @export
 fix_z <- function(res, crs, dx = 0, dy = 0){
+  if (length(res) == 1){
+    res <- c(res,res)
+  }
   z <- data.table(x = 0, y = 0, z = 1)
   z <- rasterFromXYZ(z, res = res, crs=crs)
   origin(z) <- c(dx,dy)
