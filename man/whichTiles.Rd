@@ -15,7 +15,7 @@ individual points.}
 
 \item{polys}{An object of class SpatialPolygonsDataFrame representing
 the partitioning grid for the maximum possible area, in the same format as the
-output of the \link[lbmech]{makeGrid} function.}
+output of the \code{\link[lbmech]{makeGrid}} function.}
 
 \item{tile_id}{a character string representing the name of the column
 in the \code{polys} polygon containing the unique Tile IDs. Default is \code{tile_id = 'TILEID'}}

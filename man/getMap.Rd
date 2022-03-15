@@ -8,18 +8,18 @@ getMap(tiles, polys, tile_id = "TILEID", vals = "location", dir = tempdir())
 }
 \arguments{
 \item{tiles}{A character vector--such as the output to
-\link[lbmech]{whichTiles}---containing the unique tile IDs for sectors that
+\code{\link[lbmech]{whichTiles}}---containing the unique tile IDs for sectors that
 should be in the workspace.}
 
 \item{polys}{An object of class SpatialPolygonsDataFrame representing
 the partitioning grid for the maximum possible area, in the same format as the
-output of the \link[lbmech]{makeGrid} function.}
+output of the \code{\link[lbmech]{makeGrid}} function.}
 
 \item{tile_id}{a character string representing the name of the column
 in the 'polys' polygon containing the unique Tile IDs. Default is \code{tile_id = 'TILEID'}}
 
 \item{vals}{A character string or a RasterLayer object. Optional if the
-\code{polys} polygon is the output of the \link[lbmech]{makeGrid} function as the default is
+\code{polys} polygon is the output of the \code{\link[lbmech]{makeGrid}} function as the default is
 the character string \code{'location'}. If not, the \code{vals} parameter should be
 set to the column name containing the URL or filepath to the DEM for that
 sector.}

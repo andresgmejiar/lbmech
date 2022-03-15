@@ -9,7 +9,7 @@
 #' extent imaginable for a study. Note that this only works for rasters that
 #' have been read in, not those that exist exclusively in the memory. If you
 #' have just generated the raster and it is in memory, export it first with
-#' \link[raster]{writeRaster} then re-import it with \link[raster]{raster}.
+#' \code{\link[raster]{writeRaster}} then re-import it with \code{\link[raster]{raster}}.
 #' @param nx The integer-number of columns in the output grid
 #' @param ny The integer-number of rows in the output grid
 #' @param crs A crs object representing the desired output projection.
@@ -121,7 +121,7 @@ makeGrid <- function(dem, nx, ny, crs = NULL, prefix = "SECTOR_"){
 #' individual points.
 #' @param polys An object of class SpatialPolygonsDataFrame representing
 #' the partitioning grid for the maximum possible area, in the same format as the
-#' output of the \link[lbmech]{makeGrid} function.
+#' output of the \code{\link[lbmech]{makeGrid}} function.
 #' @param tile_id a character string representing the name of the column
 #' in the \code{polys} polygon containing the unique Tile IDs. Default is \code{tile_id = 'TILEID'}
 #' @param x a character string representing column name containing the "x"
@@ -188,15 +188,15 @@ whichTiles <- function(region, polys, tile_id = "TILEID", x = "x", y = "y"){
 #'
 #' @title Download or crop necessary DEMs
 #' @param tiles A character vector--such as the output to
-#' \link[lbmech]{whichTiles}---containing the unique tile IDs for sectors that
+#' \code{\link[lbmech]{whichTiles}}---containing the unique tile IDs for sectors that
 #' should be in the workspace.
 #' @param polys An object of class SpatialPolygonsDataFrame representing
 #' the partitioning grid for the maximum possible area, in the same format as the
-#' output of the \link[lbmech]{makeGrid} function.
+#' output of the \code{\link[lbmech]{makeGrid}} function.
 #' @param tile_id a character string representing the name of the column
 #' in the 'polys' polygon containing the unique Tile IDs. Default is \code{tile_id = 'TILEID'}
 #' @param vals A character string or a RasterLayer object. Optional if the
-#' \code{polys} polygon is the output of the \link[lbmech]{makeGrid} function as the default is
+#' \code{polys} polygon is the output of the \code{\link[lbmech]{makeGrid}} function as the default is
 #' the character string \code{'location'}. If not, the \code{vals} parameter should be
 #' set to the column name containing the URL or filepath to the DEM for that
 #' sector.
@@ -343,7 +343,7 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
 #' object. If character string, it represents the data column containing the 'z'
 #' coordinates/elevations in meters. If RasterLayer, a DEM containing
 #' the elevation in meters. If SpatialPolygonsDataFrame, it must represent the
-#' sectors and filepaths/URLs (see the output of \link[lbmech]{makeGrid})
+#' sectors and filepaths/URLs (see the output of \code{\link[lbmech]{makeGrid}})
 #' @param dt A character string representing the data column containing the
 #' time difference from the previous observation in seconds.
 #' @param ID A character string representing the data column containing the
@@ -368,7 +368,7 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
 #' in the \code{z} polygon containing the unique Tile IDs. Ignored if elevations are
 #' provided as a column or RasterLayer. Otherwise default is \code{tile_id = 'TILEID'}.
 #' @param vals A character string or a RasterLayer object. Required only if the
-#' \code{z} parameter is a polygon NOT the output of the \link[lbmech]{makeGrid} function as the default is
+#' \code{z} parameter is a polygon NOT the output of the \code{\link[lbmech]{makeGrid}} function as the default is
 #' the character string \code{'location'}. If not, the \code{vals} parameter should be
 #' set to the column name containing the URL or file path to the DEM for that
 #' sector.
@@ -377,7 +377,7 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
 #' times it is highly recommended to define a permanent workspace.
 #' @return A list, containing the following entries:
 #'
-#' (1) \code{$model}, containing an object of class \link[quantreg]{nlrq} containing the output
+#' (1) \code{$model}, containing an object of class \code{\link[quantreg]{nlrq}} containing the output
 #' model from the nonlinear quantitative regression.
 #'
 #' (2) \code{$vmax}, containing the identified maximum velocity.
@@ -601,11 +601,11 @@ getVelocity <- function(data, x = 'x', y ='y', z = 'z',
 #'
 #' @title Define which cells are adjacent
 #' @param tiles A character vector--such as the output to
-#' \link[lbmech]{whichTiles}---containing the unique tile IDs for sectors that
+#' \code{\link[lbmech]{whichTiles}}---containing the unique tile IDs for sectors that
 #' should be in the workspace.
 #' @param polys An object of class SpatialPolygonsDataFrame representing
 #' the partitioning grid for the maximum possible area, in the same format as the
-#' output of the \link[lbmech]{makeGrid} function.
+#' output of the \code{\link[lbmech]{makeGrid}} function.
 #' @param tile_id A character string representing the name of the column
 #' in the 'polys' polygon containing the unique Tile IDs. Default is \code{tile_id = 'TILEID'}
 #' @param cut_slope A number representing the dimensionless maximum slope
@@ -616,7 +616,7 @@ getVelocity <- function(data, x = 'x', y ='y', z = 'z',
 #' @param directions One of the integers \code{c(4, 8, 16)},
 #' the character string \code{'bishop'},or a neighborhood matrix.
 #' Default is \code{directions = 16}, implying that all 'knight and one-cell
-#' queen moves' are permissible movements on the grid. See \link[raster]{adjacent}.
+#' queen moves' are permissible movements on the grid. See \code{\link[raster]{adjacent}}.
 #' @param neighbor_distance An integer representing the distance in meters
 #' that tiles are buffered. In other words, to ensure that all transitions in the
 #' 'world' are recorded, files for each tile will contain a number of observations
@@ -625,7 +625,7 @@ getVelocity <- function(data, x = 'x', y ='y', z = 'z',
 #' @param unit One of \code{c("m", "km", "ft", "mi")}, representing the unit of the DEM.
 #' All will be converted to meters, which is the default.
 #' @param vals A character string or a RasterLayer object. Ignored unless the
-#' \code{polys} parameter is a polygon NOT the output of the \link[lbmech]{makeGrid}
+#' \code{polys} parameter is a polygon NOT the output of the \code{\link[lbmech]{makeGrid}}
 #' function as the default is the character string \code{'location'},
 #' AND the appropriate world \code{.gz} file is NOT
 #' present in the workspace directory. In which case it must represent either the
@@ -833,7 +833,7 @@ makeWorld <- function(tiles,polys,tile_id = 'TILEID',cut_slope,z_fix,
 #' @title Convert RasterLayer or SpatialPolygon* to "x,y"
 #' @param region An object of class SpatialPolygons* to convert to "x,y"
 #' @param z_fix A RasterLayer with the same origin and resolution as the
-#' \code{z_fix} used to generate the 'world' with \link[lbmech]{makeWorld}.
+#' \code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.
 #' @return A character vector containing all cells that fall in the same
 #' location as the input 'region'.
 #' @importFrom raster resample
@@ -884,17 +884,17 @@ regionMask <- function(region, z_fix){
 #' A function that for a given region imports all cells from the
 #' transition \code{.gz} files. If such files have not yet been generated,
 #' they can be created by passing along the necessary parameters to this
-#' function as with \link[lbmech]{makeWorld}.
+#' function as with \code{\link[lbmech]{makeWorld}}.
 #'
 #' @title Import a world where movement is possible
 #' @param region An object of class RasterLayer or SpatialPolygons*
 #' representing the total area where movement is possible. Must lie within
 #' the area defined by \code{polys}
 #' @param z_fix A RasterLayer with the same origin and resolution as the
-#' \code{z_fix} used to generate the 'world' with \link[lbmech]{makeWorld}.
+#' \code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.
 #' @param polys An object of class SpatialPolygonsDataFrame representing
 #' the partitioning grid for the maximum possible area, in the same format as the
-#' output of the \link[lbmech]{makeGrid} function.
+#' output of the \code{\link[lbmech]{makeGrid}} function.
 #' @param banned An object of class RasterLayer or SpatialPolygons*
 #' representing the total area where movement is \emph{prohibited}. Must lie within
 #' the area defined by \code{polys}
@@ -903,7 +903,7 @@ regionMask <- function(region, z_fix){
 #' @param dir A filepath to the directory being used as the workspace.
 #' Default is \code{tempdir()} but unless the analyses will only be performed a few
 #' times it is highly recommended to define a permanent workspace.
-#' @param ... Additional arguments to pass to \link[lbmech]{makeWorld}
+#' @param ... Additional arguments to pass to \code{\link[lbmech]{makeWorld}}
 #' @return An object of class data.table containing three columns:
 #'
 #' (1) \code{$from}, a character string of all possible origin cells in format "x,y",
@@ -992,22 +992,22 @@ importWorld <- function(region, z_fix, polys, banned = NULL,
 #' and time.
 #'
 #' @title Calculate movement costs
-#' @param world Either the output of the \link[lbmech]{importWorld} function,
+#' @param world Either the output of the \code{\link[lbmech]{importWorld}} function,
 #' or a an object of class SpatialPolygonsDataFrame representing
 #' the partitioning grid for the maximum possible area, in the same format as the
-#' output of the \link[lbmech]{makeGrid} function.
+#' output of the \code{\link[lbmech]{makeGrid}} function.
 #' @param method one of either \code{'kuo'}, \code{'heglund'}, or \code{'oscillator'} defining
 #' the method by which to calculate work per stride; see details below.
 #' @param m The mass of the animal moving across the landscape, in kilograms.
 #' @param v_max The maximum velocity of the animal moving across the landscape,
-#' in meters per second; see \link[lbmech]{getVelocity}.
+#' in meters per second; see \code{\link[lbmech]{getVelocity}}.
 #' @param epsilon The biomechanical efficiency factor for an animal moving across
 #' the landscape. Default is \code{epsilon = 0.2}.
 #' @param BMR The base metabolic rate of the object moving across the landscape
 #' in Joules per second.
-#' @param k The topographic sensitivity factor; see \link[lbmech]{getVelocity}.
+#' @param k The topographic sensitivity factor; see \code{\link[lbmech]{getVelocity}}.
 #' @param alpha The dimensionless slope of maximum velocity;
-#' see \link[lbmech]{getVelocity}
+#' see \code{\link[lbmech]{getVelocity}}
 #' @param g The acceleration due to gravity, in meters per second per second.
 #' Default is \code{g = 9.81} m/s^2, as for the surface of planet Earth.
 #' @param l_s The average stride length, in meters. Required for
@@ -1016,7 +1016,7 @@ importWorld <- function(region, z_fix, polys, banned = NULL,
 #' ignored for \code{'heglund'} and \code{'oscillator'}.
 #' @param gamma The fractional maximal deviation from average velocity per stride.
 #' Required for \code{method = 'oscillator'}, ignored for \code{'kuo'} and \code{'heglund'}.
-#' @param ... Additional arguments to pass to \link[lbmech]{importWorld}.
+#' @param ... Additional arguments to pass to \code{\link[lbmech]{importWorld}}.
 #' @return A data.table with twelve columns, representing:
 #'
 #' (1) \code{$from} The "x,y"-format coordinates of each possible origin cell
@@ -1165,7 +1165,7 @@ calculateCosts <- function(world, method = 'kuo', m = NULL, v_max = NULL,
 #' @param y A character vector representing the column containing the 'y' coordinates.
 #' Required if \code{data} is not SpatialPointsDataFrame.
 #' @param z_fix A RasterLayer with the same origin and resolution as the
-#' \code{z_fix} used to generate the 'world' with \link[lbmech]{makeWorld}.
+#' \code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.
 #' @return A vector containing the requested coordinates in appropriate format
 #' in the same order as the input data.
 #' @importFrom data.table :=
@@ -1235,7 +1235,7 @@ getCoords <- function(data, x = "x", y = "y", z_fix){
 #' \code{output == c('file','object')} and \code{destination = 'all'}.
 #'
 #' @title Get cost of travel
-#' @param world The data.table output of the \link[lbmech]{calculateCosts} function.
+#' @param world The data.table output of the \code{\link[lbmech]{calculateCosts}} function.
 #' @param from One of data.frame, data.table, SpatialPointsDataFrame, or
 #' SpatialPolygonsDataFrame representing the origin locations. If \code{to = NULL}
 #' and \code{destination = 'pairs'}, this will also be used as the \code{to} parameter.
@@ -1247,7 +1247,7 @@ getCoords <- function(data, x = "x", y = "y", z_fix){
 #' @param id Character string representing the column containing the unique
 #' IDs for for each location in the \code{from} (and \code{to}) objects.
 #' @param z_fix A RasterLayer with the same origin and resolution as the
-#' \code{z_fix} used to generate the 'world' with \link[lbmech]{makeWorld}.
+#' \code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.
 #' @param x A character vector representing the column containing the 'x' coordinates.
 #' Required if \code{data} is not Spatial*.
 #' @param y A character vector representing the column containing the 'y' coordinates.
@@ -1554,7 +1554,7 @@ getCosts <- function(world, from, to = NULL, id = 'ID', z_fix = NULL, x = "x", y
 #' necessary to calculate the cost-of-travel for paths with multiple
 #' waypoints, and the predicted cost of taking a detour to any
 #' arbitrary point in the landscape (a 'corridor').
-#' \link[lbmech]{getCosts} must have been run before this tool can be used.
+#' \code{\link[lbmech]{getCosts}} must have been run before this tool can be used.
 #'
 #' @title Calculate cost corridors for a path
 #' @param rasters One of either a character string or list of
@@ -1563,11 +1563,11 @@ getCosts <- function(world, from, to = NULL, id = 'ID', z_fix = NULL, x = "x", y
 #' Default is \code{tempdir()} but unless you are not following best
 #' practices you will have to change it to your output directory. If list
 #' of RasterStacks, it should be the output (or identical in form) to
-#' the \link[lbmech]{getCosts} function with \code{"object" \%in\% output}.
+#' the \code{\link[lbmech]{getCosts}} function with \code{"object" \%in\% output}.
 #' @param order A character vector containing the desired path in
 #' order of visited nodes. For example, to visit "A" then "B" then "C" then "A"
 #' the vector would be \code{c("A","B","C","A")}. Note that these MUST correspond
-#' to the ID names for the \code{from} features used in the \link[lbmech]{getCosts}
+#' to the ID names for the \code{from} features used in the \code{\link[lbmech]{getCosts}}
 #' function and must have previously been calculated
 #' @param costs A character vector containing any combination of the strings
 #' \code{c("time","work","energy")}. This selects which types of costs will be calculated.
@@ -1704,11 +1704,11 @@ makeCorridor <- function(rasters = tempdir(), order, costs = "all"){
 }
 
 #' Get the shortest path for a given trip that requires travel through a
-#' set of nodes. Use is like \link[lbmech]{getCosts}, but with 
+#' set of nodes. Use is like \code{\link[lbmech]{getCosts}}, but with 
 #' \code{nodes} and {order} parameters and no \code{from} or \code{to}.
 #'
 #' @title Get least-cost paths
-#' @param world The data.table output of the \link[lbmech]{calculateCosts} function.
+#' @param world The data.table output of the \code{\link[lbmech]{calculateCosts}} function.
 #' @param nodes An object of class data.frame, data.table, SpatialPointsDataFrame, or
 #' SpatialPolygonsDataFrame representing the locations.
 #' If object is of class SpatialPolygonsDataFrame, the location will be taken at the
@@ -1721,7 +1721,7 @@ makeCorridor <- function(rasters = tempdir(), order, costs = "all"){
 #' the function assumes that \code{nodes} is already sorted in the desired
 #' order.
 #' @param z_fix A RasterLayer with the same origin and resolution as the
-#' \code{z_fix} used to generate the 'world' with \link[lbmech]{makeWorld}.
+#' \code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.
 #' @param x A character vector representing the column containing the 'x' coordinates.
 #' Required if \code{data} is not Spatial*.
 #' @param y A character vector representing the column containing the 'y' coordinates.
@@ -1918,12 +1918,12 @@ getPaths <- function(world, nodes, z_fix, id = "ID", order = NULL, x = "x",
 #' DEM has such properties you may use that.
 #' 
 #' @title Define the sampling grid
-#' @param res An integer representing the spatial resolution
-#' @param crs A \link[raster]{crs} object or character string containing
+#' @param res A numeric of length one or two nrepresenting the spatial resolution
+#' @param crs A \code{\link[raster]{crs}} object or character string containing
 #' projection information.
-#' @param dx The horizontal offset from the origin (see \link[raster]{origin}).
+#' @param dx The horizontal offset from the origin (see \code{\link[raster]{origin}}).
 #' Default is 0.
-#' @param dy The vertical offset from the origin (see \link[raster]{origin}).
+#' @param dy The vertical offset from the origin (see \code{\link[raster]{origin}}).
 #' Default is 0.
 #' @return A RasterLayer object consisting of one cell, with resolution `res` and
 #'  the origin at `x = nx` and `y = ny`.

@@ -35,7 +35,7 @@ coordinates in meters.}
 object. If character string, it represents the data column containing the 'z'
 coordinates/elevations in meters. If RasterLayer, a DEM containing
 the elevation in meters. If SpatialPolygonsDataFrame, it must represent the
-sectors and filepaths/URLs (see the output of \link[lbmech]{makeGrid})}
+sectors and filepaths/URLs (see the output of \code{\link[lbmech]{makeGrid}})}
 
 \item{dt}{A character string representing the data column containing the
 time difference from the previous observation in seconds.}
@@ -69,7 +69,7 @@ in the \code{z} polygon containing the unique Tile IDs. Ignored if elevations ar
 provided as a column or RasterLayer. Otherwise default is \code{tile_id = 'TILEID'}.}
 
 \item{vals}{A character string or a RasterLayer object. Required only if the
-\code{z} parameter is a polygon NOT the output of the \link[lbmech]{makeGrid} function as the default is
+\code{z} parameter is a polygon NOT the output of the \code{\link[lbmech]{makeGrid}} function as the default is
 the character string \code{'location'}. If not, the \code{vals} parameter should be
 set to the column name containing the URL or file path to the DEM for that
 sector.}
@@ -81,7 +81,7 @@ times it is highly recommended to define a permanent workspace.}
 \value{
 A list, containing the following entries:
 
-(1) \code{$model}, containing an object of class \link[quantreg]{nlrq} containing the output
+(1) \code{$model}, containing an object of class \code{\link[quantreg]{nlrq}} containing the output
 model from the nonlinear quantitative regression.
 
 (2) \code{$vmax}, containing the identified maximum velocity.

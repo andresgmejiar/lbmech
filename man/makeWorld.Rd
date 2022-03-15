@@ -19,12 +19,12 @@ makeWorld(
 }
 \arguments{
 \item{tiles}{A character vector--such as the output to
-\link[lbmech]{whichTiles}---containing the unique tile IDs for sectors that
+\code{\link[lbmech]{whichTiles}}---containing the unique tile IDs for sectors that
 should be in the workspace.}
 
 \item{polys}{An object of class SpatialPolygonsDataFrame representing
 the partitioning grid for the maximum possible area, in the same format as the
-output of the \link[lbmech]{makeGrid} function.}
+output of the \code{\link[lbmech]{makeGrid}} function.}
 
 \item{tile_id}{A character string representing the name of the column
 in the 'polys' polygon containing the unique Tile IDs. Default is \code{tile_id = 'TILEID'}}
@@ -39,7 +39,7 @@ it does NOT need the same extent.}
 \item{directions}{One of the integers \code{c(4, 8, 16)},
 the character string \code{'bishop'},or a neighborhood matrix.
 Default is \code{directions = 16}, implying that all 'knight and one-cell
-queen moves' are permissible movements on the grid. See \link[raster]{adjacent}.}
+queen moves' are permissible movements on the grid. See \code{\link[raster]{adjacent}}.}
 
 \item{neighbor_distance}{An integer representing the distance in meters
 that tiles are buffered. In other words, to ensure that all transitions in the
@@ -51,7 +51,7 @@ on raster size.}
 All will be converted to meters, which is the default.}
 
 \item{vals}{A character string or a RasterLayer object. Ignored unless the
-\code{polys} parameter is a polygon NOT the output of the \link[lbmech]{makeGrid}
+\code{polys} parameter is a polygon NOT the output of the \code{\link[lbmech]{makeGrid}}
 function as the default is the character string \code{'location'},
 AND the appropriate world \code{.gz} file is NOT
 present in the workspace directory. In which case it must represent either the

@@ -20,11 +20,11 @@ representing the total area where movement is possible. Must lie within
 the area defined by \code{polys}}
 
 \item{z_fix}{A RasterLayer with the same origin and resolution as the
-\code{z_fix} used to generate the 'world' with \link[lbmech]{makeWorld}.}
+\code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.}
 
 \item{polys}{An object of class SpatialPolygonsDataFrame representing
 the partitioning grid for the maximum possible area, in the same format as the
-output of the \link[lbmech]{makeGrid} function.}
+output of the \code{\link[lbmech]{makeGrid}} function.}
 
 \item{banned}{An object of class RasterLayer or SpatialPolygons*
 representing the total area where movement is \emph{prohibited}. Must lie within
@@ -37,7 +37,7 @@ in the \code{polys} polygon containing the unique Tile IDs. Default is \code{til
 Default is \code{tempdir()} but unless the analyses will only be performed a few
 times it is highly recommended to define a permanent workspace.}
 
-\item{...}{Additional arguments to pass to \link[lbmech]{makeWorld}}
+\item{...}{Additional arguments to pass to \code{\link[lbmech]{makeWorld}}}
 }
 \value{
 An object of class data.table containing three columns:
@@ -54,7 +54,7 @@ rounded to the next-lowest integer
 A function that for a given region imports all cells from the
 transition \code{.gz} files. If such files have not yet been generated,
 they can be created by passing along the necessary parameters to this
-function as with \link[lbmech]{makeWorld}.
+function as with \code{\link[lbmech]{makeWorld}}.
 }
 \examples{
 

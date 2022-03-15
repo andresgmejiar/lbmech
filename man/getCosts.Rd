@@ -21,7 +21,7 @@ getCosts(
 )
 }
 \arguments{
-\item{world}{The data.table output of the \link[lbmech]{calculateCosts} function.}
+\item{world}{The data.table output of the \code{\link[lbmech]{calculateCosts}} function.}
 
 \item{from}{One of data.frame, data.table, SpatialPointsDataFrame, or
 SpatialPolygonsDataFrame representing the origin locations. If \code{to = NULL}
@@ -37,7 +37,7 @@ SpatialPolygonsDataFrame representing the origin locations. Optional if
 IDs for for each location in the \code{from} (and \code{to}) objects.}
 
 \item{z_fix}{A RasterLayer with the same origin and resolution as the
-\code{z_fix} used to generate the 'world' with \link[lbmech]{makeWorld}.}
+\code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.}
 
 \item{x}{A character vector representing the column containing the 'x' coordinates.
 Required if \code{data} is not Spatial*.}

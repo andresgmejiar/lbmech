@@ -7,15 +7,15 @@
 fix_z(res, crs, dx = 0, dy = 0)
 }
 \arguments{
-\item{res}{An integer representing the spatial resolution}
+\item{res}{A numeric of length one or two nrepresenting the spatial resolution}
 
-\item{crs}{A \link[raster]{crs} object or character string containing
+\item{crs}{A \code{\link[raster]{crs}} object or character string containing
 projection information.}
 
-\item{dx}{The horizontal offset from the origin (see \link[raster]{origin}).
+\item{dx}{The horizontal offset from the origin (see \code{\link[raster]{origin}}).
 Default is 0.}
 
-\item{dy}{The vertical offset from the origin (see \link[raster]{origin}).
+\item{dy}{The vertical offset from the origin (see \code{\link[raster]{origin}}).
 Default is 0.}
 }
 \value{

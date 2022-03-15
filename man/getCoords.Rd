@@ -17,7 +17,7 @@ Required if \code{data} is not SpatialPointsDataFrame.}
 Required if \code{data} is not SpatialPointsDataFrame.}
 
 \item{z_fix}{A RasterLayer with the same origin and resolution as the
-\code{z_fix} used to generate the 'world' with \link[lbmech]{makeWorld}.}
+\code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.}
 }
 \value{
 A vector containing the requested coordinates in appropriate format

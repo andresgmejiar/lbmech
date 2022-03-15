@@ -10,7 +10,7 @@ regionMask(region, z_fix)
 \item{region}{An object of class SpatialPolygons* to convert to "x,y"}
 
 \item{z_fix}{A RasterLayer with the same origin and resolution as the
-\code{z_fix} used to generate the 'world' with \link[lbmech]{makeWorld}.}
+\code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.}
 }
 \value{
 A character vector containing all cells that fall in the same

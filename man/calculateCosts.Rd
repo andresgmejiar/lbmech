@@ -21,10 +21,10 @@ calculateCosts(
 )
 }
 \arguments{
-\item{world}{Either the output of the \link[lbmech]{importWorld} function,
+\item{world}{Either the output of the \code{\link[lbmech]{importWorld}} function,
 or a an object of class SpatialPolygonsDataFrame representing
 the partitioning grid for the maximum possible area, in the same format as the
-output of the \link[lbmech]{makeGrid} function.}
+output of the \code{\link[lbmech]{makeGrid}} function.}
 
 \item{method}{one of either \code{'kuo'}, \code{'heglund'}, or \code{'oscillator'} defining
 the method by which to calculate work per stride; see details below.}
@@ -32,7 +32,7 @@ the method by which to calculate work per stride; see details below.}
 \item{m}{The mass of the animal moving across the landscape, in kilograms.}
 
 \item{v_max}{The maximum velocity of the animal moving across the landscape,
-in meters per second; see \link[lbmech]{getVelocity}.}
+in meters per second; see \code{\link[lbmech]{getVelocity}}.}
 
 \item{epsilon}{The biomechanical efficiency factor for an animal moving across
 the landscape. Default is \code{epsilon = 0.2}.}
@@ -40,10 +40,10 @@ the landscape. Default is \code{epsilon = 0.2}.}
 \item{BMR}{The base metabolic rate of the object moving across the landscape
 in Joules per second.}
 
-\item{k}{The topographic sensitivity factor; see \link[lbmech]{getVelocity}.}
+\item{k}{The topographic sensitivity factor; see \code{\link[lbmech]{getVelocity}}.}
 
 \item{alpha}{The dimensionless slope of maximum velocity;
-see \link[lbmech]{getVelocity}}
+see \code{\link[lbmech]{getVelocity}}}
 
 \item{g}{The acceleration due to gravity, in meters per second per second.
 Default is \code{g = 9.81} m/s^2, as for the surface of planet Earth.}
@@ -57,7 +57,7 @@ ignored for \code{'heglund'} and \code{'oscillator'}.}
 \item{gamma}{The fractional maximal deviation from average velocity per stride.
 Required for \code{method = 'oscillator'}, ignored for \code{'kuo'} and \code{'heglund'}.}
 
-\item{...}{Additional arguments to pass to \link[lbmech]{importWorld}.}
+\item{...}{Additional arguments to pass to \code{\link[lbmech]{importWorld}}.}
 }
 \value{
 A data.table with twelve columns, representing:

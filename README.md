@@ -22,8 +22,8 @@ expenditure.
 The example provided in this README provides a detailed guide employing
 the examples included in the individual function documentation and
 generating all data from scratch. For applied/real-world examples,
-please see the provided vignettes. For most purposes, only five or six
-function calls to the package are necessary. A ‘quick start’ guide
+please see the forthcoming vignettes. For most purposes, only five or
+six function calls to the package are necessary. A ‘quick start’ guide
 summarizing the README example in as few function calls as possible is
 provided at the end of this file.
 
@@ -117,21 +117,17 @@ needed, and download or crop any such tiles that haven’t been prepared:
                                
     # Run whichTiles and getMap to prepare appropriate sector files
     tile_list <- whichTiles(region = points, polys = grid) 
+    #> Loading required namespace: rgeos
     print(tile_list)
     #> [1] "SECTOR_17" "SECTOR_5"  "SECTOR_1"  "SECTOR_10"
 
     getMap(tiles = tile_list, polys = grid, dir = dir)
+    #> [1] "Cropping Tile SECTOR_17 (1 of 4)"
+    #> [1] "Cropping Tile SECTOR_5 (2 of 4)"
+    #> [1] "Cropping Tile SECTOR_1 (3 of 4)"
+    #> [1] "Cropping Tile SECTOR_10 (4 of 4)"
     print(list.files(dir,recursive=TRUE, pattern = ".gz$"))
-    #>  [1] "Elevations/SECTOR_1.gz"      "Elevations/SECTOR_10.gz"     "Elevations/SECTOR_11.gz"    
-    #>  [4] "Elevations/SECTOR_12.gz"     "Elevations/SECTOR_13.gz"     "Elevations/SECTOR_14.gz"    
-    #>  [7] "Elevations/SECTOR_15.gz"     "Elevations/SECTOR_16.gz"     "Elevations/SECTOR_17.gz"    
-    #> [10] "Elevations/SECTOR_18.gz"     "Elevations/SECTOR_19.gz"     "Elevations/SECTOR_2.gz"     
-    #> [13] "Elevations/SECTOR_20.gz"     "Elevations/SECTOR_21.gz"     "Elevations/SECTOR_22.gz"    
-    #> [16] "Elevations/SECTOR_23.gz"     "Elevations/SECTOR_24.gz"     "Elevations/SECTOR_25.gz"    
-    #> [19] "Elevations/SECTOR_3.gz"      "Elevations/SECTOR_4.gz"      "Elevations/SECTOR_5.gz"     
-    #> [22] "Elevations/SECTOR_6.gz"      "Elevations/SECTOR_7.gz"      "Elevations/SECTOR_8.gz"     
-    #> [25] "Elevations/SECTOR_9.gz"      "Tensors/SECTOR_12_Tensor.gz" "Tensors/SECTOR_13_Tensor.gz"
-    #> [28] "Tensors/SECTOR_7_Tensor.gz"  "Tensors/SECTOR_8_Tensor.gz"
+    #> [1] "Elevations/SECTOR_1.gz"  "Elevations/SECTOR_10.gz" "Elevations/SECTOR_17.gz" "Elevations/SECTOR_5.gz"
 
 By far the most computationally intensive part of the workflow is the
 first transformation of the topographic data. To calculate the
@@ -150,6 +146,20 @@ having to re-calculate them every time they are needed:
     tiles <- whichTiles(region = tiles, polys = grid)
 
     makeWorld(tiles = tiles, polys = grid, cut_slope = 0.5, z_fix = dem, dir = dir)
+    #> [1] "Cropping Tile SECTOR_2 (1 of 8)"
+    #> [1] "Cropping Tile SECTOR_3 (2 of 8)"
+    #> [1] "Cropping Tile SECTOR_6 (3 of 8)"
+    #> [1] "Cropping Tile SECTOR_7 (4 of 8)"
+    #> [1] "Cropping Tile SECTOR_8 (5 of 8)"
+    #> [1] "Cropping Tile SECTOR_11 (6 of 8)"
+    #> [1] "Cropping Tile SECTOR_12 (7 of 8)"
+    #> [1] "Cropping Tile SECTOR_13 (8 of 8)"
+    #> [1] "Cropping Tile SECTOR_4 (1 of 3)"
+    #> [1] "Cropping Tile SECTOR_9 (2 of 3)"
+    #> [1] "Cropping Tile SECTOR_14 (3 of 3)"
+    #> [1] "Cropping Tile SECTOR_16 (1 of 2)"
+    #> [1] "Cropping Tile SECTOR_18 (2 of 2)"
+    #> [1] "Cropping Tile SECTOR_19 (1 of 1)"
 
 `makeWorld` internally calls `getMap` so you do not need to prepare the
 data beforehand. A note about the parameters. The `cut_slope` is the
@@ -219,6 +229,13 @@ function:
                        ID = rep(1:10,each=1000))
 
     velocity <- getVelocity(data = data, z = grid, dir = dir)
+    #> [1] "Cropping Tile SECTOR_23 (1 of 7)"
+    #> [1] "Cropping Tile SECTOR_20 (2 of 7)"
+    #> [1] "Cropping Tile SECTOR_21 (3 of 7)"
+    #> [1] "Cropping Tile SECTOR_24 (4 of 7)"
+    #> [1] "Cropping Tile SECTOR_25 (5 of 7)"
+    #> [1] "Cropping Tile SECTOR_22 (6 of 7)"
+    #> [1] "Cropping Tile SECTOR_15 (7 of 7)"
 
 So what happened? `getVelocity` called `whichTiles` and `getMap` to
 identify which tiles were needed to get the elevation for the points we
@@ -238,18 +255,18 @@ look at the structure anyways:
     #>    model:  dl_dt ~ v_max * exp(-k * abs(dz_dl - alpha)) 
     #>     data:  data 
     #>      tau:  0.995 
-    #> deviance:  428573.2 
+    #> deviance:  428763.3 
     #>          k      alpha 
-    #>  0.7260741 50.2094994 
+    #>  0.7231671 34.6523385 
     #> 
     #> $vmax
     #> [1] 90.81751
     #> 
     #> $alpha
-    #> [1] 50.2095
+    #> [1] 34.65234
     #> 
     #> $k
-    #> [1] 0.7260741
+    #> [1] 0.7231671
     #> 
     #> $tau_vmax
     #> [1] 0.995
@@ -258,18 +275,18 @@ look at the structure anyways:
     #> [1] 0.95
     #> 
     #> $data
-    #>        ID        x        y         z  dt         dx         dy         dz       dl    dl_dt        dz_dl
-    #>     1:  1 14184.43 37082.75 296.04593 120         NA         NA         NA       NA       NA           NA
-    #>     2:  1 13726.24 35062.09 417.70062 120  -458.1817 -2020.6651  121.65469 2071.960 17.26633  0.058714792
-    #>     3:  1 11211.38 31641.73  22.39640 120 -2514.8615 -3420.3624 -395.30422 4245.398 35.37832 -0.093113575
-    #>     4:  1 16539.87 30648.36 140.43419 120  5328.4904  -993.3627  118.03779 5420.293 45.16911  0.021777011
-    #>     5:  1 19063.24 34536.91 241.01436 120  2523.3705  3888.5521  100.58017 4635.541 38.62950  0.021697614
-    #>    ---                                                                                                   
-    #>  9996: 10 16832.04 33654.95 266.82159 120  4605.6630 -4322.2371  202.44404 6316.159 52.63466  0.032051764
-    #>  9997: 10 13210.97 38417.22 126.65144 120 -3621.0667  4762.2646 -140.17016 5982.582 49.85485 -0.023429709
-    #>  9998: 10 18523.71 37188.86  85.44712 120  5312.7413 -1228.3575  -41.20432 5452.897 45.44081 -0.007556409
-    #>  9999: 10 16082.61 34620.62 426.77194 120 -2441.1016 -2568.2359  341.32482 3543.277 29.52731  0.096330265
-    #> 10000: 10 11045.88 38322.00  20.53027 120 -5036.7365  3701.3801 -406.24168 6250.514 52.08762 -0.064993319
+    #>        ID        x        y         z  dt        dx         dy           dz       dl    dl_dt         dz_dl
+    #>     1:  1 16420.51 30361.88 150.07179 120        NA         NA           NA       NA       NA            NA
+    #>     2:  1 11469.18 34631.81 253.31918 120 -4951.330  4269.9288  103.2473907 6538.192 54.48494  1.579143e-02
+    #>     3:  1 14588.41 38432.77 253.17284 120  3119.230  3800.9694   -0.1463470 4917.008 40.97506 -2.976344e-05
+    #>     4:  1 11831.30 34478.95 254.25383 120 -2757.114 -3953.8293    1.0809937 4820.212 40.16843  2.242627e-04
+    #>     5:  1 15071.26 39050.63 253.65779 120  3239.966  4571.6794   -0.5960388 5603.359 46.69466 -1.063717e-04
+    #>    ---                                                                                                     
+    #>  9996: 10 11233.93 36415.67 158.30630 120 -4194.902 -1518.7086 -108.6871948 4461.353 37.17795 -2.436193e-02
+    #>  9997: 10 18278.64 30475.72  18.48967 120  7044.712 -5939.9532 -139.8166332 9214.717 76.78931 -1.517319e-02
+    #>  9998: 10 19574.08 31845.61  22.57398 120  1295.433  1369.8909    4.0843067 1885.404 15.71170  2.166277e-03
+    #>  9999: 10 16358.22 34630.29 399.47241 120 -3215.856  2784.6794  376.8984337 4253.959 35.44966  8.859944e-02
+    #> 10000: 10 19598.96 35026.42 251.16046 120  3240.740   396.1307 -148.3119507 3264.861 27.20718 -4.542673e-02
 
 The velocity list contains seven entries:
 
@@ -401,29 +418,29 @@ the type of costand direction of travel:
     #> $time_out
     #>        To_ID
     #> From_ID         1         2         3         4         5
-    #>       1    0.0000 1275.3205 2026.1966  698.3684  549.8334
-    #>       2  944.7807    0.0000  857.4839 1629.1968  970.7801
-    #>       3 1541.9772  674.4063    0.0000 2239.9352 1621.3863
-    #>       4  942.6987 2199.1856 2968.3413    0.0000 1107.1418
-    #>       5  576.2873 1310.4161 2133.3876  824.7255    0.0000
+    #>       1    0.0000 1395.7816 1242.5812 1069.9466 1517.1648
+    #>       2 1082.4153    0.0000 1108.1330 1056.3974 2162.5766
+    #>       3 1636.5170 1495.8231    0.0000  210.0074 3118.1499
+    #>       4 1429.0768 1425.9873  198.9947    0.0000 2912.2346
+    #>       5 1295.9609 2134.3752 2521.8492 2360.4505    0.0000
     #> 
     #> $work_out
     #>        To_ID
-    #> From_ID         1         2         3         4         5
-    #>       1       0.0  564923.4  888643.2  278409.9  243956.8
-    #>       2  397404.3       0.0  363276.2  665565.0  401934.1
-    #>       3  665752.3  345912.1       0.0  938435.0  724089.3
-    #>       4  420245.4  977938.6 1308495.0       0.0  479852.0
-    #>       5  239375.0  582084.8  932552.8  394436.7       0.0
+    #> From_ID          1          2          3          4          5
+    #>       1       0.00  583619.79  591225.68  508232.23  653901.72
+    #>       2  535033.94       0.00  370339.85  332748.03  936127.24
+    #>       3  690711.57  681507.94       0.00   85678.38 1343675.24
+    #>       4  608167.22  653921.89   86876.09       0.00 1261823.36
+    #>       5  575704.37  941029.26 1148009.56 1063811.24       0.00
     #> 
     #> $energy_out
     #>        To_ID
     #> From_ID         1         2         3         4         5
-    #>       1       0.0  683528.2 1077079.5  344808.0  295194.1
-    #>       2  486843.6       0.0  443022.2  818557.5  492216.7
-    #>       3  809887.9  408814.7       0.0 1153919.3  874878.2
-    #>       4  507916.4 1182462.8 1584550.7       0.0  582816.2
-    #>       5  292969.8  703953.5 1130957.8  478083.3       0.0
+    #>       1       0.0  713427.5  724387.1  622834.0  796959.3
+    #>       2  659922.2       0.0  473396.2  430993.0 1142711.7
+    #>       3  842907.6  820619.5       0.0  105209.1 1638657.2
+    #>       4  741071.4  786538.7  105511.3       0.0 1537667.9
+    #>       5  709363.5 1151885.4 1400710.2 1297165.8       0.0
 
 1.  If you wish to generate a RasterStack of costs from and/or to all
     nodes in the from object, set the `output = 'object'` and
@@ -455,9 +472,9 @@ Let’s take a look at the structure of the costRasters:
     #> resolution : 20, 20  (x, y)
     #> extent     : 12000, 16040, 32000, 36040  (xmin, xmax, ymin, ymax)
     #> crs        : +proj=lcc +lat_0=0 +lon_0=-100 +lat_1=48 +lat_2=33 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs 
-    #> names      :     To_4,     To_5,     To_1,     To_2,     To_3 
+    #> names      :     To_3,     To_4,     To_2,     To_1,     To_5 
     #> min values :        0,        0,        0,        0,        0 
-    #> max values : 3444.914, 3758.710, 3259.500, 4047.210, 4562.430 
+    #> max values : 4021.745, 3961.792, 3107.723, 3367.131, 4012.087 
     #> 
     #> 
     #> $time_out
@@ -466,9 +483,9 @@ Let’s take a look at the structure of the costRasters:
     #> resolution : 20, 20  (x, y)
     #> extent     : 12000, 16040, 32000, 36040  (xmin, xmax, ymin, ymax)
     #> crs        : +proj=lcc +lat_0=0 +lon_0=-100 +lat_1=48 +lat_2=33 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs 
-    #> names      :   From_4,   From_5,   From_1,   From_2,   From_3 
+    #> names      :   From_3,   From_4,   From_2,   From_1,   From_5 
     #> min values :        0,        0,        0,        0,        0 
-    #> max values : 3876.413, 3400.299, 2956.157, 2998.247, 3432.596 
+    #> max values : 4585.668, 4495.367, 3094.081, 3694.854, 3689.835 
     #> 
     #> 
     #> $work_in
@@ -477,9 +494,9 @@ Let’s take a look at the structure of the costRasters:
     #> resolution : 20, 20  (x, y)
     #> extent     : 12000, 16040, 32000, 36040  (xmin, xmax, ymin, ymax)
     #> crs        : +proj=lcc +lat_0=0 +lon_0=-100 +lat_1=48 +lat_2=33 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs 
-    #> names      :    To_4,    To_5,    To_1,    To_2,    To_3 
+    #> names      :    To_3,    To_4,    To_2,    To_1,    To_5 
     #> min values :       0,       0,       0,       0,       0 
-    #> max values : 1527516, 1613303, 1372397, 1812929, 2050753 
+    #> max values : 1614600, 1553874, 1301084, 1378460, 1753553 
     #> 
     #> 
     #> $work_out
@@ -488,9 +505,9 @@ Let’s take a look at the structure of the costRasters:
     #> resolution : 20, 20  (x, y)
     #> extent     : 12000, 16040, 32000, 36040  (xmin, xmax, ymin, ymax)
     #> crs        : +proj=lcc +lat_0=0 +lon_0=-100 +lat_1=48 +lat_2=33 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs 
-    #> names      :  From_4,  From_5,  From_1,  From_2,  From_3 
+    #> names      :  From_3,  From_4,  From_2,  From_1,  From_5 
     #> min values :       0,       0,       0,       0,       0 
-    #> max values : 1700369, 1508594, 1289124, 1226222, 1279139 
+    #> max values : 2032178, 2001639, 1352913, 1629741, 1654568 
     #> 
     #> 
     #> $energy_in
@@ -499,9 +516,9 @@ Let’s take a look at the structure of the costRasters:
     #> resolution : 20, 20  (x, y)
     #> extent     : 12000, 16040, 32000, 36040  (xmin, xmax, ymin, ymax)
     #> crs        : +proj=lcc +lat_0=0 +lon_0=-100 +lat_1=48 +lat_2=33 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs 
-    #> names      :    To_4,    To_5,    To_1,    To_2,    To_3 
+    #> names      :    To_3,    To_4,    To_2,    To_1,    To_5 
     #> min values :       0,       0,       0,       0,       0 
-    #> max values : 1867313, 1971370, 1677907, 2189321, 2475059 
+    #> max values : 1996354, 1928547, 1590102, 1698502, 2138440 
     #> 
     #> 
     #> $energy_out
@@ -510,9 +527,9 @@ Let’s take a look at the structure of the costRasters:
     #> resolution : 20, 20  (x, y)
     #> extent     : 12000, 16040, 32000, 36040  (xmin, xmax, ymin, ymax)
     #> crs        : +proj=lcc +lat_0=0 +lon_0=-100 +lat_1=48 +lat_2=33 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs 
-    #> names      :  From_4,  From_5,  From_1,  From_2,  From_3 
+    #> names      :  From_3,  From_4,  From_2,  From_1,  From_5 
     #> min values :       0,       0,       0,       0,       0 
-    #> max values : 2068809, 1834816, 1570855, 1502340, 1598683
+    #> max values : 2464906, 2424003, 1646513, 1979158, 2008974
 
 It’s a list of RasterStacks, each in a slot named after the type of cost
 (time, work, or energy) and the direction of travel (out from a node, or

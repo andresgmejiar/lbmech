@@ -11,7 +11,7 @@ makeGrid(dem, nx, ny, crs = NULL, prefix = "SECTOR_")
 extent imaginable for a study. Note that this only works for rasters that
 have been read in, not those that exist exclusively in the memory. If you
 have just generated the raster and it is in memory, export it first with
-\link[raster]{writeRaster} then re-import it with \link[raster]{raster}.}
+\code{\link[raster]{writeRaster}} then re-import it with \code{\link[raster]{raster}}.}
 
 \item{nx}{The integer-number of columns in the output grid}
 

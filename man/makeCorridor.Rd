@@ -13,12 +13,12 @@ to the workspace used as \code{dir} for the previous functions.
 Default is \code{tempdir()} but unless you are not following best
 practices you will have to change it to your output directory. If list
 of RasterStacks, it should be the output (or identical in form) to
-the \link[lbmech]{getCosts} function with \code{"object" \%in\% output}.}
+the \code{\link[lbmech]{getCosts}} function with \code{"object" \%in\% output}.}
 
 \item{order}{A character vector containing the desired path in
 order of visited nodes. For example, to visit "A" then "B" then "C" then "A"
 the vector would be \code{c("A","B","C","A")}. Note that these MUST correspond
-to the ID names for the \code{from} features used in the \link[lbmech]{getCosts}
+to the ID names for the \code{from} features used in the \code{\link[lbmech]{getCosts}}
 function and must have previously been calculated}
 
 \item{costs}{A character vector containing any combination of the strings
@@ -37,7 +37,7 @@ A function to automatically perform the raster arithmetic
 necessary to calculate the cost-of-travel for paths with multiple
 waypoints, and the predicted cost of taking a detour to any
 arbitrary point in the landscape (a 'corridor').
-\link[lbmech]{getCosts} must have been run before this tool can be used.
+\code{\link[lbmech]{getCosts}} must have been run before this tool can be used.
 }
 \examples{
 # Generate a DEM

@@ -17,7 +17,7 @@ getPaths(
 )
 }
 \arguments{
-\item{world}{The data.table output of the \link[lbmech]{calculateCosts} function.}
+\item{world}{The data.table output of the \code{\link[lbmech]{calculateCosts}} function.}
 
 \item{nodes}{An object of class data.frame, data.table, SpatialPointsDataFrame, or
 SpatialPolygonsDataFrame representing the locations.
@@ -25,7 +25,7 @@ If object is of class SpatialPolygonsDataFrame, the location will be taken at th
 centroid.}
 
 \item{z_fix}{A RasterLayer with the same origin and resolution as the
-\code{z_fix} used to generate the 'world' with \link[lbmech]{makeWorld}.}
+\code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.}
 
 \item{id}{A character string representing the column containing each \code{node}
 location's unique ID.}
@@ -62,7 +62,7 @@ a list of SpatialLinesDataFrame with one slot for each \code{cost} is returned.
 }
 \description{
 Get the shortest path for a given trip that requires travel through a
-set of nodes. Use is like \link[lbmech]{getCosts}, but with 
+set of nodes. Use is like \code{\link[lbmech]{getCosts}}, but with 
 \code{nodes} and {order} parameters and no \code{from} or \code{to}.
 }
 \examples{
