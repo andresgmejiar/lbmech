@@ -24,6 +24,226 @@ knitr::opts_chunk$set(
 )
 ```
 
+```{r, include = FALSE}
+# Knested list function taken from 
+# https://gist.github.com/billdenney/5ef10d82e6bcdbcac4f0f38562c23b53
+# This is so the lists of Rasterstacks can be displayed on Github
+knested_list <- function(x,
+                         listtype=c("bullet", "numbered", "definition"),
+                         use.names=listtype %in% "definition",
+                         format=c(NA, "html", "latex", "txt"),
+                         ...) {
+  listtype <- match.arg(listtype)
+  use.names <- as.logical(use.names[1])
+  # Choose the output format
+  format <- tolower(match.arg(format))
+  if (is.na(format)) {
+    format <- knitr:::pandoc_to()
+    if (is.null(format)) {
+      format <- knitr:::out_format()
+    }
+    if (is.null(format)) {
+      format <- "txt"
+    }
+  }
+  format <- tolower(format)
+  if (!(format %in% c("html", "latex"))) {
+    format <- "txt"
+  }
+  liststyling <-
+    list(
+      html=
+        list(
+          bullet=
+            list(list.prefix="<ul>\n",
+                 list.suffix="</ul>\n",
+                 name.prefix="<li>",
+                 name.suffix=": ",
+                 item.with.name.prefix="",
+                 item.no.name.prefix="<li>",
+                 item.suffix="</li>\n"),
+          numbered=
+            list(list.prefix="<ol>\n",
+                 list.suffix="</ol>\n",
+                 name.prefix="<li>",
+                 name.suffix=": ",
+                 item.with.name.prefix="",
+                 item.no.name.prefix="<li>",
+                 item.suffix="</li>\n"),
+          definition=
+            list(list.prefix="<dl>\n",
+                 list.suffix="</dl>\n",
+                 name.prefix="<dt>",
+                 name.suffix="</dt>\n",
+                 item.with.name.prefix="<dd>",
+                 item.no.name.prefix="<dd>",
+                 item.suffix="</dd>\n")),
+      latex=
+        list(
+          bullet=
+            list(list.prefix="\n\\begin{itemize}\n",
+                 list.suffix="\n\\end{itemize}\n",
+                 name.prefix="\\item ",
+                 name.suffix=": ",
+                 item.with.name.prefix="",
+                 item.no.name.prefix="\\item ",
+                 item.suffix="\n"),
+          numbered=
+            list(list.prefix="\n\\begin{enumerate}\n",
+                 list.suffix="\n\\end{enumerate}\n",
+                 name.prefix="\\item ",
+                 name.suffix=": ",
+                 item.with.name.prefix="",
+                 item.no.name.prefix="\\item ",
+                 item.suffix="\n"),
+          definition=
+            list(list.prefix="\n\\begin{description}\n",
+                 list.suffix="\n\\end{description}\n",
+                 name.prefix="\\item[",
+                 name.suffix="]",
+                 item.with.name.prefix=" ",
+                 item.no.name.prefix="\\item",
+                 item.suffix="\n")),
+      txt=
+        list(
+          bullet=
+            list(list.prefix="\n",
+                 list.suffix=NA,
+                 name.prefix="* ",
+                 name.suffix=": ",
+                 item.with.name.prefix="",
+                 item.no.name.prefix="* ",
+                 item.suffix="\n",
+                 indent="    "),
+          numbered=
+            list(list.prefix="\n",
+                 list.suffix=NA,
+                 name.prefix="1. ",
+                 name.suffix=": ",
+                 item.with.name.prefix="",
+                 item.no.name.prefix="1. ",
+                 item.suffix="\n",
+                 indent="    "),
+          definition= # almost the same as bullet
+            list(list.prefix="\n",
+                 list.suffix=NA,
+                 name.prefix="* ",
+                 name.suffix=": ",
+                 item.with.name.prefix="",
+                 item.no.name.prefix="* ",
+                 item.suffix="\n",
+                 indent="    ")))
+  # Generate the output
+  knested_list_helper(x, use.names=use.names,
+                      styling=liststyling[[format]][[listtype]],
+                      indent=0,
+                      ...)
+}
+
+knested_list_indent <- function(indent, styling) {
+  if (indent > 0 && ("indent" %in% names(styling)) && !is.na(styling$indent)) {
+    styling$indent
+  }  else {
+    ""
+  }
+}
+
+knested_list_item_prefix <- function(use.names, has.name, styling) {
+  if (use.names & has.name) {
+    styling$item.with.name.prefix
+  } else {
+    styling$item.no.name.prefix
+  }
+}
+
+knested_list_name_prefix <- function(use.names, has.name, styling) {
+  if (use.names & has.name) {
+    styling$name.prefix
+  } else {
+    ""
+  }
+}
+
+knested_list_name_suffix <- function(use.names, has.name, styling) {
+  if (use.names & has.name) {
+    styling$name.suffix
+  } else {
+    ""
+  }
+}
+
+knested_list_helper <- function(x, use.names, styling, indent, ...)
+  UseMethod("knested_list_helper")
+
+knested_list_helper.list <- function(x, use.names, styling, indent, ...) {
+  if (!is.na(styling$list.prefix)) {
+    prefix <- styling$list.prefix
+  } else {
+    prefix <- ""
+  }
+  if (!is.na(styling$list.suffix)) {
+    suffix <- styling$list.suffix
+  } else {
+    suffix <- ""
+  }
+  if (!use.names || is.null(names(x))) {
+    has.name <- rep(FALSE, length(x))
+    name.text <- rep("", length(x))
+  } else  {
+    name.text <- names(x)
+    has.name <- !(name.text %in% "")
+  }
+  retitems <-
+    lapply(X=seq_along(x),
+           FUN=function(i) {
+             indent.text <- knested_list_indent(indent, styling)
+             name.prefix <- knested_list_name_prefix(use.names, has.name[i], styling)
+             name.text <- as.character(name.text[i])
+             name.suffix <- knested_list_name_suffix(use.names, has.name[i], styling)
+             item.prefix <- knested_list_item_prefix(use.names, has.name[i], styling)
+             item.text <- knested_list_helper(x[[i]], use.names, styling, indent=indent + 1, ...)
+             item.suffix <- styling$item.suffix
+             paste0(indent.text,
+                    name.prefix, name.text, name.suffix,
+                    item.prefix, item.text, item.suffix)
+           })
+  paste0(prefix,
+         do.call(paste0, unname(retitems)),
+         suffix)
+}
+
+knested_list_helper.character <- function(x, use.names, styling, indent,
+                                          sep=" ", collapse=", ", ...) {
+  if (length(x) == 0) {
+    "''"
+  } else if (length(x) == 1) {
+    x
+  } else {
+    paste(x, sep=sep, collapse=collapse)
+  }
+}
+
+knested_list_helper.data.frame <- function(x, use.names, styling, indent, ...) {
+  # I'm not sure that this is a good idea...
+  knitr::kable(x, ...)
+}
+
+knested_list_helper.default <- function(x, use.names, styling, indent, ...) {
+  knested_list_helper(as.character(x, ...), use.names, styling, indent, ...)
+}
+
+for (fmt in c("txt", "html", "latex")) {
+  for (listfmt in c("bullet", "numbered", "definition")) {
+    cat(fmt, listfmt, "\n\n")
+    cat(
+      knested_list(list(a=1, b=list(c="c", d=factor("D"))),
+                   format=fmt,
+                   listtype=listfmt))
+    cat("\n")
+  }
+}
+
+```
 # lbmech
 
 <!-- badges: start -->
@@ -197,9 +417,9 @@ humans and animals tend to prefer to walk at predictable speeds at a
 given slope. The maximum speed is generally achieved at one particular
 slope, and speed would tend to decrease exponentially as the distance to
 this ideal slope increases. Mathematically, this is described by Tobler's
-Hiking function $d\ell/dt = v_{\mathrm{max}} e^{-k | dz/d\ell - \alpha |},$
-where $\ell$ is horizontal displacement, $t$ time, $d\ell/dt$ horizontal
-speed, $v_{\mathrm{max}}$ the maximum walking speed, $dz/d\ell$ the 
+Hiking function ${d \ell}/{d t} = v_{\mathrm{max}} e^{-k | {d z} / {d \ell} - \alpha |},$
+where $\ell$ is horizontal displacement, $t$ time, ${d \ell}/{d t}$ horizontal
+speed, $v_{\mathrm{max}}$ the maximum walking speed, ${d z}/{d \ell}$ the 
 change in elevation versus the change in horizontal distance (dimensionless
 slope, or $\arctan \theta$ where $\theta$ is the slope in degrees or radians),
 $\alpha$ the ideal slope of maximum walking speed, and $k$ a parameter controling
@@ -232,6 +452,10 @@ data <- data.table(x = runif(10000,extent(dem)[1],extent(dem)[2]),
                    ID = rep(1:10,each=1000))
 
 velocity <- getVelocity(data = data, z = grid, dir = dir)
+```
+```{r velocityKable, include = FALSE}
+# Convert the data to knitr::kable object so it prints on Github
+velocity$data <- knitr::kable(data)
 ```
 So what happened? `getVelocity` called `whichTiles` and `getMap` to identify
 which tiles were needed to get the elevation for the points we generated in 
@@ -316,7 +540,7 @@ are nonsensical. Taking a look at the `world` object now shows an additional
 nine columns:
 
 ```{r costs, results = 'asis', echo = F}
-head(world)
+knitr::kable(head(world))
 ```
 
 `$x_i` and `$y_i` give the numeric x and y coordinates of the
@@ -375,8 +599,9 @@ costRasters <- getCosts(world = world, from = points, z_fix = dem,
 
 ```
 Let's take a look at the structure of the costRasters:
+
 ```{r raster-structure, results = 'asis', echo = F}
-structure(costRasters)
+knested_list(structure(costRasters))
 ```
 It's a list of RasterStacks, each in a slot named after the type of cost
 (time, work, or energy) and the direction of travel (out from a node, or 
@@ -389,8 +614,9 @@ plot(costRasters$time_in[['To_5']],main='Time in Seconds to Travel to Point 5')
 Since `'file'` was also listed in the `output` parameter for `getCosts`, the
 raster files were also exported to a `'CostRasters'` folder in `dir`. 
 
+
 ```{r raster-dir, results = 'asis', echo = F}
-list.files(normalizePath(paste0(dir,"/CostRasters")))
+print(list.files(normalizePath(paste0(dir,"/CostRasters"))))
 ```
 
 These rasters---be they stored as an object on the memory with `'object' %in% output`
