@@ -455,7 +455,9 @@ velocity <- getVelocity(data = data, z = grid, dir = dir)
 ```
 ```{r velocityKable, include = FALSE}
 # Convert the data to knitr::kable object so it prints on Github
-velocity$data <- knitr::kable(data)
+velocityPrint <- velocity
+velocity$data <- head(data)
+velocityPrint <- knested_list(velocity)
 ```
 So what happened? `getVelocity` called `whichTiles` and `getMap` to identify
 which tiles were needed to get the elevation for the points we generated in 
@@ -466,8 +468,11 @@ and performed a nonlinear quantile regression to get the appropriate parameters.
 The output object is a list. Since this was calculated based on random data,
 the calculated parameters here are meaningless but let's have a look at the 
 structure anyways:
-```{r velocity, results = 'asis', echo = F}
+```{r velocity, results = 'hide', echo = F}
 print(velocity)
+```
+```{r, echo = FALSE}
+print(velocityPrint)
 ```
 The velocity list contains seven entries: 
 
