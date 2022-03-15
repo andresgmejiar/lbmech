@@ -1938,7 +1938,9 @@ fix_z <- function(res, crs, dx = 0, dy = 0){
   if (length(res) == 1){
     res <- c(res,res)
   }
-  z <- data.table(x = 0, y = 0, z = 1)
+  z <- data.table(x = c(0,0,res[1],res[1]),
+                  y = c(0,res[2],0,res[2]),
+                  z = c(1,1,1,1))
   z <- rasterFromXYZ(z, res = res, crs=crs)
   origin(z) <- c(dx,dy)
   return(z)
