@@ -457,7 +457,6 @@ velocity <- getVelocity(data = data, z = grid, dir = dir)
 # Convert the data to knitr::kable object so it prints on Github
 velocityPrint <- velocity
 velocity$data <- head(data)
-velocityPrint <- knested_list(velocity)
 ```
 So what happened? `getVelocity` called `whichTiles` and `getMap` to identify
 which tiles were needed to get the elevation for the points we generated in 
@@ -468,7 +467,7 @@ and performed a nonlinear quantile regression to get the appropriate parameters.
 The output object is a list. Since this was calculated based on random data,
 the calculated parameters here are meaningless but let's have a look at the 
 structure anyways:
-```{r velocity, results = 'hide', echo = F}
+```{r velocity, results = 'hide', echo = TRUE}
 print(velocity)
 ```
 ```{r, echo = FALSE}
@@ -605,8 +604,8 @@ costRasters <- getCosts(world = world, from = points, z_fix = dem,
 ```
 Let's take a look at the structure of the costRasters:
 
-```{r raster-structure, results = 'asis', echo = F}
-knested_list(structure(costRasters))
+```{r raster-structure}
+structure(costRasters)
 ```
 It's a list of RasterStacks, each in a slot named after the type of cost
 (time, work, or energy) and the direction of travel (out from a node, or 

@@ -231,14 +231,45 @@ The output object is a list. Since this was calculated based on random
 data, the calculated parameters here are meaningless but let’s have a
 look at the structure anyways:
 
-    #> [1] "\n* list(resid = function () \nresid, fitted = function () \nrhs, formula = function () \nform, tau = function () \ntau, deviance = function () \ndev, gradient = function () \nattr(rhs, \"gradient\"), incr = function () \nqr.coef(QR, resid), setVarying = function (vary = rep(TRUE, length(useParams))) \n{\n    assign(\"useParams\", if (is.character(vary)) {\n        temp <- logical(length(useParams))\n        temp[unlist(ind[vary])] <- TRUE\n        temp\n    }\n    else if (is.logical(vary) && length(vary) != length(useParams)) \n        stop(\"setVarying : vary length must match length of parameters\")\n    else {\n        vary\n    }, envir = thisEnv)\n    gradCall[[length(gradCall)]] <<- useParams\n    if (all(useParams)) {\n        assign(\"setPars\", setPars.noVarying, envir = thisEnv)\n        assign(\"getPars\", getPars.noVarying, envir = thisEnv)\n        assign(\"getRHS\", getRHS.noVarying, envir = thisEnv)\n        assign(\"npar\", length(useParams), envir = thisEnv)\n    }\n    else {\n        assign(\"setPars\", setPars.varying, envir = thisEnv)\n        assign(\"getPars\", getPars.varying, envir = thisEnv)\n        assign(\"getRHS\", getRHS.varying, envir = thisEnv)\n        assign(\"npar\", length((1:length(useParams))[useParams]), envir = thisEnv)\n    }\n}, changeTau = function (newTau) \n{\n    assign(\"tau\", newTau, envir = thisEnv)\n    assign(\"dev\", sum(tau * pmax(resid, 0) + (tau - 1) * pmin(resid, 0)), envir = thisEnv)\n    return(dev)\n}, setPars = function (newPars) \n{\n    setPars(newPars)\n    assign(\"resid\", lhs - assign(\"rhs\", getRHS(), envir = thisEnv), envir = thisEnv)\n    assign(\"dev\", sum(tau * pmax(resid, 0) + (tau - 1) * pmin(resid, 0)), envir = thisEnv)\n    assign(\"QR\", qr(attr(rhs, \"gradient\")), envir = thisEnv)\n    return(QR$rank < min(dim(QR$qr)))\n}, getPars = function () \ngetPars(), getAllPars = function () \ngetPars(), getEnv = function () \nenv, trace = function () \ncat(format(dev), \": \", format(getPars()), \"\\n\"), Rmat = function () \nqr.R(QR), predict = function (newdata = list(), qr = FALSE) \n{\n    Env <- new.env()\n    for (i in objects(envir = env)) {\n        assign(i, get(i, envir = env), envir = Env)\n    }\n    newdata <- as.list(newdata)\n    for (i in names(newdata)) {\n        assign(i, newdata[[i]], envir = Env)\n    }\n    eval(form[[3]], envir = Env)\n}, rho = 428573.155357793), data, quantreg::nlrq(formula = dl_dt ~ v_max * exp(-k * abs(dz_dl - alpha)), data = data, start = list(k = k_init, alpha = -alpha_init), tau = tau_vmax, control = list(maxiter = 100, k = 2, InitialStepSize = 1, big = 1e+20, eps = 1e-07, beta = 0.97), trace = FALSE)\n* 90.817505173818\n* 50.209499435617\n* 0.726074067018474\n* 0.995\n* 0.95\n* |        x|        y|  dt| ID|\n"
-    #> [2] "\n* list(resid = function () \nresid, fitted = function () \nrhs, formula = function () \nform, tau = function () \ntau, deviance = function () \ndev, gradient = function () \nattr(rhs, \"gradient\"), incr = function () \nqr.coef(QR, resid), setVarying = function (vary = rep(TRUE, length(useParams))) \n{\n    assign(\"useParams\", if (is.character(vary)) {\n        temp <- logical(length(useParams))\n        temp[unlist(ind[vary])] <- TRUE\n        temp\n    }\n    else if (is.logical(vary) && length(vary) != length(useParams)) \n        stop(\"setVarying : vary length must match length of parameters\")\n    else {\n        vary\n    }, envir = thisEnv)\n    gradCall[[length(gradCall)]] <<- useParams\n    if (all(useParams)) {\n        assign(\"setPars\", setPars.noVarying, envir = thisEnv)\n        assign(\"getPars\", getPars.noVarying, envir = thisEnv)\n        assign(\"getRHS\", getRHS.noVarying, envir = thisEnv)\n        assign(\"npar\", length(useParams), envir = thisEnv)\n    }\n    else {\n        assign(\"setPars\", setPars.varying, envir = thisEnv)\n        assign(\"getPars\", getPars.varying, envir = thisEnv)\n        assign(\"getRHS\", getRHS.varying, envir = thisEnv)\n        assign(\"npar\", length((1:length(useParams))[useParams]), envir = thisEnv)\n    }\n}, changeTau = function (newTau) \n{\n    assign(\"tau\", newTau, envir = thisEnv)\n    assign(\"dev\", sum(tau * pmax(resid, 0) + (tau - 1) * pmin(resid, 0)), envir = thisEnv)\n    return(dev)\n}, setPars = function (newPars) \n{\n    setPars(newPars)\n    assign(\"resid\", lhs - assign(\"rhs\", getRHS(), envir = thisEnv), envir = thisEnv)\n    assign(\"dev\", sum(tau * pmax(resid, 0) + (tau - 1) * pmin(resid, 0)), envir = thisEnv)\n    assign(\"QR\", qr(attr(rhs, \"gradient\")), envir = thisEnv)\n    return(QR$rank < min(dim(QR$qr)))\n}, getPars = function () \ngetPars(), getAllPars = function () \ngetPars(), getEnv = function () \nenv, trace = function () \ncat(format(dev), \": \", format(getPars()), \"\\n\"), Rmat = function () \nqr.R(QR), predict = function (newdata = list(), qr = FALSE) \n{\n    Env <- new.env()\n    for (i in objects(envir = env)) {\n        assign(i, get(i, envir = env), envir = Env)\n    }\n    newdata <- as.list(newdata)\n    for (i in names(newdata)) {\n        assign(i, newdata[[i]], envir = Env)\n    }\n    eval(form[[3]], envir = Env)\n}, rho = 428573.155357793), data, quantreg::nlrq(formula = dl_dt ~ v_max * exp(-k * abs(dz_dl - alpha)), data = data, start = list(k = k_init, alpha = -alpha_init), tau = tau_vmax, control = list(maxiter = 100, k = 2, InitialStepSize = 1, big = 1e+20, eps = 1e-07, beta = 0.97), trace = FALSE)\n* 90.817505173818\n* 50.209499435617\n* 0.726074067018474\n* 0.995\n* 0.95\n* |--------:|--------:|---:|--:|\n"
-    #> [3] "\n* list(resid = function () \nresid, fitted = function () \nrhs, formula = function () \nform, tau = function () \ntau, deviance = function () \ndev, gradient = function () \nattr(rhs, \"gradient\"), incr = function () \nqr.coef(QR, resid), setVarying = function (vary = rep(TRUE, length(useParams))) \n{\n    assign(\"useParams\", if (is.character(vary)) {\n        temp <- logical(length(useParams))\n        temp[unlist(ind[vary])] <- TRUE\n        temp\n    }\n    else if (is.logical(vary) && length(vary) != length(useParams)) \n        stop(\"setVarying : vary length must match length of parameters\")\n    else {\n        vary\n    }, envir = thisEnv)\n    gradCall[[length(gradCall)]] <<- useParams\n    if (all(useParams)) {\n        assign(\"setPars\", setPars.noVarying, envir = thisEnv)\n        assign(\"getPars\", getPars.noVarying, envir = thisEnv)\n        assign(\"getRHS\", getRHS.noVarying, envir = thisEnv)\n        assign(\"npar\", length(useParams), envir = thisEnv)\n    }\n    else {\n        assign(\"setPars\", setPars.varying, envir = thisEnv)\n        assign(\"getPars\", getPars.varying, envir = thisEnv)\n        assign(\"getRHS\", getRHS.varying, envir = thisEnv)\n        assign(\"npar\", length((1:length(useParams))[useParams]), envir = thisEnv)\n    }\n}, changeTau = function (newTau) \n{\n    assign(\"tau\", newTau, envir = thisEnv)\n    assign(\"dev\", sum(tau * pmax(resid, 0) + (tau - 1) * pmin(resid, 0)), envir = thisEnv)\n    return(dev)\n}, setPars = function (newPars) \n{\n    setPars(newPars)\n    assign(\"resid\", lhs - assign(\"rhs\", getRHS(), envir = thisEnv), envir = thisEnv)\n    assign(\"dev\", sum(tau * pmax(resid, 0) + (tau - 1) * pmin(resid, 0)), envir = thisEnv)\n    assign(\"QR\", qr(attr(rhs, \"gradient\")), envir = thisEnv)\n    return(QR$rank < min(dim(QR$qr)))\n}, getPars = function () \ngetPars(), getAllPars = function () \ngetPars(), getEnv = function () \nenv, trace = function () \ncat(format(dev), \": \", format(getPars()), \"\\n\"), Rmat = function () \nqr.R(QR), predict = function (newdata = list(), qr = FALSE) \n{\n    Env <- new.env()\n    for (i in objects(envir = env)) {\n        assign(i, get(i, envir = env), envir = Env)\n    }\n    newdata <- as.list(newdata)\n    for (i in names(newdata)) {\n        assign(i, newdata[[i]], envir = Env)\n    }\n    eval(form[[3]], envir = Env)\n}, rho = 428573.155357793), data, quantreg::nlrq(formula = dl_dt ~ v_max * exp(-k * abs(dz_dl - alpha)), data = data, start = list(k = k_init, alpha = -alpha_init), tau = tau_vmax, control = list(maxiter = 100, k = 2, InitialStepSize = 1, big = 1e+20, eps = 1e-07, beta = 0.97), trace = FALSE)\n* 90.817505173818\n* 50.209499435617\n* 0.726074067018474\n* 0.995\n* 0.95\n* | 14184.43| 37082.75| 120|  1|\n"
-    #> [4] "\n* list(resid = function () \nresid, fitted = function () \nrhs, formula = function () \nform, tau = function () \ntau, deviance = function () \ndev, gradient = function () \nattr(rhs, \"gradient\"), incr = function () \nqr.coef(QR, resid), setVarying = function (vary = rep(TRUE, length(useParams))) \n{\n    assign(\"useParams\", if (is.character(vary)) {\n        temp <- logical(length(useParams))\n        temp[unlist(ind[vary])] <- TRUE\n        temp\n    }\n    else if (is.logical(vary) && length(vary) != length(useParams)) \n        stop(\"setVarying : vary length must match length of parameters\")\n    else {\n        vary\n    }, envir = thisEnv)\n    gradCall[[length(gradCall)]] <<- useParams\n    if (all(useParams)) {\n        assign(\"setPars\", setPars.noVarying, envir = thisEnv)\n        assign(\"getPars\", getPars.noVarying, envir = thisEnv)\n        assign(\"getRHS\", getRHS.noVarying, envir = thisEnv)\n        assign(\"npar\", length(useParams), envir = thisEnv)\n    }\n    else {\n        assign(\"setPars\", setPars.varying, envir = thisEnv)\n        assign(\"getPars\", getPars.varying, envir = thisEnv)\n        assign(\"getRHS\", getRHS.varying, envir = thisEnv)\n        assign(\"npar\", length((1:length(useParams))[useParams]), envir = thisEnv)\n    }\n}, changeTau = function (newTau) \n{\n    assign(\"tau\", newTau, envir = thisEnv)\n    assign(\"dev\", sum(tau * pmax(resid, 0) + (tau - 1) * pmin(resid, 0)), envir = thisEnv)\n    return(dev)\n}, setPars = function (newPars) \n{\n    setPars(newPars)\n    assign(\"resid\", lhs - assign(\"rhs\", getRHS(), envir = thisEnv), envir = thisEnv)\n    assign(\"dev\", sum(tau * pmax(resid, 0) + (tau - 1) * pmin(resid, 0)), envir = thisEnv)\n    assign(\"QR\", qr(attr(rhs, \"gradient\")), envir = thisEnv)\n    return(QR$rank < min(dim(QR$qr)))\n}, getPars = function () \ngetPars(), getAllPars = function () \ngetPars(), getEnv = function () \nenv, trace = function () \ncat(format(dev), \": \", format(getPars()), \"\\n\"), Rmat = function () \nqr.R(QR), predict = function (newdata = list(), qr = FALSE) \n{\n    Env <- new.env()\n    for (i in objects(envir = env)) {\n        assign(i, get(i, envir = env), envir = Env)\n    }\n    newdata <- as.list(newdata)\n    for (i in names(newdata)) {\n        assign(i, newdata[[i]], envir = Env)\n    }\n    eval(form[[3]], envir = Env)\n}, rho = 428573.155357793), data, quantreg::nlrq(formula = dl_dt ~ v_max * exp(-k * abs(dz_dl - alpha)), data = data, start = list(k = k_init, alpha = -alpha_init), tau = tau_vmax, control = list(maxiter = 100, k = 2, InitialStepSize = 1, big = 1e+20, eps = 1e-07, beta = 0.97), trace = FALSE)\n* 90.817505173818\n* 50.209499435617\n* 0.726074067018474\n* 0.995\n* 0.95\n* | 13726.24| 35062.09| 120|  1|\n"
-    #> [5] "\n* list(resid = function () \nresid, fitted = function () \nrhs, formula = function () \nform, tau = function () \ntau, deviance = function () \ndev, gradient = function () \nattr(rhs, \"gradient\"), incr = function () \nqr.coef(QR, resid), setVarying = function (vary = rep(TRUE, length(useParams))) \n{\n    assign(\"useParams\", if (is.character(vary)) {\n        temp <- logical(length(useParams))\n        temp[unlist(ind[vary])] <- TRUE\n        temp\n    }\n    else if (is.logical(vary) && length(vary) != length(useParams)) \n        stop(\"setVarying : vary length must match length of parameters\")\n    else {\n        vary\n    }, envir = thisEnv)\n    gradCall[[length(gradCall)]] <<- useParams\n    if (all(useParams)) {\n        assign(\"setPars\", setPars.noVarying, envir = thisEnv)\n        assign(\"getPars\", getPars.noVarying, envir = thisEnv)\n        assign(\"getRHS\", getRHS.noVarying, envir = thisEnv)\n        assign(\"npar\", length(useParams), envir = thisEnv)\n    }\n    else {\n        assign(\"setPars\", setPars.varying, envir = thisEnv)\n        assign(\"getPars\", getPars.varying, envir = thisEnv)\n        assign(\"getRHS\", getRHS.varying, envir = thisEnv)\n        assign(\"npar\", length((1:length(useParams))[useParams]), envir = thisEnv)\n    }\n}, changeTau = function (newTau) \n{\n    assign(\"tau\", newTau, envir = thisEnv)\n    assign(\"dev\", sum(tau * pmax(resid, 0) + (tau - 1) * pmin(resid, 0)), envir = thisEnv)\n    return(dev)\n}, setPars = function (newPars) \n{\n    setPars(newPars)\n    assign(\"resid\", lhs - assign(\"rhs\", getRHS(), envir = thisEnv), envir = thisEnv)\n    assign(\"dev\", sum(tau * pmax(resid, 0) + (tau - 1) * pmin(resid, 0)), envir = thisEnv)\n    assign(\"QR\", qr(attr(rhs, \"gradient\")), envir = thisEnv)\n    return(QR$rank < min(dim(QR$qr)))\n}, getPars = function () \ngetPars(), getAllPars = function () \ngetPars(), getEnv = function () \nenv, trace = function () \ncat(format(dev), \": \", format(getPars()), \"\\n\"), Rmat = function () \nqr.R(QR), predict = function (newdata = list(), qr = FALSE) \n{\n    Env <- new.env()\n    for (i in objects(envir = env)) {\n        assign(i, get(i, envir = env), envir = Env)\n    }\n    newdata <- as.list(newdata)\n    for (i in names(newdata)) {\n        assign(i, newdata[[i]], envir = Env)\n    }\n    eval(form[[3]], envir = Env)\n}, rho = 428573.155357793), data, quantreg::nlrq(formula = dl_dt ~ v_max * exp(-k * abs(dz_dl - alpha)), data = data, start = list(k = k_init, alpha = -alpha_init), tau = tau_vmax, control = list(maxiter = 100, k = 2, InitialStepSize = 1, big = 1e+20, eps = 1e-07, beta = 0.97), trace = FALSE)\n* 90.817505173818\n* 50.209499435617\n* 0.726074067018474\n* 0.995\n* 0.95\n* | 11211.38| 31641.73| 120|  1|\n"
-    #> [6] "\n* list(resid = function () \nresid, fitted = function () \nrhs, formula = function () \nform, tau = function () \ntau, deviance = function () \ndev, gradient = function () \nattr(rhs, \"gradient\"), incr = function () \nqr.coef(QR, resid), setVarying = function (vary = rep(TRUE, length(useParams))) \n{\n    assign(\"useParams\", if (is.character(vary)) {\n        temp <- logical(length(useParams))\n        temp[unlist(ind[vary])] <- TRUE\n        temp\n    }\n    else if (is.logical(vary) && length(vary) != length(useParams)) \n        stop(\"setVarying : vary length must match length of parameters\")\n    else {\n        vary\n    }, envir = thisEnv)\n    gradCall[[length(gradCall)]] <<- useParams\n    if (all(useParams)) {\n        assign(\"setPars\", setPars.noVarying, envir = thisEnv)\n        assign(\"getPars\", getPars.noVarying, envir = thisEnv)\n        assign(\"getRHS\", getRHS.noVarying, envir = thisEnv)\n        assign(\"npar\", length(useParams), envir = thisEnv)\n    }\n    else {\n        assign(\"setPars\", setPars.varying, envir = thisEnv)\n        assign(\"getPars\", getPars.varying, envir = thisEnv)\n        assign(\"getRHS\", getRHS.varying, envir = thisEnv)\n        assign(\"npar\", length((1:length(useParams))[useParams]), envir = thisEnv)\n    }\n}, changeTau = function (newTau) \n{\n    assign(\"tau\", newTau, envir = thisEnv)\n    assign(\"dev\", sum(tau * pmax(resid, 0) + (tau - 1) * pmin(resid, 0)), envir = thisEnv)\n    return(dev)\n}, setPars = function (newPars) \n{\n    setPars(newPars)\n    assign(\"resid\", lhs - assign(\"rhs\", getRHS(), envir = thisEnv), envir = thisEnv)\n    assign(\"dev\", sum(tau * pmax(resid, 0) + (tau - 1) * pmin(resid, 0)), envir = thisEnv)\n    assign(\"QR\", qr(attr(rhs, \"gradient\")), envir = thisEnv)\n    return(QR$rank < min(dim(QR$qr)))\n}, getPars = function () \ngetPars(), getAllPars = function () \ngetPars(), getEnv = function () \nenv, trace = function () \ncat(format(dev), \": \", format(getPars()), \"\\n\"), Rmat = function () \nqr.R(QR), predict = function (newdata = list(), qr = FALSE) \n{\n    Env <- new.env()\n    for (i in objects(envir = env)) {\n        assign(i, get(i, envir = env), envir = Env)\n    }\n    newdata <- as.list(newdata)\n    for (i in names(newdata)) {\n        assign(i, newdata[[i]], envir = Env)\n    }\n    eval(form[[3]], envir = Env)\n}, rho = 428573.155357793), data, quantreg::nlrq(formula = dl_dt ~ v_max * exp(-k * abs(dz_dl - alpha)), data = data, start = list(k = k_init, alpha = -alpha_init), tau = tau_vmax, control = list(maxiter = 100, k = 2, InitialStepSize = 1, big = 1e+20, eps = 1e-07, beta = 0.97), trace = FALSE)\n* 90.817505173818\n* 50.209499435617\n* 0.726074067018474\n* 0.995\n* 0.95\n* | 16539.87| 30648.36| 120|  1|\n"
-    #> [7] "\n* list(resid = function () \nresid, fitted = function () \nrhs, formula = function () \nform, tau = function () \ntau, deviance = function () \ndev, gradient = function () \nattr(rhs, \"gradient\"), incr = function () \nqr.coef(QR, resid), setVarying = function (vary = rep(TRUE, length(useParams))) \n{\n    assign(\"useParams\", if (is.character(vary)) {\n        temp <- logical(length(useParams))\n        temp[unlist(ind[vary])] <- TRUE\n        temp\n    }\n    else if (is.logical(vary) && length(vary) != length(useParams)) \n        stop(\"setVarying : vary length must match length of parameters\")\n    else {\n        vary\n    }, envir = thisEnv)\n    gradCall[[length(gradCall)]] <<- useParams\n    if (all(useParams)) {\n        assign(\"setPars\", setPars.noVarying, envir = thisEnv)\n        assign(\"getPars\", getPars.noVarying, envir = thisEnv)\n        assign(\"getRHS\", getRHS.noVarying, envir = thisEnv)\n        assign(\"npar\", length(useParams), envir = thisEnv)\n    }\n    else {\n        assign(\"setPars\", setPars.varying, envir = thisEnv)\n        assign(\"getPars\", getPars.varying, envir = thisEnv)\n        assign(\"getRHS\", getRHS.varying, envir = thisEnv)\n        assign(\"npar\", length((1:length(useParams))[useParams]), envir = thisEnv)\n    }\n}, changeTau = function (newTau) \n{\n    assign(\"tau\", newTau, envir = thisEnv)\n    assign(\"dev\", sum(tau * pmax(resid, 0) + (tau - 1) * pmin(resid, 0)), envir = thisEnv)\n    return(dev)\n}, setPars = function (newPars) \n{\n    setPars(newPars)\n    assign(\"resid\", lhs - assign(\"rhs\", getRHS(), envir = thisEnv), envir = thisEnv)\n    assign(\"dev\", sum(tau * pmax(resid, 0) + (tau - 1) * pmin(resid, 0)), envir = thisEnv)\n    assign(\"QR\", qr(attr(rhs, \"gradient\")), envir = thisEnv)\n    return(QR$rank < min(dim(QR$qr)))\n}, getPars = function () \ngetPars(), getAllPars = function () \ngetPars(), getEnv = function () \nenv, trace = function () \ncat(format(dev), \": \", format(getPars()), \"\\n\"), Rmat = function () \nqr.R(QR), predict = function (newdata = list(), qr = FALSE) \n{\n    Env <- new.env()\n    for (i in objects(envir = env)) {\n        assign(i, get(i, envir = env), envir = Env)\n    }\n    newdata <- as.list(newdata)\n    for (i in names(newdata)) {\n        assign(i, newdata[[i]], envir = Env)\n    }\n    eval(form[[3]], envir = Env)\n}, rho = 428573.155357793), data, quantreg::nlrq(formula = dl_dt ~ v_max * exp(-k * abs(dz_dl - alpha)), data = data, start = list(k = k_init, alpha = -alpha_init), tau = tau_vmax, control = list(maxiter = 100, k = 2, InitialStepSize = 1, big = 1e+20, eps = 1e-07, beta = 0.97), trace = FALSE)\n* 90.817505173818\n* 50.209499435617\n* 0.726074067018474\n* 0.995\n* 0.95\n* | 19063.24| 34536.91| 120|  1|\n"
-    #> [8] "\n* list(resid = function () \nresid, fitted = function () \nrhs, formula = function () \nform, tau = function () \ntau, deviance = function () \ndev, gradient = function () \nattr(rhs, \"gradient\"), incr = function () \nqr.coef(QR, resid), setVarying = function (vary = rep(TRUE, length(useParams))) \n{\n    assign(\"useParams\", if (is.character(vary)) {\n        temp <- logical(length(useParams))\n        temp[unlist(ind[vary])] <- TRUE\n        temp\n    }\n    else if (is.logical(vary) && length(vary) != length(useParams)) \n        stop(\"setVarying : vary length must match length of parameters\")\n    else {\n        vary\n    }, envir = thisEnv)\n    gradCall[[length(gradCall)]] <<- useParams\n    if (all(useParams)) {\n        assign(\"setPars\", setPars.noVarying, envir = thisEnv)\n        assign(\"getPars\", getPars.noVarying, envir = thisEnv)\n        assign(\"getRHS\", getRHS.noVarying, envir = thisEnv)\n        assign(\"npar\", length(useParams), envir = thisEnv)\n    }\n    else {\n        assign(\"setPars\", setPars.varying, envir = thisEnv)\n        assign(\"getPars\", getPars.varying, envir = thisEnv)\n        assign(\"getRHS\", getRHS.varying, envir = thisEnv)\n        assign(\"npar\", length((1:length(useParams))[useParams]), envir = thisEnv)\n    }\n}, changeTau = function (newTau) \n{\n    assign(\"tau\", newTau, envir = thisEnv)\n    assign(\"dev\", sum(tau * pmax(resid, 0) + (tau - 1) * pmin(resid, 0)), envir = thisEnv)\n    return(dev)\n}, setPars = function (newPars) \n{\n    setPars(newPars)\n    assign(\"resid\", lhs - assign(\"rhs\", getRHS(), envir = thisEnv), envir = thisEnv)\n    assign(\"dev\", sum(tau * pmax(resid, 0) + (tau - 1) * pmin(resid, 0)), envir = thisEnv)\n    assign(\"QR\", qr(attr(rhs, \"gradient\")), envir = thisEnv)\n    return(QR$rank < min(dim(QR$qr)))\n}, getPars = function () \ngetPars(), getAllPars = function () \ngetPars(), getEnv = function () \nenv, trace = function () \ncat(format(dev), \": \", format(getPars()), \"\\n\"), Rmat = function () \nqr.R(QR), predict = function (newdata = list(), qr = FALSE) \n{\n    Env <- new.env()\n    for (i in objects(envir = env)) {\n        assign(i, get(i, envir = env), envir = Env)\n    }\n    newdata <- as.list(newdata)\n    for (i in names(newdata)) {\n        assign(i, newdata[[i]], envir = Env)\n    }\n    eval(form[[3]], envir = Env)\n}, rho = 428573.155357793), data, quantreg::nlrq(formula = dl_dt ~ v_max * exp(-k * abs(dz_dl - alpha)), data = data, start = list(k = k_init, alpha = -alpha_init), tau = tau_vmax, control = list(maxiter = 100, k = 2, InitialStepSize = 1, big = 1e+20, eps = 1e-07, beta = 0.97), trace = FALSE)\n* 90.817505173818\n* 50.209499435617\n* 0.726074067018474\n* 0.995\n* 0.95\n* | 11261.91| 37888.96| 120|  1|\n"
+    print(velocity)
+
+    #> $model
+    #> Nonlinear quantile regression
+    #>    model:  dl_dt ~ v_max * exp(-k * abs(dz_dl - alpha)) 
+    #>     data:  data 
+    #>      tau:  0.995 
+    #> deviance:  428573.2 
+    #>          k      alpha 
+    #>  0.7260741 50.2094994 
+    #> 
+    #> $vmax
+    #> [1] 90.81751
+    #> 
+    #> $alpha
+    #> [1] 50.2095
+    #> 
+    #> $k
+    #> [1] 0.7260741
+    #> 
+    #> $tau_vmax
+    #> [1] 0.995
+    #> 
+    #> $tau_nlrq
+    #> [1] 0.95
+    #> 
+    #> $data
+    #>        ID        x        y         z  dt         dx         dy         dz       dl    dl_dt        dz_dl
+    #>     1:  1 14184.43 37082.75 296.04593 120         NA         NA         NA       NA       NA           NA
+    #>     2:  1 13726.24 35062.09 417.70062 120  -458.1817 -2020.6651  121.65469 2071.960 17.26633  0.058714792
+    #>     3:  1 11211.38 31641.73  22.39640 120 -2514.8615 -3420.3624 -395.30422 4245.398 35.37832 -0.093113575
+    #>     4:  1 16539.87 30648.36 140.43419 120  5328.4904  -993.3627  118.03779 5420.293 45.16911  0.021777011
+    #>     5:  1 19063.24 34536.91 241.01436 120  2523.3705  3888.5521  100.58017 4635.541 38.62950  0.021697614
+    #>    ---                                                                                                   
+    #>  9996: 10 16832.04 33654.95 266.82159 120  4605.6630 -4322.2371  202.44404 6316.159 52.63466  0.032051764
+    #>  9997: 10 13210.97 38417.22 126.65144 120 -3621.0667  4762.2646 -140.17016 5982.582 49.85485 -0.023429709
+    #>  9998: 10 18523.71 37188.86  85.44712 120  5312.7413 -1228.3575  -41.20432 5452.897 45.44081 -0.007556409
+    #>  9999: 10 16082.61 34620.62 426.77194 120 -2441.1016 -2568.2359  341.32482 3543.277 29.52731  0.096330265
+    #> 10000: 10 11045.88 38322.00  20.53027 120 -5036.7365  3701.3801 -406.24168 6250.514 52.08762 -0.064993319
 
 The velocity list contains seven entries:
 
@@ -527,28 +558,78 @@ the type of costand direction of travel:
 
 Let’s take a look at the structure of the costRasters:
 
-\[1\] “brick(ncol=202, nrow=202, nl=5, xmn=12000, xmx=16040, ymn=32000,
-ymx=36040, crs=‘+proj=lcc +lat\_0=0 +lon\_0=-100 +lat\_1=48 +lat\_2=33
-+x\_0=0 +y\_0=0 +datum=WGS84 +units=m +no\_defs’)brick(ncol=202,
-nrow=202, nl=5, xmn=12000, xmx=16040, ymn=32000, ymx=36040,
-crs=‘+proj=lcc +lat\_0=0 +lon\_0=-100 +lat\_1=48 +lat\_2=33 +x\_0=0
-+y\_0=0 +datum=WGS84 +units=m +no\_defs’)brick(ncol=202, nrow=202, nl=5,
-xmn=12000, xmx=16040, ymn=32000, ymx=36040, crs=‘+proj=lcc +lat\_0=0
-+lon\_0=-100 +lat\_1=48 +lat\_2=33 +x\_0=0 +y\_0=0 +datum=WGS84 +units=m
-+no\_defs’)brick(ncol=202, nrow=202, nl=5, xmn=12000, xmx=16040,
-ymn=32000, ymx=36040, crs=‘+proj=lcc +lat\_0=0 +lon\_0=-100 +lat\_1=48
-+lat\_2=33 +x\_0=0 +y\_0=0 +datum=WGS84 +units=m
-+no\_defs’)brick(ncol=202, nrow=202, nl=5, xmn=12000, xmx=16040,
-ymn=32000, ymx=36040, crs=‘+proj=lcc +lat\_0=0 +lon\_0=-100 +lat\_1=48
-+lat\_2=33 +x\_0=0 +y\_0=0 +datum=WGS84 +units=m
-+no\_defs’)brick(ncol=202, nrow=202, nl=5, xmn=12000, xmx=16040,
-ymn=32000, ymx=36040, crs=‘+proj=lcc +lat\_0=0 +lon\_0=-100 +lat\_1=48
-+lat\_2=33 +x\_0=0 +y\_0=0 +datum=WGS84 +units=m +no\_defs’)” It’s a
-list of RasterStacks, each in a slot named after the type of cost (time,
-work, or energy) and the direction of travel (out from a node, or in to
-a node). Each RasterStack has one layer for each node, with the value at
-each point in the RasterLayer representing the absolute minimum cost
-necessary to travel between that given node to/from that given point.
+    structure(costRasters)
+    #> $time_in
+    #> class      : RasterStack 
+    #> dimensions : 202, 202, 40804, 5  (nrow, ncol, ncell, nlayers)
+    #> resolution : 20, 20  (x, y)
+    #> extent     : 12000, 16040, 32000, 36040  (xmin, xmax, ymin, ymax)
+    #> crs        : +proj=lcc +lat_0=0 +lon_0=-100 +lat_1=48 +lat_2=33 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs 
+    #> names      :     To_4,     To_5,     To_1,     To_2,     To_3 
+    #> min values :        0,        0,        0,        0,        0 
+    #> max values : 3444.914, 3758.710, 3259.500, 4047.210, 4562.430 
+    #> 
+    #> 
+    #> $time_out
+    #> class      : RasterStack 
+    #> dimensions : 202, 202, 40804, 5  (nrow, ncol, ncell, nlayers)
+    #> resolution : 20, 20  (x, y)
+    #> extent     : 12000, 16040, 32000, 36040  (xmin, xmax, ymin, ymax)
+    #> crs        : +proj=lcc +lat_0=0 +lon_0=-100 +lat_1=48 +lat_2=33 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs 
+    #> names      :   From_4,   From_5,   From_1,   From_2,   From_3 
+    #> min values :        0,        0,        0,        0,        0 
+    #> max values : 3876.413, 3400.299, 2956.157, 2998.247, 3432.596 
+    #> 
+    #> 
+    #> $work_in
+    #> class      : RasterStack 
+    #> dimensions : 202, 202, 40804, 5  (nrow, ncol, ncell, nlayers)
+    #> resolution : 20, 20  (x, y)
+    #> extent     : 12000, 16040, 32000, 36040  (xmin, xmax, ymin, ymax)
+    #> crs        : +proj=lcc +lat_0=0 +lon_0=-100 +lat_1=48 +lat_2=33 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs 
+    #> names      :    To_4,    To_5,    To_1,    To_2,    To_3 
+    #> min values :       0,       0,       0,       0,       0 
+    #> max values : 1527516, 1613303, 1372397, 1812929, 2050753 
+    #> 
+    #> 
+    #> $work_out
+    #> class      : RasterStack 
+    #> dimensions : 202, 202, 40804, 5  (nrow, ncol, ncell, nlayers)
+    #> resolution : 20, 20  (x, y)
+    #> extent     : 12000, 16040, 32000, 36040  (xmin, xmax, ymin, ymax)
+    #> crs        : +proj=lcc +lat_0=0 +lon_0=-100 +lat_1=48 +lat_2=33 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs 
+    #> names      :  From_4,  From_5,  From_1,  From_2,  From_3 
+    #> min values :       0,       0,       0,       0,       0 
+    #> max values : 1700369, 1508594, 1289124, 1226222, 1279139 
+    #> 
+    #> 
+    #> $energy_in
+    #> class      : RasterStack 
+    #> dimensions : 202, 202, 40804, 5  (nrow, ncol, ncell, nlayers)
+    #> resolution : 20, 20  (x, y)
+    #> extent     : 12000, 16040, 32000, 36040  (xmin, xmax, ymin, ymax)
+    #> crs        : +proj=lcc +lat_0=0 +lon_0=-100 +lat_1=48 +lat_2=33 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs 
+    #> names      :    To_4,    To_5,    To_1,    To_2,    To_3 
+    #> min values :       0,       0,       0,       0,       0 
+    #> max values : 1867313, 1971370, 1677907, 2189321, 2475059 
+    #> 
+    #> 
+    #> $energy_out
+    #> class      : RasterStack 
+    #> dimensions : 202, 202, 40804, 5  (nrow, ncol, ncell, nlayers)
+    #> resolution : 20, 20  (x, y)
+    #> extent     : 12000, 16040, 32000, 36040  (xmin, xmax, ymin, ymax)
+    #> crs        : +proj=lcc +lat_0=0 +lon_0=-100 +lat_1=48 +lat_2=33 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs 
+    #> names      :  From_4,  From_5,  From_1,  From_2,  From_3 
+    #> min values :       0,       0,       0,       0,       0 
+    #> max values : 2068809, 1834816, 1570855, 1502340, 1598683
+
+It’s a list of RasterStacks, each in a slot named after the type of cost
+(time, work, or energy) and the direction of travel (out from a node, or
+in to a node). Each RasterStack has one layer for each node, with the
+value at each point in the RasterLayer representing the absolute minimum
+cost necessary to travel between that given node to/from that given
+point.
 
     plot(costRasters$time_in[['To_5']],main='Time in Seconds to Travel to Point 5')
 
