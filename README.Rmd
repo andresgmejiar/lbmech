@@ -44,7 +44,7 @@ instead of simply the total energetic or metabolic expenditure.
 The example provided in this README provides a detailed guide employing
 the examples included in the individual function documentation and 
 generating all data from scratch. For applied/real-world examples, please
-see the provided vignettes. For most purposes, only five or six function calls
+see the forthcoming vignettes. For most purposes, only five or six function calls
 to the package are necessary. A 'quick start' guide summarizing the README
 example in as few function calls as possible is provided at the end of this file.
 
