@@ -19,9 +19,9 @@ to take place. Moreover, unlike similar tools such as `package` for `R`,
 processes) instead of simply the total energetic or metabolic
 expenditure.
 
-The example provided in this README provides a detailed guide employing
-the examples included in the individual function documentation and
-generating all data from scratch. For applied/real-world examples,
+The workflow demonstrated in this README provides a detailed guide
+employing the examples included in the individual function documentation
+and generating all data from scratch. For applied/real-world examples,
 please see the forthcoming vignettes. For most purposes, only five or
 six function calls to the package are necessary. A ‘quick start’ guide
 summarizing the README example in as few function calls as possible is
@@ -553,7 +553,7 @@ raster files were also exported to a `'CostRasters'` folder in `dir`.
     #> [26] "Work_To_1.tif"     "Work_To_2.tif"     "Work_To_3.tif"     "Work_To_4.tif"     "Work_To_5.tif"
 
 These rasters—be they stored as an object on the memory with
-`'object' %in% output` or on the hard drive with `'file' %in% object'`
+`'object' %in% output` or on the hard drive with `'file' %in% output'`
 are required to compute cost corridors. For a given series of origins
 and destinations (e.g. A -&gt; B -&gt; C) a cost raster gives the
 absolute minimum expectedtotal cost that would be required to route the

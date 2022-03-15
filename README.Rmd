@@ -41,7 +41,7 @@ for `R`, `lbmech` allows for the estimation of various types of energetic losses
 (due to kinematic locomotion, work against gravity, basal metabolic processes)
 instead of simply the total energetic or metabolic expenditure. 
 
-The example provided in this README provides a detailed guide employing
+The workflow demonstrated in this README provides a detailed guide employing
 the examples included in the individual function documentation and 
 generating all data from scratch. For applied/real-world examples, please
 see the forthcoming vignettes. For most purposes, only five or six function calls
@@ -404,7 +404,7 @@ print(list.files(normalizePath(paste0(dir,"/CostRasters"))))
 ```
 
 These rasters---be they stored as an object on the memory with `'object' %in% output`
-or on the hard drive with `'file' %in% object'` are required to compute cost 
+or on the hard drive with `'file' %in% output'` are required to compute cost 
 corridors. For a given series of origins and destinations (e.g. A -> B -> C)
 a cost raster gives the absolute minimum expectedtotal cost that would be required 
 to route the path through any given point on the landscape. The cells with the 

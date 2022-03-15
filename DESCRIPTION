@@ -1,6 +1,6 @@
 Package: lbmech
 Type: Package
-Title: A package to Study the Mechanics of Landscape and Behavior
+Title: A Package to Study the Mechanics of Landscape and Behavior
 Version: 0.2.0
 Author: Andres G. Mejia Ramon
 Maintainer: Andres G. Mejia Ramon <andres.mejiaramon@oist.jp>

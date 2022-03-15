@@ -1925,8 +1925,8 @@ getPaths <- function(world, nodes, z_fix, id = "ID", order = NULL, x = "x",
 #' Default is 0.
 #' @param dy The vertical offset from the origin (see \code{\link[raster]{origin}}).
 #' Default is 0.
-#' @return A RasterLayer object consisting of one cell, with resolution `res` and
-#'  the origin at `x = nx` and `y = ny`.
+#' @return A RasterLayer object consisting of four cells, with resolution \code{res} and
+#'  the origin at \code{x = nx} and \code{y = ny}.
 #' @importFrom raster rasterFromXYZ
 #' @importFrom raster origin<-
 #' @importFrom data.table data.table

@@ -19,8 +19,8 @@ Default is 0.}
 Default is 0.}
 }
 \value{
-A RasterLayer object consisting of one cell, with resolution `res` and
- the origin at `x = nx` and `y = ny`.
+A RasterLayer object consisting of four cells, with resolution \code{res} and
+ the origin at \code{x = nx} and \code{y = ny}.
 }
 \description{
 Create a raster that can be used to define
