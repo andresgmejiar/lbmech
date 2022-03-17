@@ -4,13 +4,19 @@
 \alias{regionMask}
 \title{Convert RasterLayer or SpatialPolygon* to "x,y"}
 \usage{
-regionMask(region, z_fix)
+regionMask(region, z_fix, precision = 2)
 }
 \arguments{
 \item{region}{An object of class SpatialPolygons* to convert to "x,y"}
 
 \item{z_fix}{A RasterLayer with the same origin and resolution as the
 \code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.}
+
+\item{precision}{An integer representing the number of decimals to retain
+in the x and y directions. For grid sizes with nice, round numbers precisions
+can be low. This factor is controled by \code{\link[raster]{rasterFromXYZ}} and
+must be the same as the one used to generate the 
+'world' with \code{\link[lbmech]{makeWorld}}. Default is 2.}
 }
 \value{
 A character vector containing all cells that fall in the same

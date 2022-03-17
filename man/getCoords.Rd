@@ -4,7 +4,7 @@
 \alias{getCoords}
 \title{Get "x,y" coordinates in appropriate format}
 \usage{
-getCoords(data, x = "x", y = "y", z_fix)
+getCoords(data, x = "x", y = "y", z_fix, precision = 2)
 }
 \arguments{
 \item{data}{An object of class data.table or something coercible to it
@@ -18,6 +18,12 @@ Required if \code{data} is not SpatialPointsDataFrame.}
 
 \item{z_fix}{A RasterLayer with the same origin and resolution as the
 \code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.}
+
+\item{precision}{An integer representing the number of decimals to retain
+in the x and y directions. For grid sizes with nice, round numbers precisions
+can be low. This factor is controled by \code{\link[raster]{rasterFromXYZ}} and
+must be the same as the one used to generate the 
+'world' with \code{\link[lbmech]{makeWorld}}. Default is 2.}
 }
 \value{
 A vector containing the requested coordinates in appropriate format

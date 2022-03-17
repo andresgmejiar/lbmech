@@ -17,6 +17,7 @@ getCosts(
   costs = "all",
   direction = "both",
   output = "object",
+  precision = 2,
   dir = tempdir()
 )
 }
@@ -69,6 +70,12 @@ are calculated. Ignored for \code{destination = 'pairs'}.}
 If \code{"object"} is included, then a list of RasterStacks will be returned.
 If \code{"file"} is included, then the appropriate cost rasters will be saved
 to the workspace directory \code{dir}. Ignored if \code{destination = 'pairs'}.}
+
+\item{precision}{An integer representing the number of decimals to retain
+in the x and y directions. For grid sizes with nice, round numbers precisions
+can be low. This factor is controled by \code{\link[raster]{rasterFromXYZ}} and
+must be the same as the one used to generate the 
+'world' with \code{\link[lbmech]{makeWorld}}. Default is 2.}
 
 \item{dir}{A filepath to the directory being used as the workspace.
 Default is \code{tempdir()} but unless the analyses will only be performed a few

@@ -14,6 +14,7 @@ makeWorld(
   neighbor_distance = 100,
   unit = "m",
   vals = "location",
+  precision = 2,
   dir = tempdir()
 )
 }
@@ -57,6 +58,11 @@ AND the appropriate world \code{.gz} file is NOT
 present in the workspace directory. In which case it must represent either the
 original DEM or a character string with the column representing the DEM
 filepath or URL.}
+
+\item{precision}{An integer representing the number of decimals to retain
+in the x and y directions. For grid sizes with nice, round numbers precisions
+can be low. This factor is controled by \code{\link[raster]{rasterFromXYZ}}.
+Default is 2.}
 
 \item{dir}{A filepath to the directory being used as the workspace.
 Default is \code{tempdir()} but unless the analyses will only be performed a few

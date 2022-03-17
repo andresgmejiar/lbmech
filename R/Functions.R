@@ -92,7 +92,11 @@ makeGrid <- function(dem, nx, ny, crs = NULL, prefix = "SECTOR_"){
   # Convert the data.table to an SPDF and assign it a unique TILEID
   polys <- apply(cS[,.(left,right,bottom,top)],
                  1, FUN = function(x) methods::as(extent(x), "SpatialPolygons"))
-  polys <- do.call("bind",polys)
+  if (nx * ny > 1){
+    polys <- do.call("bind",polys)
+  } else {
+    polys <- polys[[1]]
+  }
   polys <- SpatialPolygonsDataFrame(polys,
                                     data.frame("TILEID" =
                                                  paste0(prefix,1:length(polys))))
@@ -631,6 +635,10 @@ getVelocity <- function(data, x = 'x', y ='y', z = 'z',
 #' present in the workspace directory. In which case it must represent either the
 #' original DEM or a character string with the column representing the DEM
 #' filepath or URL.
+#' @param precision An integer representing the number of decimals to retain
+#' in the x and y directions. For grid sizes with nice, round numbers precisions
+#' can be low. This factor is controled by \code{\link[raster]{rasterFromXYZ}}.
+#' Default is 2.
 #' @param dir A filepath to the directory being used as the workspace.
 #' Default is \code{tempdir()} but unless the analyses will only be performed a few
 #' times it is highly recommended to define a permanent workspace.
@@ -694,7 +702,7 @@ getVelocity <- function(data, x = 'x', y ='y', z = 'z',
 #' @export 
 makeWorld <- function(tiles,polys,tile_id = 'TILEID',cut_slope,z_fix,
                       directions = 16, neighbor_distance = 100,
-                      unit = "m", vals = 'location',
+                      unit = "m", vals = 'location', precision = 2,
                       dir = tempdir()){
   # This bit is to silence the CRAN check warnings for literal column names
   from=to=..dem=z_f=z_i=x_f=x_i=y_f=y_i=dz=NULL
@@ -757,12 +765,20 @@ makeWorld <- function(tiles,polys,tile_id = 'TILEID',cut_slope,z_fix,
                                           projectRaster,
                                           to=dem[[1]],
                                           alignOnly=TRUE))
-      dem_temp$fun <- mean
-      dem_temp <- do.call(mosaic,dem_temp)
+      if (length(dem_temp) > 1){
+        dem_temp$fun <- mean
+        dem_temp <- do.call(mosaic,dem_temp)
+      } else {
+        dem_temp <- dem_temp[[1]]
+      }
       
       dem <- suppressWarnings(lapply(dem,projectRaster,to=dem_temp))
-      dem$fun <- mean
-      dem <- do.call(mosaic,dem)
+      if (length(dem) > 1){
+        dem$fun <- mean
+        dem <- do.call(mosaic,dem)
+      } else {
+        dem <- dem[[1]]
+      }
       
       # Fix the units if they weren't provided in meters
       if (unit == "km"){
@@ -810,7 +826,7 @@ makeWorld <- function(tiles,polys,tile_id = 'TILEID',cut_slope,z_fix,
                  x_f = xFromCell(dem,to), y_f = yFromCell(dem,to))
       ][, `:=`(dz = z_f - z_i)
       ][, (c("x_i","y_i","x_f","y_f")) :=
-          lapply(.SD,round,2),
+          lapply(.SD,round,precision),
         .SDcols = c("x_i","y_i","x_f","y_f")
       ][, `:=`(from = paste(x_i,y_i,sep=","),
                to = paste(x_f,y_f,sep=","))
@@ -834,6 +850,11 @@ makeWorld <- function(tiles,polys,tile_id = 'TILEID',cut_slope,z_fix,
 #' @param region An object of class SpatialPolygons* to convert to "x,y"
 #' @param z_fix A RasterLayer with the same origin and resolution as the
 #' \code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.
+#' @param precision An integer representing the number of decimals to retain
+#' in the x and y directions. For grid sizes with nice, round numbers precisions
+#' can be low. This factor is controled by \code{\link[raster]{rasterFromXYZ}} and
+#' must be the same as the one used to generate the 
+#' 'world' with \code{\link[lbmech]{makeWorld}}. Default is 2.
 #' @return A character vector containing all cells that fall in the same
 #' location as the input 'region'.
 #' @importFrom raster resample
@@ -862,7 +883,7 @@ makeWorld <- function(tiles,polys,tile_id = 'TILEID',cut_slope,z_fix,
 #' maskedCells <- regionMask(region = region, z_fix = dem)
 #' 
 #' @export
-regionMask <- function(region, z_fix){
+regionMask <- function(region, z_fix, precision = 2){
   # This bit is to silence the CRAN check warnings for literal column names
   x=y=NULL
   #
@@ -875,8 +896,8 @@ regionMask <- function(region, z_fix){
     stop("Inappropriate Region Object. Only SpatialPolygons* or Raster allowed")
   }
   region <- which(!is.na(getValues(region)))
-  region <- data.table(x = round(xFromCell(z_fix, region),2),
-                       y = round(yFromCell(z_fix, region),2))
+  region <- data.table(x = round(xFromCell(z_fix, region),precision),
+                       y = round(yFromCell(z_fix, region),precision))
   region[, `:=`(coord = paste(x,y,sep=','), x = NULL, y = NULL)]
   return(region$coord)
 }
@@ -1166,6 +1187,11 @@ calculateCosts <- function(world, method = 'kuo', m = NULL, v_max = NULL,
 #' Required if \code{data} is not SpatialPointsDataFrame.
 #' @param z_fix A RasterLayer with the same origin and resolution as the
 #' \code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.
+#' @param precision An integer representing the number of decimals to retain
+#' in the x and y directions. For grid sizes with nice, round numbers precisions
+#' can be low. This factor is controled by \code{\link[raster]{rasterFromXYZ}} and
+#' must be the same as the one used to generate the 
+#' 'world' with \code{\link[lbmech]{makeWorld}}. Default is 2.
 #' @return A vector containing the requested coordinates in appropriate format
 #' in the same order as the input data.
 #' @importFrom data.table :=
@@ -1191,7 +1217,7 @@ calculateCosts <- function(world, method = 'kuo', m = NULL, v_max = NULL,
 #' # Get the coordinates
 #' points$Cell <- getCoords(points, z_fix = dem)
 #' @export
-getCoords <- function(data, x = "x", y = "y", z_fix){
+getCoords <- function(data, x = "x", y = "y", z_fix, precision = 2){
   # This bit is to silence the CRAN check warnings for literal column names
   ..x=..y=Cell=..poi=NULL
   # End
@@ -1200,7 +1226,7 @@ getCoords <- function(data, x = "x", y = "y", z_fix){
   for (i in 1:nrow(data)){
     centroid <- data[i, .(x = get(..x),y = get(..y))]
     poi <- cellFromXY(z_fix, centroid[,.(x,y)])
-    poi <- paste(round(xyFromCell(z_fix, poi),2), collapse = ",")
+    poi <- paste(round(xyFromCell(z_fix, poi),precision), collapse = ",")
     data[i, Cell := ..poi]
   }
   return(data$Cell)
@@ -1275,6 +1301,11 @@ getCoords <- function(data, x = "x", y = "y", z_fix){
 #' @param dir A filepath to the directory being used as the workspace.
 #' Default is \code{tempdir()} but unless the analyses will only be performed a few
 #' times it is highly recommended to define a permanent workspace.
+#' @param precision An integer representing the number of decimals to retain
+#' in the x and y directions. For grid sizes with nice, round numbers precisions
+#' can be low. This factor is controled by \code{\link[raster]{rasterFromXYZ}} and
+#' must be the same as the one used to generate the 
+#' 'world' with \code{\link[lbmech]{makeWorld}}. Default is 2.
 #' @return A list, with entries for each combination of selected \code{costs}
 #' and \code{directions}. The object class of the list entries depends on the
 #' \code{destination} and \code{output} parameters:
@@ -1351,7 +1382,7 @@ getCoords <- function(data, x = "x", y = "y", z_fix){
 #' @export
 getCosts <- function(world, from, to = NULL, id = 'ID', z_fix = NULL, x = "x", y = "y",
                      destination = 'pairs', region = NULL, costs = 'all',
-                     direction = 'both', output = 'object',
+                     direction = 'both', output = 'object', precision = 2,
                      dir = tempdir()){
   # This bit is to silence the CRAN check warnings for literal column names
   ..id=..x=..y=dt=dW_l=dE_l=Var2=value=Var1=Cell=From_ID=ID=..cost=..d=Value=NULL
@@ -1382,7 +1413,7 @@ getCosts <- function(world, from, to = NULL, id = 'ID', z_fix = NULL, x = "x", y
   }
   # Coerce to data.table
   from <- as.data.table(from)[,.(ID = get(..id), x = get(..x), y = get(..y))]
-  from$Cell <- getCoords(from, z_fix = z_fix)
+  from$Cell <- getCoords(from, z_fix = z_fix, precision = precision)
   
   # Do the same for the destination UNLESS it's set as "all".
   # If it's empty, then from is the same as to.
@@ -1397,7 +1428,7 @@ getCosts <- function(world, from, to = NULL, id = 'ID', z_fix = NULL, x = "x", y
       }
       
       to <- as.data.table(to)[,.(ID = get(..id), x = get(..x), y = get(..y))]
-      to$Cell <- getCoords(to, z_fix = z_fix)
+      to$Cell <- getCoords(to, z_fix = z_fix, precision = precision)
     } else {
       to <- from
     }
@@ -1734,6 +1765,11 @@ makeCorridor <- function(rasters = tempdir(), order, costs = "all"){
 #' \code{costs = 'all'} is shorthand for \code{costs = c("time","work","energy")}
 #' while \code{costs = 'energetics'} is shorthand for \code{c("work","energy")}.
 #' Default is \code{'all'}.
+#' @param precision An integer representing the number of decimals to retain
+#' in the x and y directions. For grid sizes with nice, round numbers precisions
+#' can be low. This factor is controled by \code{\link[raster]{rasterFromXYZ}} and
+#' must be the same as the one used to generate the 
+#' 'world' with \code{\link[lbmech]{makeWorld}}. Default is 2.
 #' @return SpatialLinesDataFrames representing least-cost paths. For each
 #' cost, each entry within the SpatialLinesDataFrame object represents
 #' a single leg of the journey, sorted in the original path order.
@@ -1801,7 +1837,7 @@ makeCorridor <- function(rasters = tempdir(), order, costs = "all"){
 #' #plot(paths$time,add=TRUE)
 #' @export
 getPaths <- function(world, nodes, z_fix, id = "ID", order = NULL, x = "x",
-                     y = "y", region = NULL, costs = 'all'){
+                     y = "y", region = NULL, costs = 'all', precision = 2){
   # This bit is to silence the CRAN check warnings for literal column names
   from=to=..id=..x=..y=ID=Cell=V1=V2=TempID=dt=dW_l=dE_l=NULL
   #
@@ -1828,7 +1864,7 @@ getPaths <- function(world, nodes, z_fix, id = "ID", order = NULL, x = "x",
   }
   # Coerce to data.table
   nodes <- as.data.table(nodes)[,.(ID = get(..id), x = get(..x), y = get(..y))]
-  nodes$Cell <- getCoords(nodes, z_fix = z_fix)
+  nodes$Cell <- getCoords(nodes, z_fix = z_fix, precision = precision)
   
   # If no order is given, assume the node object is already in the desired order
   if (is.null(order)){

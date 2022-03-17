@@ -13,7 +13,8 @@ getPaths(
   x = "x",
   y = "y",
   region = NULL,
-  costs = "all"
+  costs = "all",
+  precision = 2
 )
 }
 \arguments{
@@ -51,6 +52,12 @@ to constrain the \code{world} more than it may already have been.}
 \code{costs = 'all'} is shorthand for \code{costs = c("time","work","energy")}
 while \code{costs = 'energetics'} is shorthand for \code{c("work","energy")}.
 Default is \code{'all'}.}
+
+\item{precision}{An integer representing the number of decimals to retain
+in the x and y directions. For grid sizes with nice, round numbers precisions
+can be low. This factor is controled by \code{\link[raster]{rasterFromXYZ}} and
+must be the same as the one used to generate the 
+'world' with \code{\link[lbmech]{makeWorld}}. Default is 2.}
 }
 \value{
 SpatialLinesDataFrames representing least-cost paths. For each
