@@ -12,6 +12,7 @@ makeWorld(
   z_fix,
   directions = 16,
   neighbor_distance = 100,
+  keep_z = "dz",
   unit = "m",
   vals = "location",
   precision = 2,
@@ -31,7 +32,7 @@ output of the \code{\link[lbmech]{makeGrid}} function.}
 in the 'polys' polygon containing the unique Tile IDs. Default is \code{tile_id = 'TILEID'}}
 
 \item{cut_slope}{A number representing the dimensionless maximum slope
-of ascent/descent.}
+of ascent/descent. To ignore, set \code{cut_slope = Inf}.}
 
 \item{z_fix}{A raster that will define the resolution, origin, and
 projection information for the entire "world" of possible movement. Note that
@@ -47,6 +48,14 @@ that tiles are buffered. In other words, to ensure that all transitions in the
 'world' are recorded, files for each tile will contain a number of observations
 that fall outside of the tile in other ones. Default is 100 m, but adjust
 on raster size.}
+
+\item{keep_z}{A \code{NULL}, character string, or character vector consisting of 
+one, two, or three of (respectively) \code{c('z_i','z_f','dz')} indicating which
+of the initial or final cell's values should be stored in the output tensor.
+\code{keep_z = 'all'} is shorthand for \code{c('z_i','z_f','dz')}.
+Since the energetic calculations only depend on a *change* in elevation, 
+the default is \code{'dz'}. However, if the specific origin or destination
+values are needed this should me modified accordingly.}
 
 \item{unit}{One of \code{c("m", "km", "ft", "mi")}, representing the unit of the DEM.
 All will be converted to meters, which is the default.}
@@ -70,7 +79,7 @@ times it is highly recommended to define a permanent workspace.}
 }
 \value{
 A \code{.gz} file for each sector named after its sector id,
-containing a data.table with three columns:
+containing a data.table with three columns in the default setting:
 
 (1) \code{$from}, a character string of all possible origin cells in format "x,y",
 rounded to the next-lowest integer
@@ -79,6 +88,10 @@ rounded to the next-lowest integer
 rounded to the next-lowest integer
 
 (3) \code{$dz}, an integer representing the change in elevation for each origin-destination pair
+
+Additionally, \code{$z_i} and \code{$z_f} columns containing the values of the
+initial and final cells may appear depending on the setting of the 
+\code{keep_z} parameter.
 }
 \description{
 Function that defines the grid that can be traversed--the "world"--as well as the
@@ -87,6 +100,13 @@ time-intensive function. It first checks to see if the required transition \code
 files have already been created in the \code{dir} workspace. If not, it checks to see if the
 DEMs required to generate the transition \code{.gz} files have been downloaded/cropped,
 and generates the latter if so. If not, it downloads/crops them and proceeds.
+}
+\details{
+The default parameters are sufficient for a workflow involving calculating
+costs with the \code{\link[lbmech]{calculateCosts}} function. However, if
+non-energetic analyses are desired, or if the user wishes to employ functions
+relying on the raw values at each cell (not just the *difference*), \code{keep_z}
+should be modified accordingly.
 }
 \examples{
 # Generate a DEM

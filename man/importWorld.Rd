@@ -10,6 +10,9 @@ importWorld(
   polys,
   banned = NULL,
   tile_id = "TILEID",
+  xy1 = FALSE,
+  xy2 = FALSE,
+  dl = FALSE,
   dir = tempdir(),
   ...
 )
@@ -33,6 +36,20 @@ the area defined by \code{polys}}
 \item{tile_id}{A character string representing the name of the column
 in the \code{polys} polygon containing the unique Tile IDs. Default is \code{tile_id = 'TILEID'}}
 
+\item{xy1}{A logical \code{TRUE} or \code{FALSE} indicating whether to generate
+unique numeric columns for the x and y coordinates of the starting points.
+Default is \code{FALSE}, and is not needed for the 
+\code{\link[lbmech]{calculateCosts}} function, which generates them on its own.}
+
+\item{xy2}{A logical \code{TRUE} or \code{FALSE} indicating whether to generate
+unique numeric columns for the x and y coordinates of the ending points.
+Default is \code{FALSE}, and is not needed for the 
+\code{\link[lbmech]{calculateCosts}} function.}
+
+\item{dl}{A logical \code{TRUE} or \code{FALSE} indicating whether to 
+Default is \code{FALSE}, and is not needed for the 
+\code{\link[lbmech]{calculateCosts}} function, which generates it on its own.}
+
 \item{dir}{A filepath to the directory being used as the workspace.
 Default is \code{tempdir()} but unless the analyses will only be performed a few
 times it is highly recommended to define a permanent workspace.}
@@ -40,7 +57,7 @@ times it is highly recommended to define a permanent workspace.}
 \item{...}{Additional arguments to pass to \code{\link[lbmech]{makeWorld}}}
 }
 \value{
-An object of class data.table containing three columns:
+An object of class data.table containing three  under the default settings:
 
 (1) \code{$from}, a character string of all possible origin cells in format "x,y",
 rounded to the next-lowest integer
@@ -49,12 +66,29 @@ rounded to the next-lowest integer
 rounded to the next-lowest integer
 
 (3) \code{$dz}, an integer representing the change in elevation for each origin-destination pair
+
+If \code{xy1} and/or \code{xy2} are \code{TRUE}, then an additional columns
+for the start and/or end 'x' and 'y' coordinates are included (e.g. \code{$x_i}
+for the initial 'x' and \code{$y_f} for the final 'y'). If \code{dl = TRUE},
+then a final \code{$dl} column is added with the total displacement.
 }
 \description{
 A function that for a given region imports all cells from the
 transition \code{.gz} files. If such files have not yet been generated,
 they can be created by passing along the necessary parameters to this
 function as with \code{\link[lbmech]{makeWorld}}.
+}
+\details{
+The default parameters are sufficient for a workflow involving calculating
+costs with the \code{\link[lbmech]{calculateCosts}} function. However, if
+non-energetic analyses are desired, or if the user wishes to employ functions
+relying on the coordinates of each cell or the distance traveled in each
+segment, \code{xy1}, \code{xy2} and \code{dl} should be modified accordingly.
+
+After running this function, the user may plug in the output world into
+the \code{\link[lbmech]{calculateCosts}} function. Alternatively, the user
+may perform algebraic operations using any of the 
+\code{c('x_i','x_f','y_i','y_f','z_i','z_f','dl','dz')} columns.
 }
 \examples{
 

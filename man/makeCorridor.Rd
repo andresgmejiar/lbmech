@@ -22,7 +22,11 @@ to the ID names for the \code{from} features used in the \code{\link[lbmech]{get
 function and must have previously been calculated}
 
 \item{costs}{A character vector containing any combination of the strings
-\code{c("time","work","energy")}. This selects which types of costs will be calculated.
+\code{c("time","work","energy")} if the input world data.table is the
+output of of the \code{\link[lbmech]{calculateCosts}} function. Otherwise
+a character string or vector containing the names of the columns where the 
+cost values are stored in the custom-produced data.table.
+This selects which types of costs will be calculated.
 \code{costs = 'all'} is shorthand for \code{costs = c("time","work","energy")}
 while \code{costs = 'energetics'} is shorthand for \code{c("work","energy")}.
 Default is \code{'all'}. Note that these must have previously been calculated.}

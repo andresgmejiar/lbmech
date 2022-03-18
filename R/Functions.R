@@ -602,6 +602,12 @@ getVelocity <- function(data, x = 'x', y ='y', z = 'z',
 #' files have already been created in the \code{dir} workspace. If not, it checks to see if the
 #' DEMs required to generate the transition \code{.gz} files have been downloaded/cropped,
 #' and generates the latter if so. If not, it downloads/crops them and proceeds.
+#' 
+#' The default parameters are sufficient for a workflow involving calculating
+#' costs with the \code{\link[lbmech]{calculateCosts}} function. However, if
+#' non-energetic analyses are desired, or if the user wishes to employ functions
+#' relying on the raw values at each cell (not just the *difference*), \code{keep_z}
+#' should be modified accordingly. 
 #'
 #' @title Define which cells are adjacent
 #' @param tiles A character vector--such as the output to
@@ -613,7 +619,7 @@ getVelocity <- function(data, x = 'x', y ='y', z = 'z',
 #' @param tile_id A character string representing the name of the column
 #' in the 'polys' polygon containing the unique Tile IDs. Default is \code{tile_id = 'TILEID'}
 #' @param cut_slope A number representing the dimensionless maximum slope
-#' of ascent/descent.
+#' of ascent/descent. To ignore, set \code{cut_slope = Inf}.
 #' @param z_fix A raster that will define the resolution, origin, and
 #' projection information for the entire "world" of possible movement. Note that
 #' it does NOT need the same extent.
@@ -626,6 +632,13 @@ getVelocity <- function(data, x = 'x', y ='y', z = 'z',
 #' 'world' are recorded, files for each tile will contain a number of observations
 #' that fall outside of the tile in other ones. Default is 100 m, but adjust
 #' on raster size.
+#' @param keep_z A \code{NULL}, character string, or character vector consisting of 
+#' one, two, or three of (respectively) \code{c('z_i','z_f','dz')} indicating which
+#' of the initial or final cell's values should be stored in the output tensor.
+#' \code{keep_z = 'all'} is shorthand for \code{c('z_i','z_f','dz')}.
+#' Since the energetic calculations only depend on a *change* in elevation, 
+#' the default is \code{'dz'}. However, if the specific origin or destination
+#' values are needed this should me modified accordingly. 
 #' @param unit One of \code{c("m", "km", "ft", "mi")}, representing the unit of the DEM.
 #' All will be converted to meters, which is the default.
 #' @param vals A character string or a RasterLayer object. Ignored unless the
@@ -643,7 +656,7 @@ getVelocity <- function(data, x = 'x', y ='y', z = 'z',
 #' Default is \code{tempdir()} but unless the analyses will only be performed a few
 #' times it is highly recommended to define a permanent workspace.
 #' @return A \code{.gz} file for each sector named after its sector id,
-#' containing a data.table with three columns:
+#' containing a data.table with three columns in the default setting:
 #'
 #' (1) \code{$from}, a character string of all possible origin cells in format "x,y",
 #' rounded to the next-lowest integer
@@ -652,6 +665,10 @@ getVelocity <- function(data, x = 'x', y ='y', z = 'z',
 #' rounded to the next-lowest integer
 #'
 #' (3) \code{$dz}, an integer representing the change in elevation for each origin-destination pair
+#' 
+#' Additionally, \code{$z_i} and \code{$z_f} columns containing the values of the
+#' initial and final cells may appear depending on the setting of the 
+#' \code{keep_z} parameter.
 #' @importFrom raster res
 #' @importFrom raster projectRaster
 #' @importFrom raster mosaic
@@ -701,13 +718,13 @@ getVelocity <- function(data, x = 'x', y ='y', z = 'z',
 #'           cut_slope = 0.5, z_fix = dem, dir = dir)
 #' @export 
 makeWorld <- function(tiles,polys,tile_id = 'TILEID',cut_slope,z_fix,
-                      directions = 16, neighbor_distance = 100,
+                      directions = 16, neighbor_distance = 100, keep_z = 'dz',
                       unit = "m", vals = 'location', precision = 2,
                       dir = tempdir()){
   # This bit is to silence the CRAN check warnings for literal column names
-  from=to=..dem=z_f=z_i=x_f=x_i=y_f=y_i=dz=NULL
+  from=to=..dem=z_f=z_i=x_f=x_i=y_f=y_i=dz=..cols=NULL
+  rm(..cols)
   #
-  
   
   dir <- normalizePath(dir)
   units <- c("m","km","ft","mi")
@@ -722,6 +739,10 @@ makeWorld <- function(tiles,polys,tile_id = 'TILEID',cut_slope,z_fix,
     contiguity <- 2
   } else{
     contiguity <- base::ceiling(max(nrow(directions),ncol(directions)))
+  }
+  
+  if (all(keep_z == 'all')){
+    keep_z <- c("dz","z_i","z_f")
   }
   
   
@@ -824,7 +845,6 @@ makeWorld <- function(tiles,polys,tile_id = 'TILEID',cut_slope,z_fix,
       adj[, `:=`(z_i = ..dem[from], z_f = ..dem[to],
                  x_i = xFromCell(dem,from), y_i = yFromCell(dem,from),
                  x_f = xFromCell(dem,to), y_f = yFromCell(dem,to))
-      ][, `:=`(dz = z_f - z_i)
       ][, (c("x_i","y_i","x_f","y_f")) :=
           lapply(.SD,round,precision),
         .SDcols = c("x_i","y_i","x_f","y_f")
@@ -832,11 +852,16 @@ makeWorld <- function(tiles,polys,tile_id = 'TILEID',cut_slope,z_fix,
                to = paste(x_f,y_f,sep=","))
       ]
       
+      if ('dz' %in% keep_z){
+        adj[, `:=`(dz = z_f - z_i)]
+      }
+      
       adj <- stats::na.omit(adj)
       
       # This exports the cost tensor so that it can be called later by
       # the lbm.distance tool to calculate paths and catchments
-      fwrite(adj[,.(from,to,dz)],
+      cols <- c("from","to",keep_z)
+      fwrite(adj[,..cols],
              file = normalizePath(paste0(rd,"/",i,"_Tensor.gz"),mustWork=FALSE))
       unlink(tensors,recursive=TRUE)
     }
@@ -906,7 +931,17 @@ regionMask <- function(region, z_fix, precision = 2){
 #' transition \code{.gz} files. If such files have not yet been generated,
 #' they can be created by passing along the necessary parameters to this
 #' function as with \code{\link[lbmech]{makeWorld}}.
-#'
+#' 
+#' The default parameters are sufficient for a workflow involving calculating
+#' costs with the \code{\link[lbmech]{calculateCosts}} function. However, if
+#' non-energetic analyses are desired, or if the user wishes to employ functions
+#' relying on the coordinates of each cell or the distance traveled in each
+#' segment, \code{xy1}, \code{xy2} and \code{dl} should be modified accordingly.
+#' 
+#' After running this function, the user may plug in the output world into
+#' the \code{\link[lbmech]{calculateCosts}} function. Alternatively, the user
+#' may perform algebraic operations using any of the 
+#' \code{c('x_i','x_f','y_i','y_f','z_i','z_f','dl','dz')} columns.
 #' @title Import a world where movement is possible
 #' @param region An object of class RasterLayer or SpatialPolygons*
 #' representing the total area where movement is possible. Must lie within
@@ -924,8 +959,19 @@ regionMask <- function(region, z_fix, precision = 2){
 #' @param dir A filepath to the directory being used as the workspace.
 #' Default is \code{tempdir()} but unless the analyses will only be performed a few
 #' times it is highly recommended to define a permanent workspace.
+#' @param xy1 A logical \code{TRUE} or \code{FALSE} indicating whether to generate
+#' unique numeric columns for the x and y coordinates of the starting points.
+#' Default is \code{FALSE}, and is not needed for the 
+#' \code{\link[lbmech]{calculateCosts}} function, which generates them on its own.
+#' @param xy2 A logical \code{TRUE} or \code{FALSE} indicating whether to generate
+#' unique numeric columns for the x and y coordinates of the ending points.
+#' Default is \code{FALSE}, and is not needed for the 
+#' \code{\link[lbmech]{calculateCosts}} function. 
+#' @param dl A logical \code{TRUE} or \code{FALSE} indicating whether to 
+#' Default is \code{FALSE}, and is not needed for the 
+#' \code{\link[lbmech]{calculateCosts}} function, which generates it on its own.
 #' @param ... Additional arguments to pass to \code{\link[lbmech]{makeWorld}}
-#' @return An object of class data.table containing three columns:
+#' @return An object of class data.table containing three  under the default settings:
 #'
 #' (1) \code{$from}, a character string of all possible origin cells in format "x,y",
 #' rounded to the next-lowest integer
@@ -934,6 +980,11 @@ regionMask <- function(region, z_fix, precision = 2){
 #' rounded to the next-lowest integer
 #'
 #' (3) \code{$dz}, an integer representing the change in elevation for each origin-destination pair
+#' 
+#' If \code{xy1} and/or \code{xy2} are \code{TRUE}, then an additional columns
+#' for the start and/or end 'x' and 'y' coordinates are included (e.g. \code{$x_i}
+#' for the initial 'x' and \code{$y_f} for the final 'y'). If \code{dl = TRUE},
+#' then a final \code{$dl} column is added with the total displacement. 
 #' @importFrom data.table data.table
 #' @importFrom data.table fread
 #' @examples 
@@ -967,9 +1018,10 @@ regionMask <- function(region, z_fix, precision = 2){
 #'                      cut_slope = 0.5, z_fix = dem, dir = dir)
 #' @export
 importWorld <- function(region, z_fix, polys, banned = NULL,
-                        tile_id = "TILEID", dir = tempdir(), ...){
+                        tile_id = "TILEID", xy1 = FALSE, xy2 = FALSE, 
+                        dl = FALSE, dir = tempdir(), ...){
   # This bit is to silence the CRAN check warnings for literal column names
-  from=to=NULL
+  from=to=dz=x_f=x_i=y_f=y_i=z_f=z_i=NULL
   #
   
   # First determine which tiles to import,
@@ -1005,6 +1057,46 @@ importWorld <- function(region, z_fix, polys, banned = NULL,
     Edges <- rbind(Edges, import)
     utils::setTxtProgressBar(pb,i)
   }
+  
+  # Convert to numeric any 'z' columns to numeric'
+  if ("dz" %in% names(Edges)){
+  Edges[, `:=`(dz = as.numeric(dz))]
+  }
+  if ("z_i" %in% names(Edges)){
+    Edges[, `:=`(z_i = as.numeric(z_i))]
+  }
+  if ("z_f" %in% names(Edges)){
+    Edges[, `:=`(z_f = as.numeric(z_f))]
+  }
+  
+  # If the user requests the tensor prepared such that origin
+  # XY coordinates are reported as numeric columns
+  if ((xy1 == TRUE) | (dl == TRUE)){
+    Edges[, c("x_i","y_i") := transpose(stringr::str_split(from,","))
+    ][, c("x_i","y_i") := lapply(.SD,as.numeric),
+      .SDcols = c("x_i","y_i")]
+  }
+  
+  # Destination XY coordinates as numeric columns
+  if ((xy2 == TRUE | dl == TRUE)){
+    Edges[, c("x_f","y_f") := transpose(stringr::str_split(to,","))
+    ][, c("x_f","y_f") := lapply(.SD,as.numeric),
+      .SDcols = c("x_f","y_f")]
+  }
+  
+  # If user wants the distance between cells
+  if (dl == TRUE){
+    Edges[, dl := sqrt((x_f - x_i)^2 + (y_f - y_i)^2)]
+    if (xy1 == FALSE){
+      Edges$x_i <- NULL
+      Edges$y_i <- NULL
+    }
+    if (xy2 == FALSE){
+      Edges$x_f <- NULL
+      Edges$y_f <- NULL
+    }
+  }
+
   return(Edges)
 }
 
@@ -1287,7 +1379,11 @@ getCoords <- function(data, x = "x", y = "y", z_fix, precision = 2){
 #' representing the total area where movement is possible. Optional; used
 #' to constrain the \code{world} more than it may already have been.
 #' @param costs A character vector containing any combination of the strings
-#' \code{c("time","work","energy")}. This selects which types of costs will be calculated.
+#' \code{c("time","work","energy")} if the input world data.table is the
+#' output of of the \code{\link[lbmech]{calculateCosts}} function. Otherwise
+#' a character string or vector containing the names of the columns where the 
+#' cost values are stored in the custom-produced data.table.
+#' This selects which types of costs will be calculated.
 #' \code{costs = 'all'} is shorthand for \code{costs = c("time","work","energy")}
 #' while \code{costs = 'energetics'} is shorthand for \code{c("work","energy")}.
 #' Default is \code{'all'}.
@@ -1471,12 +1567,12 @@ getCosts <- function(world, from, to = NULL, id = 'ID', z_fix = NULL, x = "x", y
     # appropriate cost variable
     if (all(cost == "time")){
       Graph <- igraph::graph_from_data_frame(world[,.(from,to,weight = dt)])
-    }
-    if (all(cost == "work")){
+    } else if (all(cost == "work")){
       Graph <- igraph::graph_from_data_frame(world[,.(from,to,weight = dW_l)])
-    }
-    if (all(cost == "energy")){
+    } else if (all(cost == "energy")){
       Graph <- igraph::graph_from_data_frame(world[,.(from,to,weight = dE_l)])
+    } else {
+      Graph <- igraph::graph_from_data_frame(world[,.(from,to,weight = get(cost))])
     }
     
     costVals <- data.table()
@@ -1601,7 +1697,11 @@ getCosts <- function(world, from, to = NULL, id = 'ID', z_fix = NULL, x = "x", y
 #' to the ID names for the \code{from} features used in the \code{\link[lbmech]{getCosts}}
 #' function and must have previously been calculated
 #' @param costs A character vector containing any combination of the strings
-#' \code{c("time","work","energy")}. This selects which types of costs will be calculated.
+#' \code{c("time","work","energy")} if the input world data.table is the
+#' output of of the \code{\link[lbmech]{calculateCosts}} function. Otherwise
+#' a character string or vector containing the names of the columns where the 
+#' cost values are stored in the custom-produced data.table.
+#' This selects which types of costs will be calculated.
 #' \code{costs = 'all'} is shorthand for \code{costs = c("time","work","energy")}
 #' while \code{costs = 'energetics'} is shorthand for \code{c("work","energy")}.
 #' Default is \code{'all'}. Note that these must have previously been calculated.
@@ -1696,10 +1796,10 @@ makeCorridor <- function(rasters = tempdir(), order, costs = "all"){
       
       from <- normalizePath(paste0(rd,"/",
                                    stringr::str_to_sentence(cost),"_",
-                                   starts,".tif"))
+                                   starts,".tif"),mustWork = FALSE)
       to <- normalizePath(paste0(rd,"/",
                                  stringr::str_to_sentence(cost),"_",
-                                 stops,".tif"))
+                                 stops,".tif"),mustWork =FALSE)
       
       from <- lapply(from,raster)
       from <- stack(unlist(from))
@@ -1761,7 +1861,11 @@ makeCorridor <- function(rasters = tempdir(), order, costs = "all"){
 #' representing the total area where movement is possible. Optional; used
 #' to constrain the \code{world} more than it may already have been.
 #' @param costs A character vector containing any combination of the strings
-#' \code{c("time","work","energy")}. This selects which types of costs will be calculated.
+#' \code{c("time","work","energy")} if the input world data.table is the
+#' output of of the \code{\link[lbmech]{calculateCosts}} function. Otherwise
+#' a character string or vector containing the names of the columns where the 
+#' cost values are stored in the custom-produced data.table.
+#' This selects which types of costs will be calculated.
 #' \code{costs = 'all'} is shorthand for \code{costs = c("time","work","energy")}
 #' while \code{costs = 'energetics'} is shorthand for \code{c("work","energy")}.
 #' Default is \code{'all'}.
@@ -1887,12 +1991,13 @@ getPaths <- function(world, nodes, z_fix, id = "ID", order = NULL, x = "x",
   for (cost in costs){
     if (cost == "time"){
       Graph <- igraph::graph_from_data_frame(world[,.(from,to,weight = dt)])
-    }
-    if (cost == "work"){
+    } else if (cost == "work"){
       Graph <- igraph::graph_from_data_frame(world[,.(from,to,weight = dW_l)])
-    }
-    if (cost == "energy"){
+    } else if (cost == "energy"){
       Graph <- igraph::graph_from_data_frame(world[,.(from,to,weight = dE_l)])
+    } else {
+      Graph <- igraph::graph_from_data_frame(world[,.(from,to,weight = get(cost))])
+
     }
     
     # Store each *segment* (leg) of each path in a list,

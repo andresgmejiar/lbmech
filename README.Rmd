@@ -29,22 +29,25 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-`lbmech` is a geospatial package for `R` to calculate time- and energy-based 
+`lbmech` is a geospatial package for `R` for least-cost path analysis in R.
+It contains additional tools to calculate time- and energy-based 
 costs-of-travel for humans and animals moving across the landscape. While 
 providing a similar functionality to the package `gdistance`, `lbmech` stores
 data and performs all linear algebra using the `data.table` package allowing
-for in-place modification of objects greatly increasing processing speed.
-`lbmech` also modularizes important aspects of the cost-distance workflow
-allowing for computationally-intensive and otherwise prohibitively-large
-operations to take place. Moreover, unlike similar tools such as `package`
-for `R`, `lbmech` allows for the estimation of various types of energetic losses
-(due to kinematic locomotion, work against gravity, basal metabolic processes)
-instead of simply the total energetic or metabolic expenditure. 
+for (1) in-place modification of objects greatly increasing processing speed,
+(2) bidirectional raster analysis describing accumulated costs to and from
+a node, and (3) additive and nonlinear transformations of large rasters without
+running into integer overflow limits. `lbmech` also modularizes important aspects 
+of the cost-distance workflow allowing for computationally-intensive and 
+otherwise prohibitively-large operations to take place. Moreover, unlike similar 
+tools such as `enerscape` for `R`, `lbmech` allows for the estimation of various 
+types of energetic losses (due to kinematic locomotion, work against gravity, 
+basal metabolic processes) instead of simply the total energetic or metabolic 
+expenditure. 
 
 The workflow demonstrated in this README provides a detailed guide employing
 the examples included in the individual function documentation and 
-generating all data from scratch. For applied/real-world examples, please
-see the forthcoming vignettes. For most purposes, only five or six function calls
+generating all data from scratch. For most purposes, only five or six function calls
 to the package are necessary. A 'quick start' guide summarizing the README
 example in as few function calls as possible is provided at the end of this file.
 
@@ -190,7 +193,9 @@ z_fix <- fix_z(res = res(dem)[1],      # Desired resolution
 
 ```
 
-### Part 2: Velocity data sources
+
+
+### Part 2: Velocity Data Sources
 
 The fundamental assumption behind the least-cost calculations is that
 humans and animals tend to prefer to walk at predictable speeds at a 
@@ -444,6 +449,7 @@ plot(paths$time, add=TRUE)
 
 
 ## Quick Start
+### For Energetic and Temporal Cost Calculations
 Assuming that we have (1) generated a `dem`, (2) location `points`, (3) high-resolution
 locational `data` representing the XY location of an animal, and (4) a `region` of 
 interest lying within the `dem`'s extent, the minimum required workflow to
@@ -480,4 +486,105 @@ corridors <- makeCorridor(rasters = dir, order = pathOrder)
 
 # Get that same least-cost path
 paths <- getPaths(world = world, nodes = points, z_fix = dem, order = pathOrder)
+```
+
+### Custom Cost Functions and Multivariate Costs 
+
+It's also possible to employ costs that aren't directly a function of the 
+difference in elevation between two points. This could be because the employed
+raster does not represent heights (such as a landcover raster), or because
+the required values are the raw ones (not just the difference). Neither case
+prohibits use of the workflow in Part 1. In such situations, it's important
+to bear in mind that `$dz` represents that difference in value. When
+the raw values are needed, the `keep_z` parameter in `makeWorld` should
+be a character vector including `c('z_i','z_f')`, and also `dz` when
+the difference between them is needed. If the raster is categorical (such as
+those representing discrete landcover types), `dz` should be omitted. If
+the origin x or y coordinates are needed, the `xy1` parameter in `importWorld`
+should be set to `TRUE`, and likewise for the destination coordinates and 
+`xy2` parameter. If the distance between the origin and destination are needed,
+`dl = TRUE`:
+
+```{r quickstart-custom, results='hide'}
+# Generate a categorical DEM
+n <- 5
+dem2 <- expand.grid(list(x = 1:(n * 100),
+                        y = 1:(n * 100))) / 100
+dem2 <- as.data.table(dem2)
+dem2[, z := sample(1:4,size=nrow(dem2),replace=TRUE)]
+dem2 <- rasterFromXYZ(dem2)
+extent(dem2) <- c(10000, 20000, 30000, 40000)
+crs(dem2) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
+
+# Export it so it doesn't just exist on the memory
+dir2 <- normalizePath(paste0(tempdir(),"/Categorical"),mustWork=FALSE)
+dir.create(dir2,showWarnings=FALSE)
+writeRaster(dem2, paste0(dir2,"/DEM2.tif"),format="GTiff",overwrite=TRUE)
+
+# Import raster, get the grid
+dem2 <- raster(paste0(dir2,"/DEM2.tif"))
+grid2 <- makeGrid(dem = dem2, nx = n, ny = n)
+
+world2 <- importWorld(region = region, polys = grid2, cut_slope = Inf,
+                      z_fix = dem, keep_z = c("z_i","z_f"), dl = TRUE, 
+                      dir = dir2)
+```
+Let's take a look at the structure of this new world data.table
+```{r world2}
+head(world2)
+```
+Unlike the output of `importWorld` above, this contains five columns, only
+sharing in common the `$from` and `$to` columns.Let's pretend that this raster represents landtypes,
+and for some reason travel between cells of the same landcover type are prohibited.
+Bearing in mind that since `distance = 16` a traveler could 'hop' over a single
+barrier cell, we can still apply that condition using a simple data.table 
+expression:
+
+```{r dropVals}
+world2 <- world2[z_i != z_f, ]
+```
+This drops all entries where `z_i == z_f`. Now let's calculate some imaginary costs.
+Let's say that the cost to travel from one landcover type to another is square of the
+landcover class integer times the destination class integer divided by the distance
+between the cells `dl`:
+```{r makeCosts}
+world2[, fakeCost := z_i^2 * z_f / dl]
+```
+
+Since we've used the same `z_fix` and `precision` values, any overlapping
+sections will have the same cell names as the example in Part 3. Thus, we can
+calculate different types of costs based on different types of landscape 
+variables. For example, if the total cost function we're interested is the
+product of `$fakeCost` from above and the gravitational potential energy `$dU_l`
+from part 3 we just need to merge the `world` data.tables, calculate the 
+total cost, and run `getCosts`, `makeCorridor`, and `getPaths` as above but
+specifying the new cost name. 
+
+```{r finalCosts-quiet, results='hide'}
+# Merge the worlds
+world3 <- merge(world[,.(from,to,dU_l)],
+                world2[,.(from,to,fakeCost)],
+                by=c("from","to"), all=FALSE)
+
+# Calculate our multivariate cost
+world3[, newCost := fakeCost * dU_l]
+
+# Get the total costs for the least-cost path between any point on the landscape
+# and all of the nodes; export as rasters but don't keep the object
+getCosts(world = world3, from = points, z_fix = dem, destination = 'all',
+         output = 'file', costs='newCost', dir = dir2)
+
+# Calculate the corridors for the path between nodes 1 -> 2 -> 5 -> 1 -> 4
+pathOrder <- c(1,2,5,1,4)
+corridors <- makeCorridor(rasters = dir2, order = pathOrder, cost='newCost')
+
+# Get that same least-cost path
+paths <- getPaths(world = world3, nodes = points, z_fix = dem, 
+                  order = pathOrder, cost='newCost')
+plot(corridors)
+plot(paths,add=TRUE)
+```
+```{r finalCosts-display, echo = FALSE}
+plot(corridors)
+plot(paths,add=TRUE)
 ```
