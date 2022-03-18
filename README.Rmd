@@ -29,28 +29,61 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-`lbmech` is a geospatial package for `R` for least-cost path analysis in R.
+`lbmech` is a geospatial package for least-cost path analysis in `R`.
 It contains additional tools to calculate time- and energy-based 
-costs-of-travel for humans and animals moving across the landscape. While 
-providing a similar functionality to the package `gdistance`, `lbmech` stores
-data and performs all linear algebra using the `data.table` package allowing
-for (1) in-place modification of objects greatly increasing processing speed,
-(2) bidirectional raster analysis describing accumulated costs to and from
-a node, and (3) additive and nonlinear transformations of large rasters without
-running into integer overflow limits. `lbmech` also modularizes important aspects 
-of the cost-distance workflow allowing for computationally-intensive and 
-otherwise prohibitively-large operations to take place. Moreover, unlike similar 
-tools such as `enerscape` for `R`, `lbmech` allows for the estimation of various 
+costs-of-travel for humans and animals moving across the landscape. 
+The general philosophy behind this package is that least-cost path analyses
+should always be simple, the most time-taking parts should be done at most
+once, and ideally that costs should be rooted in empirical reality. 
+
+In general terms, both `lbmech` and the deterministic functions of the library
+`gdistance` provide similar capabilities but with notable differences in 
+computation and ease-of-use.`gdistance` stores movement costs 
+as their reciprocal (*conductance* , i.e. $1/\textrm{resistance}$) in a 
+sparse matrix representing every possible transition between two cells on a raster.
+The use of conductance allows for most cell-to-cell transitions to be zero, since
+impossible transitions due to distance have a conductance of $1/\infty = 0$.
+However, the use of conductance makes it cumbersome to employ functions where
+f(0) != 0, requiring the use of index masking. This in turn encounters integer
+overflow errors with 'large' datasets that are nonetheless of a necessary
+size for most reasonable purposes. 
+
+`lbmech` stores data and performs all linear algebra using the `data.table` package,
+storing each possible movement as its own unique row, with entries for a from
+node, a to node, and either the difference in or raw final and initial values of
+the raster encountered during the transition. This allows for (1) in-place 
+modification of objects, greatly increasing processing speed; (2) bidirectional 
+raster analysis describing accumulated costs to and from a node, and 
+(3) additive, nonlinear, and multivariate transformations of large rasters and 
+independent considerations without running into integer overflow 
+limits. Since `lbmech` in the end is just a wrapper for applying `data.table` and
+`igraph` functions to rasters, it's easy to generate any arbitrary cost function
+using `data.table` syntax. 
+
+To ensure that the most computationally intensive steps only need to be performed
+once for many repeated analyses, `lbmech` also modularizes important aspects of
+the cost-distance workflow. This allows for ootherwise prohibitively-large 
+spatial regions and fine spatial resolutions to be considered. This is arguably
+necessary when land-based transport requires decision-making to be made 
+at scales on the order of 1-10 m. 
+
+Finally, to encourage the use of least-cost analysis rooted in empirical reality,
+`lbmech`'s default workflow is geared towards the study of time- and energy-
+based considerations when moving across a landscape (although the use of any
+cost function is possible as well). Unlike similar tools such as `enerscape` for
+`R` in this regard, `lbmech` allows for the estimation of various 
 types of energetic losses (due to kinematic locomotion, work against gravity, 
 basal metabolic processes) instead of simply the total energetic or metabolic 
 expenditure. 
 
-The workflow demonstrated in this README provides a detailed guide employing
+The workflow demonstrated in this README provides a detailed guide for 
+a hypothetical analysis of least-cost energetic analysis employing
 the examples included in the individual function documentation and 
 generating all data from scratch. For most purposes, only five or six function calls
 to the package are necessary. A 'quick start' guide summarizing the README
 example in as few function calls as possible is provided at the end of this file.
-
+Please note that all units are in SI: Kilograms for mass, meters for length,
+Joules for energy, seconds for time.
 
 ## Installation
 
@@ -69,7 +102,7 @@ set.seed(5574741)
 ```
 
 
-### Part 1: Topographic data sources
+### Part 1: Topographic Data Sources
 
 The first step in a typical `lbmech` workflow is defining the digital elevation
 model (DEM) to define as the topographic data source. 
@@ -109,7 +142,7 @@ plot(dem, main = "Digital Elevation Model")
     
 2. A SpatialPolygonsDataFrame object whose individual polygons represent
 sectors with unique DEM sources stored as a file path or URL in the data frame
-object. 
+object. You can often find these from state agencies.
     * As of the most recent version, `lbmech` supports file types 
     readible by `rgdal` and `raster`, as well as such files compressed in `gz` 
     and `zip` files--although the latter is likely to fail in Unix systems. 
@@ -169,30 +202,44 @@ tiles <- whichTiles(region = tiles, polys = grid)
 makeWorld(tiles = tiles, polys = grid, cut_slope = 0.5, z_fix = dem, dir = dir)
 ```
 `makeWorld` internally calls `getMap` so you do not need to prepare the data
-beforehand. A note about the parameters. The `cut_slope` is the magnitude of the 
-dimensionless slope beyond which movement is not possible. 
+beforehand. This, however, means that you will need to either erase the
+created directories or define a new workspace directory and regenerate all
+tensors from scratch if you later on wish to change any of the parameters
+used in `makeWorld.`A note about the parameters. The `cut_slope` is the 
+magnitude of the dimensionless slope beyond which movement is not possible. 
 
 `z_fix` merits special attention since its consistency will be required for
-most of the later functions in the workflow. `lbmech` allows for sector-defining
+most of the later functions in the workflow.`lbmech` allows for sector-defining
 grids pointing to DEM sources in different coordinate reference systems, spatial
 resolutions, and grid origins. However, the package requires a 'master' raster
 be designated that will define the projection, spatial resolution, and grid 
 origin to be used in the analyses. All data will be projected to these 
-'fixed' parameters. If your sector-defining grid points to a single
-raster such as the output of the `makeGrid` function, you can simply use the 
-original DEM as the `z_fix` parameter throughout. If the grid is custom or 
-comes from a third party, it is useful to designate a raster from within the 
-dataset as the master if the spatial resolution matches the desired unit of analysis.
-If not, you can make an appropriate `z_fix` using the `fix_z` function:
+'fixed' parameters. Really only the origin can be neglected from consideration,
+and generally to minimize space should be left at its default of zero.
+
+The spatial resolution should generally be of an order of magnitude comparable
+to the scale of decision-making in a real-world environment. For example, a
+90 m SRTM raster cell would generally result in paths much straighter than a 
+real individual would walk, while a 0.10 cm would result in paths much curlier
+than a real individual would walk. Thus, for humans a reasonable resolution might
+be between 1-10 m, while for ants it might be between 1-5 mm. 
+
+The raster projection should be selected
+to minimize distance distortion along different bearings---such as conformal
+projections. If your source DEM is of the appropriate resolution and projection,
+you can simply use the original DEM (or a constituent, if it's multiple sources) 
+as the `z_fix` parameter throughout. If none of these rasters are appropriate,
+you can make one using the `fix_z` function:
 
 ```{r fix_z}
-z_fix <- fix_z(res = res(dem)[1],      # Desired resolution
-               crs = crs(dem),         # Desired projection
-               dx  = origin(dem)[1],   # Desired horizontal offset
-               dy  = origin(dem)[2])   # Desired vertical offset
+z_fix <- fix_z(region = dem,              # Desired extent and projection
+               res    = res(dem),         # Desired resolution
+               dx     = origin(dem)[1],   # Desired horizontal offset
+               dy     = origin(dem)[2])   # Desired vertical offset
 
 ```
-
+Contrary to my advice, in this example we will set `z_fix = dem` since the 
+resolution is low enough to minimize computational time.
 
 
 ### Part 2: Velocity Data Sources

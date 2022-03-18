@@ -2066,30 +2066,42 @@ getPaths <- function(world, nodes, z_fix, id = "ID", order = NULL, x = "x",
 #' DEM has such properties you may use that.
 #' 
 #' @title Define the sampling grid
-#' @param res A numeric of length one or two nrepresenting the spatial resolution
-#' @param crs A \code{\link[raster]{crs}} object or character string containing
-#' projection information.
+#' @param region An object with coercible \code{\link[raster]{extent}} such 
+#' as a RasterLayer or SpatialPolygonDataFrame representing the total area
+#' where movement is possible.
+#' @param res A numeric of length one or two representing the spatial resolution.
+#' Default is 5. 
 #' @param dx The horizontal offset from the origin (see \code{\link[raster]{origin}}).
 #' Default is 0.
 #' @param dy The vertical offset from the origin (see \code{\link[raster]{origin}}).
 #' Default is 0.
-#' @return A RasterLayer object consisting of four cells, with resolution \code{res} and
+#' @return A RasterLayer object to which all values are snapped, with resolution \code{res} and
 #'  the origin at \code{x = nx} and \code{y = ny}.
 #' @importFrom raster rasterFromXYZ
 #' @importFrom raster origin<-
-#' @importFrom data.table data.table
 #' @examples 
-#' projection <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
-#' z_fix <- fix_z(res = 2, crs = projection)
+#' proj <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
+#' area <- extent(c(10000,20000,30000,40000))
+#' area <- as(area,'SpatialPolygons')
+#' crs(area) <- proj
+#' z_fix <- fix_z(region = area, res = 2)
 #' @export
-fix_z <- function(res, crs, dx = 0, dy = 0){
+fix_z <- function(region, res = 5, dx = 0, dy = 0){
   if (length(res) == 1){
     res <- c(res,res)
   }
-  z <- data.table(x = c(0,0,res[1],res[1]),
-                  y = c(0,res[2],0,res[2]),
-                  z = c(1,1,1,1))
-  z <- rasterFromXYZ(z, res = res, crs=crs)
+  
+  z <- expand.grid(
+    x = seq(from = extent(region)[1],
+            to = extent(region)[2],
+            by = res[1]),
+    y = seq(from = extent(region)[3],
+            to = extent(region)[4],
+            by = res[2]),
+    z = 0
+  )
+  
+  z <- rasterFromXYZ(z, crs=crs(region))
   origin(z) <- c(dx,dy)
   return(z)
 }
