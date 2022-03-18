@@ -655,6 +655,10 @@ getVelocity <- function(data, x = 'x', y ='y', z = 'z',
 #' @param dir A filepath to the directory being used as the workspace.
 #' Default is \code{tempdir()} but unless the analyses will only be performed a few
 #' times it is highly recommended to define a permanent workspace.
+#' @param FUN Function to deal with overlapping values for overlapping sectors.
+#' Default is \code{\link[base]{mean}}. See \code{\link[raster]{mosaic}}.
+#' @param sampling How to resample rasters. Default is \code{'bilinear'} interpolation,
+#' although \code{'ngb'} nearest neighbor is available for categorical rasters. 
 #' @return A \code{.gz} file for each sector named after its sector id,
 #' containing a data.table with three columns in the default setting:
 #'
@@ -719,8 +723,8 @@ getVelocity <- function(data, x = 'x', y ='y', z = 'z',
 #' @export 
 makeWorld <- function(tiles,polys,tile_id = 'TILEID',cut_slope,z_fix,
                       directions = 16, neighbor_distance = 100, keep_z = 'dz',
-                      unit = "m", vals = 'location', precision = 2,
-                      dir = tempdir()){
+                      unit = "m", vals = 'location', precision = 2, 
+                      FUN = mean, sampling = 'bilinear', dir = tempdir()){
   # This bit is to silence the CRAN check warnings for literal column names
   from=to=..dem=z_f=z_i=x_f=x_i=y_f=y_i=dz=..cols=NULL
   rm(..cols)
@@ -793,9 +797,12 @@ makeWorld <- function(tiles,polys,tile_id = 'TILEID',cut_slope,z_fix,
         dem_temp <- dem_temp[[1]]
       }
       
-      dem <- suppressWarnings(lapply(dem,projectRaster,to=dem_temp))
+      dem <- suppressWarnings(lapply(dem,
+                                     projectRaster,
+                                     to=dem_temp,
+                                     method = sampling))
       if (length(dem) > 1){
-        dem$fun <- mean
+        dem$fun <- FUN
         dem <- do.call(mosaic,dem)
       } else {
         dem <- dem[[1]]
@@ -827,7 +834,7 @@ makeWorld <- function(tiles,polys,tile_id = 'TILEID',cut_slope,z_fix,
       # Crop the mosaiced raster by the cropping polygon, project it
       dem <- crop(dem,poly)
       dem_temp <- suppressWarnings(projectRaster(dem,to=z_fix,alignOnly = TRUE))
-      dem <- suppressWarnings(projectRaster(dem,to=dem_temp,method='bilinear'))
+      dem <- suppressWarnings(projectRaster(dem,to=dem_temp,method=sampling))
       
       name <- i
       

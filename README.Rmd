@@ -499,8 +499,11 @@ to bear in mind that `$dz` represents that difference in value. When
 the raw values are needed, the `keep_z` parameter in `makeWorld` should
 be a character vector including `c('z_i','z_f')`, and also `dz` when
 the difference between them is needed. If the raster is categorical (such as
-those representing discrete landcover types), `dz` should be omitted. If
-the origin x or y coordinates are needed, the `xy1` parameter in `importWorld`
+those representing discrete landcover types), `dz` should be omitted. 
+In the event of a tie in mosaicing rasters, we'll select the highest integer value 
+(`FUN = max`). Don't forget to set `sampling = 'ngb` if the data is categorical 
+and thus it's inappropriate to employ the default `'bilinear'` interpolation. 
+If the origin x or y coordinates are needed, the `xy1` parameter in `importWorld`
 should be set to `TRUE`, and likewise for the destination coordinates and 
 `xy2` parameter. If the distance between the origin and destination are needed,
 `dl = TRUE`:
@@ -527,18 +530,18 @@ grid2 <- makeGrid(dem = dem2, nx = n, ny = n)
 
 world2 <- importWorld(region = region, polys = grid2, cut_slope = Inf,
                       z_fix = dem, keep_z = c("z_i","z_f"), dl = TRUE, 
-                      dir = dir2)
+                      FUN = max, sampling = 'ngb', dir = dir2)
 ```
 Let's take a look at the structure of this new world data.table
 ```{r world2}
 head(world2)
 ```
 Unlike the output of `importWorld` above, this contains five columns, only
-sharing in common the `$from` and `$to` columns.Let's pretend that this raster represents landtypes,
-and for some reason travel between cells of the same landcover type are prohibited.
-Bearing in mind that since `distance = 16` a traveler could 'hop' over a single
-barrier cell, we can still apply that condition using a simple data.table 
-expression:
+sharing in common the `$from` and `$to` columns.Let's pretend that this raster 
+represents landtypes, and for some reason travel between cells of the same 
+landcover type are prohibited. Bearing in mind that since `distance = 16` a 
+traveler could 'hop' over a single barrier cell, we can still apply that 
+condition using a simple data.table expression:
 
 ```{r dropVals}
 world2 <- world2[z_i != z_f, ]
@@ -584,7 +587,4 @@ paths <- getPaths(world = world3, nodes = points, z_fix = dem,
 plot(corridors)
 plot(paths,add=TRUE)
 ```
-```{r finalCosts-display, echo = FALSE}
-plot(corridors)
-plot(paths,add=TRUE)
-```
+

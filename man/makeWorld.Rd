@@ -16,6 +16,8 @@ makeWorld(
   unit = "m",
   vals = "location",
   precision = 2,
+  FUN = mean,
+  sampling = "bilinear",
   dir = tempdir()
 )
 }
@@ -72,6 +74,12 @@ filepath or URL.}
 in the x and y directions. For grid sizes with nice, round numbers precisions
 can be low. This factor is controled by \code{\link[raster]{rasterFromXYZ}}.
 Default is 2.}
+
+\item{FUN}{Function to deal with overlapping values for overlapping sectors.
+Default is \code{\link[base]{mean}}. See \code{\link[raster]{mosaic}}.}
+
+\item{sampling}{How to resample rasters. Default is \code{'bilinear'} interpolation,
+although \code{'ngb'} nearest neighbor is available for categorical rasters.}
 
 \item{dir}{A filepath to the directory being used as the workspace.
 Default is \code{tempdir()} but unless the analyses will only be performed a few
