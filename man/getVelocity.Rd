@@ -8,6 +8,7 @@ getVelocity(
   data,
   x = "x",
   y = "y",
+  dl = NULL,
   z = "z",
   dt = "dt",
   ID = "ID",
@@ -26,16 +27,24 @@ getVelocity(
 all observations}
 
 \item{x}{A character string representing the data column containing the 'x'
-coordinates in meters.}
+coordinates in meters. Ignored for distance calculations if \code{dl} is,
+provided but required to extract elevations if \code{z} is of class
+RasterLayer or SpatialPolygonsDataFrame.}
 
 \item{y}{A character string representing the data column containing the 'y'
-coordinates in meters.}
+coordinates in meters. Ignored for distance calculations if \code{dl} is,
+provided but required to extract elevations if \code{z} is of class
+RasterLayer or SpatialPolygonsDataFrame.}
+
+\item{dl}{A character string representing the data column containing the
+net displacement between this observation and the previous in meters. Optional.}
 
 \item{z}{Either a character string, a RasterLayer, or a SpatialPolygonsDataFrame
 object. If character string, it represents the data column containing the 'z'
 coordinates/elevations in meters. If RasterLayer, a DEM containing
 the elevation in meters. If SpatialPolygonsDataFrame, it must represent the
-sectors and filepaths/URLs (see the output of \code{\link[lbmech]{makeGrid}})}
+sectors and filepaths/URLs (see the output of \code{\link[lbmech]{makeGrid}}).
+Elevations}
 
 \item{dt}{A character string representing the data column containing the
 time difference from the previous observation in seconds.}

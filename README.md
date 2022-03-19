@@ -66,7 +66,13 @@ important aspects of the cost-distance workflow. This allows for
 ootherwise prohibitively-large spatial regions and fine spatial
 resolutions to be considered. This is arguably necessary when land-based
 transport requires decision-making to be made at scales on the order of
-1-10 m.
+1-10 m. Files by default are stored in the temporary directory, however
+if it’s expected that the particular procedure will be repeated again
+after `R` is reinitialized it is *highly* recommended to designate a
+consistent workspace directory in the `dir` parameter of most functions
+for each time `makeWorld` (or a function that depends on it) is called
+with new parameters. This ensures that each world only needs to be
+generated *once*.
 
 Finally, to encourage the use of least-cost analysis rooted in empirical
 reality, `lbmech`’s default workflow is geared towards the study of
@@ -332,14 +338,14 @@ and
 be estimated from locational data for different species. Data should be
 structured such that there is a column with x coordinates, a column with
 y coordinates, a column with changes in time, and a column with a
-trajectory id. Note that all values must be in meters, and the `'x'` and
-`'y'` coordinates in a projected coordinate system. If those columns are
-named anything other than `'x'`, `'y'`, ‘`dt`’, and `'id'`, the column
-names need to be declared explicitly. Elevational data is provided as
-the `z` parameter. This can be either a column with elevations—such as
-those recorded by a GPS unit—a RasterLayer representing the DEM for that
-region, or a SpatialPolygonsDataFrame like the output of the `makeGrid`
-function:
+trajectory id. Note that all values must be in meters (other than
+`'dt'`, which must be in seconds), and the `'x'` and `'y'` coordinates
+in a projected coordinate system. If those columns are named anything
+other than `'x'`, `'y'`, `'dt'`, and `'id'`, the column names need to be
+declared explicitly. Elevational data is provided as the `z` parameter.
+This can be either a column with elevations—such as those recorded by a
+GPS unit—a RasterLayer representing the DEM for that region, or a
+SpatialPolygonsDataFrame like the output of the `makeGrid` function:
 
 ``` r
 # Generate dummy GPS data
@@ -794,7 +800,7 @@ parameter in `makeWorld` should be a character vector including
 needed. If the raster is categorical (such as those representing
 discrete landcover types), `dz` should be omitted. In the event of a tie
 in mosaicing rasters, we’ll select the highest integer value
-(`FUN = max`). Don’t forget to set `sampling = 'ngb` if the data is
+(`FUN = max`). Don’t forget to set `sampling = 'ngb'` if the data is
 categorical and thus it’s inappropriate to employ the default
 `'bilinear'` interpolation. If the origin x or y coordinates are needed,
 the `xy1` parameter in `importWorld` should be set to `TRUE`, and
@@ -852,8 +858,8 @@ world2 <- world2[z_i != z_f, ]
 
 This drops all entries where `z_i == z_f`. Now let’s calculate some
 imaginary costs. Let’s say that the cost to travel from one landcover
-type to another is square of the landcover class integer times the
-destination class integer divided by the distance between the cells
+type to another is square of the origin landcover class integer times
+the destination class integer divided by the distance between the cells
 `dl`:
 
 ``` r

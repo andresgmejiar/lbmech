@@ -340,14 +340,21 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
 #' @param data A data.frame or something coercible to a data.table containing
 #' all observations
 #' @param x A character string representing the data column containing the 'x'
-#' coordinates in meters.
+#' coordinates in meters. Ignored for distance calculations if \code{dl} is,
+#' provided but required to extract elevations if \code{z} is of class
+#' RasterLayer or SpatialPolygonsDataFrame.
 #' @param y A character string representing the data column containing the 'y'
-#' coordinates in meters.
+#' coordinates in meters. Ignored for distance calculations if \code{dl} is,
+#' provided but required to extract elevations if \code{z} is of class
+#' RasterLayer or SpatialPolygonsDataFrame.
+#' @param dl A character string representing the data column containing the
+#' net displacement between this observation and the previous in meters. Optional.
 #' @param z Either a character string, a RasterLayer, or a SpatialPolygonsDataFrame
 #' object. If character string, it represents the data column containing the 'z'
 #' coordinates/elevations in meters. If RasterLayer, a DEM containing
 #' the elevation in meters. If SpatialPolygonsDataFrame, it must represent the
-#' sectors and filepaths/URLs (see the output of \code{\link[lbmech]{makeGrid}})
+#' sectors and filepaths/URLs (see the output of \code{\link[lbmech]{makeGrid}}).
+#' Elevations
 #' @param dt A character string representing the data column containing the
 #' time difference from the previous observation in seconds.
 #' @param ID A character string representing the data column containing the
@@ -449,7 +456,7 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
 #' velocity <- getVelocity(data = data, z = grid, dir = dir)
 #' 
 #' @export
-getVelocity <- function(data, x = 'x', y ='y', z = 'z', 
+getVelocity <- function(data, x = 'x', y ='y', dl = NULL, z = 'z', 
                         dt = 'dt', ID = 'ID', tau = NULL, tau_vmax = 0.995,
                         tau_nlrq = 0.95,k_init = 3.5, alpha_init = -0.1,
                         tile_id = "TILEID", vals = "location",
@@ -469,12 +476,25 @@ getVelocity <- function(data, x = 'x', y ='y', z = 'z',
     dem <- z
     z <- dem[cellFromXY(dem,data[,.(get(..x),get(..y))])]
     data[,z := ..z]
+    if (is.null(dl)){
     data <- data[,.(ID = get(..ID),x = get(..x),y = get(..y),z,dt = get(..dt))]
+    } else {
+      data <- data[,.(ID = get(..ID),x = get(..x),y = get(..y),z,dt = get(..dt))]
+    }
     
     # If z is a character, do nothing; just rename columns
   } else if ("character" %in% class(z)){
     
-    data <- data[,.(ID = get(..ID),x = get(..x),y = get(..y),z = get(..z),dt = get(..dt))]
+    if (is.null(dl)){
+    data <- data[,.(ID = get(..ID), x = get(..x), y = get(..y),
+                    z = get(..z),dt = get(..dt))]
+    } else if ((x %in% names(data)) & (y %in% names(data))){
+      data <- data[,.(ID = get(..ID), x = get(..x), y = get(..y), dl = get(..dl),
+                      z = get(..z), dt = get(..dt))]  
+    } else{
+      data <- data[,.(ID = get(..ID),dl = get(..dl), z = get(..z), dt = get(..dt))]  
+    }
+    
     
     # If z is a polygon defining sector locations...
   } else if ("SpatialPolygonsDataFrame" %in% class(z)){
@@ -531,19 +551,32 @@ getVelocity <- function(data, x = 'x', y ='y', z = 'z',
     cols <- names(data_new)
     cols <- cols[cols != "z"]
     data_new <- data_new[,.(z = mean(z,na.rm=TRUE)),by=cols][]
+    
+    if (is.null(dl)){
     data <- data_new[order(Order)
     ][,.(ID = get(..ID),x = get(..x),y = get(..y),z,dt = get(..dt))
     ][]
-    
+    } else {
+      data <- data_new[order(Order)
+      ][,.(ID = get(..ID),x = get(..x),y = get(..y),dl = get(..dl),
+           z,dt = get(..dt))
+      ][]
+    }
   }
   
   # Calculate displacement, then speed and slope
+  if (is.null(dl)){
   data[, `:=`(dx = x - data.table::shift(x),
               dy = y - data.table::shift(y),
               dz = z - data.table::shift(z)),
        by = 'ID'
-  ][, dl := sqrt(dx^2 + dy^2)
-  ][, `:=`(dl_dt = dl / dt,
+  ][, dl := sqrt(dx^2 + dy^2)]
+  } else {
+    data[, `:=`(dl = get(dl),
+                dz = z - data.table::shift(z))]
+  }
+  
+  data[, `:=`(dl_dt = dl / dt,
            dz_dl = dz / dl)]
   
   # The user can set a global tau, or a tau for the maximum velocity
