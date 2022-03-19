@@ -620,9 +620,10 @@ getVelocity <- function(data, x = 'x', y ='y', z = 'z',
 #' in the 'polys' polygon containing the unique Tile IDs. Default is \code{tile_id = 'TILEID'}
 #' @param cut_slope A number representing the dimensionless maximum slope
 #' of ascent/descent. To ignore, set \code{cut_slope = Inf}.
-#' @param z_fix A raster that will define the resolution, origin, and
-#' projection information for the entire "world" of possible movement. Note that
-#' it does NOT need the same extent.
+#' @param proj A crs object or character string representing the output projection.
+#' Default projection is \code{proj = crs(polys)} unless a `z_fix` or `proj` is 
+#' provided, in which case the latter is ignored. Great care should be 
+#' employed to ensure that the projection is conformal and in meters. 
 #' @param directions One of the integers \code{c(4, 8, 16)},
 #' the character string \code{'bishop'},or a neighborhood matrix.
 #' Default is \code{directions = 16}, implying that all 'knight and one-cell
@@ -639,6 +640,12 @@ getVelocity <- function(data, x = 'x', y ='y', z = 'z',
 #' Since the energetic calculations only depend on a *change* in elevation, 
 #' the default is \code{'dz'}. However, if the specific origin or destination
 #' values are needed this should me modified accordingly. 
+#' @param z_fix A raster that will define the resolution, origin, and
+#' projection information for the entire "world" of possible movement. Note that
+#' it does NOT need the same extent. Default resolution is 5, and offset is 0.
+#' Default projection is \code{proj = crs(polys)} unless a `z_fix` or `proj` is 
+#' provided, in which case the latter is ignored. Great care should be 
+#' employed to ensure that the projection is conformal and in meters. 
 #' @param unit One of \code{c("m", "km", "ft", "mi")}, representing the unit of the DEM.
 #' All will be converted to meters, which is the default.
 #' @param vals A character string or a RasterLayer object. Ignored unless the
@@ -652,13 +659,14 @@ getVelocity <- function(data, x = 'x', y ='y', z = 'z',
 #' in the x and y directions. For grid sizes with nice, round numbers precisions
 #' can be low. This factor is controled by \code{\link[raster]{rasterFromXYZ}}.
 #' Default is 2.
-#' @param dir A filepath to the directory being used as the workspace.
-#' Default is \code{tempdir()} but unless the analyses will only be performed a few
-#' times it is highly recommended to define a permanent workspace.
 #' @param FUN Function to deal with overlapping values for overlapping sectors.
 #' Default is \code{\link[base]{mean}}. See \code{\link[raster]{mosaic}}.
 #' @param sampling How to resample rasters. Default is \code{'bilinear'} interpolation,
 #' although \code{'ngb'} nearest neighbor is available for categorical rasters. 
+#' @param dir A filepath to the directory being used as the workspace.
+#' Default is \code{tempdir()} but unless the analyses will only be performed a few
+#' times it is highly recommended to define a permanent workspace.
+#' @param ... Additional arguments to pass to \code{\link[lbmech]{fix_z}}.
 #' @return A \code{.gz} file for each sector named after its sector id,
 #' containing a data.table with three columns in the default setting:
 #'
@@ -718,13 +726,14 @@ getVelocity <- function(data, x = 'x', y ='y', z = 'z',
 #' crs(tiles) <- crs(grid)
 #' tiles <- whichTiles(region = tiles, polys = grid)
 #' 
-#' makeWorld(tiles = tiles, polys = grid,
-#'           cut_slope = 0.5, z_fix = dem, dir = dir)
+#' # Make a world but limit it to the DEM grid size
+#' makeWorld(tiles = tiles, polys = grid, cut_slope = 0.5, 
+#'           res = res(dem), dir = dir)
 #' @export 
-makeWorld <- function(tiles,polys,tile_id = 'TILEID',cut_slope,z_fix,
+makeWorld <- function(tiles,polys,cut_slope,tile_id = 'TILEID', proj = crs(polys),
                       directions = 16, neighbor_distance = 100, keep_z = 'dz',
-                      unit = "m", vals = 'location', precision = 2, 
-                      FUN = mean, sampling = 'bilinear', dir = tempdir()){
+                      z_fix = NULL, unit = "m", vals = 'location', precision = 2, 
+                      FUN = mean, sampling = 'bilinear', dir = tempdir(), ...){
   # This bit is to silence the CRAN check warnings for literal column names
   from=to=..dem=z_f=z_i=x_f=x_i=y_f=y_i=dz=..cols=NULL
   rm(..cols)
@@ -749,6 +758,10 @@ makeWorld <- function(tiles,polys,tile_id = 'TILEID',cut_slope,z_fix,
     keep_z <- c("dz","z_i","z_f")
   }
   
+  # If no z_fix is provided, make one
+  if (is.null(z_fix)){
+    z_fix <- fix_z(proj = proj, ...)
+  }
   
   rd <- normalizePath(paste0(dir,"/Tensors"),mustWork=FALSE)
   for (i in tiles){
@@ -880,19 +893,32 @@ makeWorld <- function(tiles,polys,tile_id = 'TILEID',cut_slope,z_fix,
 #'
 #' @title Convert RasterLayer or SpatialPolygon* to "x,y"
 #' @param region An object of class SpatialPolygons* to convert to "x,y"
+#' @param proj A crs object or character string representing the output
+#' projection. Default is \code{proj = crs(region)}
+#' unless \code{proj} or \code{z_fix} are provided in which case 
+#' the latter takes precedence. 
 #' @param z_fix A RasterLayer with the same origin and resolution as the
 #' \code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.
+#' Do not modify this parameter if you didn't modify it when you ran
+#' \code{\link[lbmech]{makeWorld}}.
 #' @param precision An integer representing the number of decimals to retain
 #' in the x and y directions. For grid sizes with nice, round numbers precisions
 #' can be low. This factor is controled by \code{\link[raster]{rasterFromXYZ}} and
 #' must be the same as the one used to generate the 
 #' 'world' with \code{\link[lbmech]{makeWorld}}. Default is 2.
+#' @param ... Additional arguments to pass to \code{\link[lbmech]{fix_z}}.
 #' @return A character vector containing all cells that fall in the same
 #' location as the input 'region'.
 #' @importFrom raster resample
 #' @importFrom raster getValues
 #' @importFrom raster xFromCell
 #' @importFrom raster yFromCell
+#' @importFrom raster rasterFromXYZ
+#' @importFrom raster crs
+#' @importFrom raster crs<-
+#' @importFrom raster extent
+#' @importFrom raster res
+#' @importFrom raster projectRaster
 #' @importFrom data.table data.table
 #' @importFrom data.table :=
 #' @examples 
@@ -912,13 +938,29 @@ makeWorld <- function(tiles,polys,tile_id = 'TILEID',cut_slope,z_fix,
 #' region <- as(region,"SpatialPolygons")
 #' crs(region) <- crs(dem)
 #' 
-#' maskedCells <- regionMask(region = region, z_fix = dem)
-#' 
+#' maskedCells <- regionMask(region = region, res = res(dem))
 #' @export
-regionMask <- function(region, z_fix, precision = 2){
+regionMask <- function(region, proj = crs(region),
+                       z_fix = NULL, precision = 2, ...){
   # This bit is to silence the CRAN check warnings for literal column names
   x=y=NULL
   #
+  if (is.null(z_fix)){
+    z_fix <- fix_z(proj = proj, ...)
+  }
+  
+  z_temp <- expand.grid(x = seq(from = extent(region)[1],
+                                to = extent(region)[2],
+                                by = res(z_fix)[1]),
+                        y = seq(from = extent(region)[3],
+                                to = extent(region)[4],
+                                by = res(z_fix)[2]))
+  z_temp <- rasterFromXYZ(z_temp)
+  crs(z_temp) <- crs(z_fix)
+  z_fix <- suppressWarnings(projectRaster(from = z_temp,
+                                          to = z_fix,
+                                          alignOnly = TRUE))
+  
   
   if (class(region) %in% c("SpatialPolygons","SpatialPolygonsDataFrame")){
     region <- fasterize::fasterize(sf::st_as_sf(region), z_fix)
@@ -953,11 +995,13 @@ regionMask <- function(region, z_fix, precision = 2){
 #' @param region An object of class RasterLayer or SpatialPolygons*
 #' representing the total area where movement is possible. Must lie within
 #' the area defined by \code{polys}
-#' @param z_fix A RasterLayer with the same origin and resolution as the
-#' \code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.
 #' @param polys An object of class SpatialPolygonsDataFrame representing
 #' the partitioning grid for the maximum possible area, in the same format as the
 #' output of the \code{\link[lbmech]{makeGrid}} function.
+#' @param proj A crs object or character string representing the output
+#' projection. Default is \code{proj = crs(polys)}
+#' unless \code{proj} or \code{z_fix} are provided in which case 
+#' the latter takes precedence. 
 #' @param banned An object of class RasterLayer or SpatialPolygons*
 #' representing the total area where movement is \emph{prohibited}. Must lie within
 #' the area defined by \code{polys}
@@ -969,7 +1013,9 @@ regionMask <- function(region, z_fix, precision = 2){
 #' @param xy1 A logical \code{TRUE} or \code{FALSE} indicating whether to generate
 #' unique numeric columns for the x and y coordinates of the starting points.
 #' Default is \code{FALSE}, and is not needed for the 
-#' \code{\link[lbmech]{calculateCosts}} function, which generates them on its own.
+#' \code{\link[lbmech]{calculateCosts}}.
+#' If you intend on using a custom cost function, set this as TRUE since 
+#' \code{\link[lbmech]{getCosts}} will need them. 
 #' @param xy2 A logical \code{TRUE} or \code{FALSE} indicating whether to generate
 #' unique numeric columns for the x and y coordinates of the ending points.
 #' Default is \code{FALSE}, and is not needed for the 
@@ -977,6 +1023,16 @@ regionMask <- function(region, z_fix, precision = 2){
 #' @param dl A logical \code{TRUE} or \code{FALSE} indicating whether to 
 #' Default is \code{FALSE}, and is not needed for the 
 #' \code{\link[lbmech]{calculateCosts}} function, which generates it on its own.
+#' @param z_fix A RasterLayer with the same origin and resolution as the
+#' \code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.
+#' Do not modify this parameter if you didn't modify it when you ran
+#' \code{\link[lbmech]{makeWorld}}.
+#' @param res Passed on to \code{\link[lbmech]{fix_z}}, default is 5. Ignored
+#' if z_fix is provided.
+#' @param dx Passed on to \code{\link[lbmech]{fix_z}}, default is 0. Ignored
+#' if z_fix is provided.
+#' @param dy Passed on to \code{\link[lbmech]{fix_z}}, default is 0. Ignored
+#' if z_fix is provided.
 #' @param ... Additional arguments to pass to \code{\link[lbmech]{makeWorld}}
 #' @return An object of class data.table containing three  under the default settings:
 #'
@@ -994,6 +1050,12 @@ regionMask <- function(region, z_fix, precision = 2){
 #' then a final \code{$dl} column is added with the total displacement. 
 #' @importFrom data.table data.table
 #' @importFrom data.table fread
+#' @importFrom raster extent
+#' @importFrom raster res
+#' @importFrom raster rasterFromXYZ
+#' @importFrom raster crs
+#' @importFrom raster crs<-
+#' @importFrom raster projectRaster
 #' @examples 
 #' 
 #' # Generate a DEM
@@ -1021,15 +1083,31 @@ regionMask <- function(region, z_fix, precision = 2){
 #' region <- as(region,"SpatialPolygons")
 #' crs(region) <- crs(grid)
 #' 
-#' world <- importWorld(region = region, polys = grid,
-#'                      cut_slope = 0.5, z_fix = dem, dir = dir)
+#' world <- importWorld(region = region, polys = grid, cut_slope = 0.5, 
+#'                      res = res(dem), dir = dir)
 #' @export
-importWorld <- function(region, z_fix, polys, banned = NULL,
+importWorld <- function(region, polys, proj = crs(polys), banned = NULL,
                         tile_id = "TILEID", xy1 = FALSE, xy2 = FALSE, 
-                        dl = FALSE, dir = tempdir(), ...){
+                        res = 5, dx = 0, dy = 0, dl = FALSE, 
+                        z_fix = NULL, dir = tempdir(), ...){
   # This bit is to silence the CRAN check warnings for literal column names
   from=to=dz=x_f=x_i=y_f=y_i=z_f=z_i=NULL
   #
+  if (is.null(z_fix)){
+    z_fix <- fix_z(proj = proj, res = res, dx = dx, dy = dy)
+  }
+  
+  z_temp <- expand.grid(x = seq(from = extent(region)[1] - 2 * res(z_fix)[1],
+                                to = extent(region)[2]  + 2 * res(z_fix)[1],
+                                by = res(z_fix)[1]),
+                        y = seq(from = extent(region)[3] - 2 * res(z_fix)[2],
+                                to = extent(region)[4] + 2 * res(z_fix)[2],
+                                by = res(z_fix)[2]))
+  z_temp <- rasterFromXYZ(z_temp)
+  crs(z_temp) <- crs(z_fix)
+  z_fix <- suppressWarnings(projectRaster(from = z_temp,
+                                          to = z_fix,
+                                          alignOnly = TRUE))
   
   # First determine which tiles to import,
   # download maps and make tensors if needed
@@ -1044,9 +1122,9 @@ importWorld <- function(region, z_fix, polys, banned = NULL,
                          mustWork=FALSE)
   
   # Convert the regions into a list of the allowable cells
-  region <- regionMask(region, z_fix)
+  region <- regionMask(region, z_fix =  z_fix, res = res, dx = dx, dy = dy)
   if (!is.null(banned)){
-    banned <- regionMask(banned, z_fix)
+    banned <- regionMask(banned, z_fix = z_fix, res = res, dx = dx, dy = dy)
   } else{
     banned <- c("NULL")
   }
@@ -1067,7 +1145,7 @@ importWorld <- function(region, z_fix, polys, banned = NULL,
   
   # Convert to numeric any 'z' columns to numeric'
   if ("dz" %in% names(Edges)){
-  Edges[, `:=`(dz = as.numeric(dz))]
+    Edges[, `:=`(dz = as.numeric(dz))]
   }
   if ("z_i" %in% names(Edges)){
     Edges[, `:=`(z_i = as.numeric(z_i))]
@@ -1103,7 +1181,7 @@ importWorld <- function(region, z_fix, polys, banned = NULL,
       Edges$y_f <- NULL
     }
   }
-
+  
   return(Edges)
 }
 
@@ -1201,7 +1279,7 @@ importWorld <- function(region, z_fix, polys, banned = NULL,
 #' crs(region) <- crs(grid)
 #' 
 #' world <- importWorld(region = region, polys = grid,
-#'                      cut_slope = 0.5, z_fix = dem, dir = dir)
+#'                      cut_slope = 0.5, res = res(dem), dir = dir)
 #'
 #' # We'll run calculateCosts using the canonical parameters for Tobler's 
 #' # function on a human being. 
@@ -1222,7 +1300,8 @@ importWorld <- function(region, z_fix, polys, banned = NULL,
 #' # Run calculateCosts
 #' world <- calculateCosts(world = grid, m = 60, v_max = velocity$vmax,
 #'                         k = velocity$k, alpha = velocity$alpha, BMR = 93,
-#'                         l_s = 1.6, L = 0.8, region = region, z_fix = dem,
+#'                         l_s = 1.6, L = 0.8, region = region,
+#'                         proj = crs(dem), res = res(dem),
 #'                         cut_slope = 0.5, dir = dir)
 #' 
 #' @export
@@ -1279,7 +1358,10 @@ calculateCosts <- function(world, method = 'kuo', m = NULL, v_max = NULL,
 #'
 #' @title Get "x,y" coordinates in appropriate format
 #' @param data An object of class data.table or something coercible to it
-#' containing the coordinates needing conversion, or a SpatialPointsDataFrame
+#' containing the coordinates needing conversion, or a SpatialPointsDataFrame.
+#' @param proj A crs object or character string representing the output
+#' projection. Required unless \code{z_fix} is provided in which case 
+#' \code{proj} is ignored. 
 #' @param x A character vector representing the column containing the 'x' coordinates.
 #' Required if \code{data} is not SpatialPointsDataFrame.
 #' @param y A character vector representing the column containing the 'y' coordinates.
@@ -1291,12 +1373,18 @@ calculateCosts <- function(world, method = 'kuo', m = NULL, v_max = NULL,
 #' can be low. This factor is controled by \code{\link[raster]{rasterFromXYZ}} and
 #' must be the same as the one used to generate the 
 #' 'world' with \code{\link[lbmech]{makeWorld}}. Default is 2.
+#' @param ... Additional arguments to pass to \code{\link[lbmech]{fix_z}}.
 #' @return A vector containing the requested coordinates in appropriate format
 #' in the same order as the input data.
 #' @importFrom data.table :=
 #' @importFrom data.table as.data.table
 #' @importFrom raster cellFromXY
 #' @importFrom raster xyFromCell
+#' @importFrom raster res
+#' @importFrom raster rasterFromXYZ
+#' @importFrom raster crs
+#' @importFrom raster crs<-
+#' @importFrom raster projectRaster
 #' @examples
 #' # Generate a DEM
 #' n <- 5
@@ -1316,12 +1404,33 @@ calculateCosts <- function(world, method = 'kuo', m = NULL, v_max = NULL,
 #' # Get the coordinates
 #' points$Cell <- getCoords(points, z_fix = dem)
 #' @export
-getCoords <- function(data, x = "x", y = "y", z_fix, precision = 2){
+getCoords <- function(data, proj = NULL, x = "x", y = "y", 
+                      z_fix = NULL, precision = 2,...){
   # This bit is to silence the CRAN check warnings for literal column names
   ..x=..y=Cell=..poi=NULL
+  rm(..x,..y)
   # End
   
+  if (is.null(z_fix)){
+    z_fix <- fix_z(proj = proj, ...)
+  }
+  
+  
   data <- as.data.table(data)
+  
+  z_temp <- expand.grid(x = seq(from = min(data[,..x]) - 2 * res(z_fix)[1],
+                                to = max(data[,..x]) + 2 * res(z_fix)[1],
+                                by = res(z_fix)[1]),
+                        y = seq(from = min(data[,..y]) - 2 * res(z_fix)[2],
+                                to = max(data[,..y]) + 2 * res(z_fix)[2],
+                                by = res(z_fix)[2]))
+  z_temp <- rasterFromXYZ(z_temp)
+  crs(z_temp) <- crs(z_fix)
+  z_fix <- suppressWarnings(projectRaster(from = z_temp,
+                                          to = z_fix,
+                                          alignOnly = TRUE))
+  
+  
   for (i in 1:nrow(data)){
     centroid <- data[i, .(x = get(..x),y = get(..y))]
     poi <- cellFromXY(z_fix, centroid[,.(x,y)])
@@ -1360,19 +1469,21 @@ getCoords <- function(data, x = "x", y = "y", z_fix, precision = 2){
 #' \code{output == c('file','object')} and \code{destination = 'all'}.
 #'
 #' @title Get cost of travel
-#' @param world The data.table output of the \code{\link[lbmech]{calculateCosts}} function.
+#' @param world The data.table output of the \code{\link[lbmech]{calculateCosts}} 
+#' function.
 #' @param from One of data.frame, data.table, SpatialPointsDataFrame, or
 #' SpatialPolygonsDataFrame representing the origin locations. If \code{to = NULL}
 #' and \code{destination = 'pairs'}, this will also be used as the \code{to} parameter.
 #' If object is of class SpatialPolygonsDataFrame, the location will be taken at the
 #' centroid.
+#' @param proj A crs object or character string representing the workspace 
+#' projection. Required, unless \code{z_fix} is provided in which case
+#' it's ignored.
 #' @param to One of data.frame, data.table, SpatialPointsDataFrame, or
 #' SpatialPolygonsDataFrame representing the origin locations. Optional if
 #' \code{destination =  'pairs'}, ignored if \code{destination =  'all'}.
 #' @param id Character string representing the column containing the unique
 #' IDs for for each location in the \code{from} (and \code{to}) objects.
-#' @param z_fix A RasterLayer with the same origin and resolution as the
-#' \code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.
 #' @param x A character vector representing the column containing the 'x' coordinates.
 #' Required if \code{data} is not Spatial*.
 #' @param y A character vector representing the column containing the 'y' coordinates.
@@ -1401,6 +1512,10 @@ getCoords <- function(data, x = "x", y = "y", z_fix, precision = 2){
 #' If \code{"object"} is included, then a list of RasterStacks will be returned.
 #' If \code{"file"} is included, then the appropriate cost rasters will be saved
 #' to the workspace directory \code{dir}. Ignored if \code{destination = 'pairs'}.
+#' @param z_fix A RasterLayer with the same origin and resolution as the
+#' \code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.
+#' Do not modify this parameter if you didn't modify it when you ran
+#' \code{\link[lbmech]{makeWorld}}.
 #' @param dir A filepath to the directory being used as the workspace.
 #' Default is \code{tempdir()} but unless the analyses will only be performed a few
 #' times it is highly recommended to define a permanent workspace.
@@ -1409,6 +1524,7 @@ getCoords <- function(data, x = "x", y = "y", z_fix, precision = 2){
 #' can be low. This factor is controled by \code{\link[raster]{rasterFromXYZ}} and
 #' must be the same as the one used to generate the 
 #' 'world' with \code{\link[lbmech]{makeWorld}}. Default is 2.
+#' @param ... Additional arguments to pass to \code{\link[lbmech]{fix_z}}.
 #' @return A list, with entries for each combination of selected \code{costs}
 #' and \code{directions}. The object class of the list entries depends on the
 #' \code{destination} and \code{output} parameters:
@@ -1430,6 +1546,9 @@ getCoords <- function(data, x = "x", y = "y", z_fix, precision = 2){
 #' @importFrom raster stack
 #' @importFrom raster addLayer
 #' @importFrom raster crs
+#' @importFrom raster crs<-
+#' @importFrom raster res
+#' @importFrom raster projectRaster
 #' @importFrom utils txtProgressBar
 #' @importFrom utils setTxtProgressBar
 #' @examples 
@@ -1464,7 +1583,8 @@ getCoords <- function(data, x = "x", y = "y", z_fix, precision = 2){
 #' # Use the canonical parameters for a human in Tobler's Function
 #' world <- calculateCosts(world = grid, m = 60, v_max = 1.5,
 #'                         k = 3.5, alpha = -0.05, BMR = 93,
-#'                         l_s = 1.6, L = 0.8, region = region, z_fix = dem,
+#'                         l_s = 1.6, L = 0.8, region = region, 
+#'                         proj = crs(dem), res = res(dem),
 #'                         cut_slope = 0.5, dir = dir)
 #'                         
 #' # Generate five random points that fall within the region
@@ -1473,22 +1593,25 @@ getCoords <- function(data, x = "x", y = "y", z_fix, precision = 2){
 #'                      y = runif(5, extent(region)[3], extent(region)[4]))
 #'                      
 #' # Get 'time' and 'work' costs
-#' costMatrix <- getCosts(world = world, from = points, z_fix = dem,
-#'                        costs = c("time","work"), dir = dir)
+#' costMatrix <- getCosts(world = world, from = points, 
+#'                        costs = c("time","work"),
+#'                        proj = crs(dem), res = res(dem), dir = dir)
 #'                      
 #' #### Example 2:
 #' # Calculate the cost rasters to travel to and from a set of points
-#' costRasters <- getCosts(world = world, from = points, z_fix = dem,
+#' costRasters <- getCosts(world = world, from = points,
 #'                         destination = 'all', costs = c('time','work'),
-#'                         output = c("object","file"), dir = dir)
+#'                         output = c("object","file"), 
+#'                         proj = crs(dem), res = res(dem),dir = dir)
 #' 
 #' @export
-getCosts <- function(world, from, to = NULL, id = 'ID', z_fix = NULL, x = "x", y = "y",
-                     destination = 'pairs', region = NULL, costs = 'all',
-                     direction = 'both', output = 'object', precision = 2,
-                     dir = tempdir()){
+getCosts <- function(world, from, to = NULL, proj = NULL, id = 'ID', 
+                     x = "x", y = "y", destination = 'pairs', region = NULL, 
+                     costs = 'all', direction = 'both', output = 'object', 
+                     precision = 2, z_fix = NULL, dir = tempdir(), ...){
   # This bit is to silence the CRAN check warnings for literal column names
-  ..id=..x=..y=dt=dW_l=dE_l=Var2=value=Var1=Cell=From_ID=ID=..cost=..d=Value=NULL
+  ..id=..x=..y=dt=dW_l=dE_l=Var2=value=Var1=NULL
+  Cell=From_ID=ID=..cost=..d=Value=x_i=y_i=NULL
   #
   
   dir <- normalizePath(dir)
@@ -1508,6 +1631,27 @@ getCosts <- function(world, from, to = NULL, id = 'ID', z_fix = NULL, x = "x", y
     id2 <- NULL
   }
   
+  if (is.null(z_fix)){
+    z_fix <- fix_z(proj = proj, ...)
+  }
+  
+  if(is.null(world$x_i) | is.null(world$y_i)){
+    world[, c("x_i","y_i") := tstrsplit(from,",")
+          ][, c("x_i","y_i") := lapply(.SD,as.numeric),.SDcols = c("x_i","y_i")]
+  }
+  
+  z_temp <- expand.grid(x = seq(from = min(world[,x_i]) - 2 * res(z_fix)[1],
+                                to = max(world[,x_i]) + 2 * res(z_fix)[1],
+                                by = res(z_fix)[1]),
+                        y = seq(from = min(world[,y_i]) - 2 * res(z_fix)[2],
+                                to = max(world[,y_i]) + 2 * res(z_fix)[2],
+                                by = res(z_fix)[2]))
+  z_temp <- rasterFromXYZ(z_temp)
+  crs(z_temp) <- crs(z_fix)
+  z_fix <- suppressWarnings(projectRaster(from = z_temp,
+                                          to = z_fix,
+                                          alignOnly = TRUE))
+  
   # We need to coerce everything to an (x,y) list stored as a data.table
   # First, if the input are polygons we'll just find the centroid
   if (sum(class(from) %in% 
@@ -1516,7 +1660,7 @@ getCosts <- function(world, from, to = NULL, id = 'ID', z_fix = NULL, x = "x", y
   }
   # Coerce to data.table
   from <- as.data.table(from)[,.(ID = get(..id), x = get(..x), y = get(..y))]
-  from$Cell <- getCoords(from, z_fix = z_fix, precision = precision)
+  from$Cell <- getCoords(from, z_fix = z_fix, precision = precision, ...)
   
   # Do the same for the destination UNLESS it's set as "all".
   # If it's empty, then from is the same as to.
@@ -1531,7 +1675,7 @@ getCosts <- function(world, from, to = NULL, id = 'ID', z_fix = NULL, x = "x", y
       }
       
       to <- as.data.table(to)[,.(ID = get(..id), x = get(..x), y = get(..y))]
-      to$Cell <- getCoords(to, z_fix = z_fix, precision = precision)
+      to$Cell <- getCoords(to, z_fix = z_fix, precision = precision, ...)
     } else {
       to <- from
     }
@@ -1549,7 +1693,7 @@ getCosts <- function(world, from, to = NULL, id = 'ID', z_fix = NULL, x = "x", y
   # If a region further constraining the world more than what was previosly
   # provided is input, then drop those observations from the dataframe
   if (!is.null(region)){
-    region <- regionMask(region, z_fix = z_fix)
+    region <- regionMask(region = region, z_fix = z_fix, ...)
     world <- world[(from %in% region) & (to %in% region),]
   }
   
@@ -1748,7 +1892,8 @@ getCosts <- function(world, from, to = NULL, id = 'ID', z_fix = NULL, x = "x", y
 #' # Use the canonical parameters for a human in Tobler's Function
 #' world <- calculateCosts(world = grid, m = 60, v_max = 1.5,
 #'                         k = 3.5, alpha = -0.05, BMR = 93,
-#'                         l_s = 1.6, L = 0.8, region = region, z_fix = dem,
+#'                         l_s = 1.6, L = 0.8, region = region, 
+#'                         proj = crs(dem), res = res(dem),
 #'                         cut_slope = 0.5, dir = dir)
 #'                         
 #' # Generate five random points that fall within the region
@@ -1757,9 +1902,10 @@ getCosts <- function(world, from, to = NULL, id = 'ID', z_fix = NULL, x = "x", y
 #'                      y = runif(5, extent(region)[3], extent(region)[4]))
 #'                      
 #' # Calculate cost rasters
-#' costRasters <- getCosts(world = world, from = points, z_fix = dem,
+#' costRasters <- getCosts(world = world, from = points, 
 #'                         destination = 'all', costs = 'all',
-#'                         output = c("object","file"), dir = dir)
+#'                         output = c("object","file"), 
+#'                         proj = crs(dem), res = res(dem), dir = dir)
 #'                         
 #' #### Example 1:
 #' # Calculating the corridors from a list of RasterStacks,
@@ -1851,6 +1997,9 @@ makeCorridor <- function(rasters = tempdir(), order, costs = "all"){
 #' SpatialPolygonsDataFrame representing the locations.
 #' If object is of class SpatialPolygonsDataFrame, the location will be taken at the
 #' centroid.
+#' @param proj A crs object or character string representing the workspace 
+#' projection. Required, unless \code{z_fix} is provided in which case
+#' it's ignored.
 #' @param id A character string representing the column containing each \code{node}
 #' location's unique ID.
 #' @param order A character vector containing the desired path in
@@ -1881,6 +2030,11 @@ makeCorridor <- function(rasters = tempdir(), order, costs = "all"){
 #' can be low. This factor is controled by \code{\link[raster]{rasterFromXYZ}} and
 #' must be the same as the one used to generate the 
 #' 'world' with \code{\link[lbmech]{makeWorld}}. Default is 2.
+#' @param z_fix A RasterLayer with the same origin and resolution as the
+#' \code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.
+#' Do not modify this parameter if you didn't modify it when you ran
+#' \code{\link[lbmech]{makeWorld}}.
+#' @param ... Additional arguments to pass to \code{\link[lbmech]{fix_z}}.
 #' @return SpatialLinesDataFrames representing least-cost paths. For each
 #' cost, each entry within the SpatialLinesDataFrame object represents
 #' a single leg of the journey, sorted in the original path order.
@@ -1924,7 +2078,8 @@ makeCorridor <- function(rasters = tempdir(), order, costs = "all"){
 #' # Use the canonical parameters for a human in Tobler's Function
 #' world <- calculateCosts(world = grid, m = 60, v_max = 1.5,
 #'                         k = 3.5, alpha = -0.05, BMR = 93,
-#'                         l_s = 1.6, L = 0.8, region = region, z_fix = dem,
+#'                         l_s = 1.6, L = 0.8, region = region,
+#'                         proj = crs(dem), res = res(dem),
 #'                         cut_slope = 0.5, dir = dir)
 #'                         
 #' # Generate five random points that fall within the region
@@ -1936,21 +2091,22 @@ makeCorridor <- function(rasters = tempdir(), order, costs = "all"){
 #' # Calculate the path from 1 -> 2 -> 5 -> 1 -> 4 
 #' pathOrder <- c(1,2,5,1,4)
 #' 
-#' paths <- getPaths(world = world, nodes = points, z_fix = dem,
-#'                           order = pathOrder,
+#' paths <- getPaths(world = world, nodes = points, order = pathOrder,
+#'                           proj = crs(dem), res = res(dem),
 #'                           costs = c('time','work','energy'))
 #'                         
-#' #getCosts(world = world, from = points, z_fix = dem,
+#' #getCosts(world = world, from = points, proj = crs(dem), res = res(dem),
 #' #                        destination = 'all', costs = 'all',
 #' #                        output = 'file', dir = dir)                       
 #' #corridors <- makeCorridor(rasters = dir, order = pathOrder)
 #' #plot(corridors$time)
 #' #plot(paths$time,add=TRUE)
 #' @export
-getPaths <- function(world, nodes, z_fix, id = "ID", order = NULL, x = "x",
-                     y = "y", region = NULL, costs = 'all', precision = 2){
+getPaths <- function(world, nodes, proj = NULL, id = "ID", order = NULL, x = "x",
+                     y = "y", region = NULL, costs = 'all', precision = 2, 
+                     z_fix = NULL, ...){
   # This bit is to silence the CRAN check warnings for literal column names
-  from=to=..id=..x=..y=ID=Cell=V1=V2=TempID=dt=dW_l=dE_l=NULL
+  from=to=..id=..x=..y=ID=Cell=V1=V2=TempID=dt=dW_l=dE_l=x_i=y_i=NULL
   #
   
   # First, "all" and "energetics" are just shorthand for a vector
@@ -1961,10 +2117,26 @@ getPaths <- function(world, nodes, z_fix, id = "ID", order = NULL, x = "x",
     costs <- c("work","energy")
   }
   
+  # If no z_fix is provided, make one. Here we require crs
+  if (is.null(z_fix)){
+    z_fix <- fix_z(proj = proj, ...)
+  }
+  
+  z_temp <- expand.grid(x = seq(from = min(world[,x_i]) - 2 * res(z_fix)[1],
+                                to = max(world[,x_i]) + 2 * res(z_fix)[1],
+                                by = res(z_fix)[1]),
+                        y = seq(from = min(world[,y_i]) - 2 * res(z_fix)[2],
+                                to = max(world[,y_i]) + 2 * res(z_fix)[2],
+                                by = res(z_fix)[2]))
+  z_temp <- rasterFromXYZ(z_temp)
+  crs(z_temp) <- crs(z_fix)
+  z_fix <- suppressWarnings(projectRaster(from = z_temp,
+                                          to = z_fix,
+                                          alignOnly = TRUE))
   
   # If region is provided, filter out those values
   if (!is.null(region)){
-    region <- regionMask(region, z_fix = z_fix)
+    region <- regionMask(region, z_fix = z_fix, ...)
     world <- world[(from %in% region) & (to %in% region),]
   }
   
@@ -1975,7 +2147,7 @@ getPaths <- function(world, nodes, z_fix, id = "ID", order = NULL, x = "x",
   }
   # Coerce to data.table
   nodes <- as.data.table(nodes)[,.(ID = get(..id), x = get(..x), y = get(..y))]
-  nodes$Cell <- getCoords(nodes, z_fix = z_fix, precision = precision)
+  nodes$Cell <- getCoords(nodes, z_fix = z_fix, precision = precision, ...)
   
   # If no order is given, assume the node object is already in the desired order
   if (is.null(order)){
@@ -2004,7 +2176,7 @@ getPaths <- function(world, nodes, z_fix, id = "ID", order = NULL, x = "x",
       Graph <- igraph::graph_from_data_frame(world[,.(from,to,weight = dE_l)])
     } else {
       Graph <- igraph::graph_from_data_frame(world[,.(from,to,weight = get(cost))])
-
+      
     }
     
     # Store each *segment* (leg) of each path in a list,
@@ -2066,42 +2238,29 @@ getPaths <- function(world, nodes, z_fix, id = "ID", order = NULL, x = "x",
 #' DEM has such properties you may use that.
 #' 
 #' @title Define the sampling grid
-#' @param region An object with coercible \code{\link[raster]{extent}} such 
-#' as a RasterLayer or SpatialPolygonDataFrame representing the total area
-#' where movement is possible.
-#' @param res A numeric of length one or two representing the spatial resolution.
+#' @param proj A \code{\link[raster]{crs}} object or character string containing
+#' projection information. Should be conformal and in meters.
+#' @param res A numeric of length one or two nrepresenting the spatial resolution.
 #' Default is 5. 
 #' @param dx The horizontal offset from the origin (see \code{\link[raster]{origin}}).
-#' Default is 0.
+#' Default is 0 (this does not correspond to an origin of zero however).
 #' @param dy The vertical offset from the origin (see \code{\link[raster]{origin}}).
-#' Default is 0.
-#' @return A RasterLayer object to which all values are snapped, with resolution \code{res} and
+#' Default is 0 (this does not correspond to an origin of zero however).
+#' @return A RasterLayer object consisting of four cells, with resolution \code{res} and
 #'  the origin at \code{x = nx} and \code{y = ny}.
 #' @importFrom raster rasterFromXYZ
-#' @importFrom raster origin<-
+#' @importFrom data.table data.table
 #' @examples 
-#' proj <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
-#' area <- extent(c(10000,20000,30000,40000))
-#' area <- as(area,'SpatialPolygons')
-#' crs(area) <- proj
-#' z_fix <- fix_z(region = area, res = 2)
+#' projection <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
+#' z_fix <- fix_z(res = 2, proj = projection)
 #' @export
-fix_z <- function(region, res = 5, dx = 0, dy = 0){
+fix_z <- function(proj, res = 5, dx = 0, dy = 0){
   if (length(res) == 1){
     res <- c(res,res)
   }
-  
-  z <- expand.grid(
-    x = seq(from = extent(region)[1],
-            to = extent(region)[2],
-            by = res[1]),
-    y = seq(from = extent(region)[3],
-            to = extent(region)[4],
-            by = res[2]),
-    z = 0
-  )
-  
-  z <- rasterFromXYZ(z, crs=crs(region))
-  origin(z) <- c(dx,dy)
+  z <- data.table(x = c(0,0,res[1],res[1]) + dx,
+                  y = c(0,res[2],0,res[2]) + dy,
+                  z = c(1,1,1,1))
+  z <- rasterFromXYZ(z, res = res, crs=proj)
   return(z)
 }

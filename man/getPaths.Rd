@@ -7,14 +7,16 @@
 getPaths(
   world,
   nodes,
-  z_fix,
+  proj = NULL,
   id = "ID",
   order = NULL,
   x = "x",
   y = "y",
   region = NULL,
   costs = "all",
-  precision = 2
+  precision = 2,
+  z_fix = NULL,
+  ...
 )
 }
 \arguments{
@@ -25,8 +27,9 @@ SpatialPolygonsDataFrame representing the locations.
 If object is of class SpatialPolygonsDataFrame, the location will be taken at the
 centroid.}
 
-\item{z_fix}{A RasterLayer with the same origin and resolution as the
-\code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.}
+\item{proj}{A crs object or character string representing the workspace 
+projection. Required, unless \code{z_fix} is provided in which case
+it's ignored.}
 
 \item{id}{A character string representing the column containing each \code{node}
 location's unique ID.}
@@ -62,6 +65,13 @@ in the x and y directions. For grid sizes with nice, round numbers precisions
 can be low. This factor is controled by \code{\link[raster]{rasterFromXYZ}} and
 must be the same as the one used to generate the 
 'world' with \code{\link[lbmech]{makeWorld}}. Default is 2.}
+
+\item{z_fix}{A RasterLayer with the same origin and resolution as the
+\code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.
+Do not modify this parameter if you didn't modify it when you ran
+\code{\link[lbmech]{makeWorld}}.}
+
+\item{...}{Additional arguments to pass to \code{\link[lbmech]{fix_z}}.}
 }
 \value{
 SpatialLinesDataFrames representing least-cost paths. For each
@@ -106,7 +116,8 @@ crs(region) <- crs(grid)
 # Use the canonical parameters for a human in Tobler's Function
 world <- calculateCosts(world = grid, m = 60, v_max = 1.5,
                         k = 3.5, alpha = -0.05, BMR = 93,
-                        l_s = 1.6, L = 0.8, region = region, z_fix = dem,
+                        l_s = 1.6, L = 0.8, region = region,
+                        proj = crs(dem), res = res(dem),
                         cut_slope = 0.5, dir = dir)
                         
 # Generate five random points that fall within the region
@@ -118,11 +129,11 @@ points <- data.table(ID = 1:5,
 # Calculate the path from 1 -> 2 -> 5 -> 1 -> 4 
 pathOrder <- c(1,2,5,1,4)
 
-paths <- getPaths(world = world, nodes = points, z_fix = dem,
-                          order = pathOrder,
+paths <- getPaths(world = world, nodes = points, order = pathOrder,
+                          proj = crs(dem), res = res(dem),
                           costs = c('time','work','energy'))
                         
-#getCosts(world = world, from = points, z_fix = dem,
+#getCosts(world = world, from = points, proj = crs(dem), res = res(dem),
 #                        destination = 'all', costs = 'all',
 #                        output = 'file', dir = dir)                       
 #corridors <- makeCorridor(rasters = dir, order = pathOrder)

@@ -43,18 +43,22 @@ where f(0) != 0, requiring the use of index masking. This in turn
 encounters integer overflow errors with ‘large’ datasets that are
 nonetheless of a necessary size for most reasonable purposes.
 
-`lbmech` stores data and performs all linear algebra using the
-`data.table` package, storing each possible movement as its own unique
-row, with entries for a from node, a to node, and either the difference
-in or raw final and initial values of the raster encountered during the
-transition. This allows for (1) in-place modification of objects,
-greatly increasing processing speed; (2) bidirectional raster analysis
-describing accumulated costs to and from a node, and (3) additive,
-nonlinear, and multivariate transformations of large rasters and
-independent considerations without running into integer overflow limits.
-Since `lbmech` in the end is just a wrapper for applying `data.table`
-and `igraph` functions to rasters, it’s easy to generate any arbitrary
-cost function using `data.table` syntax.
+`lbmech` stores data and performs all linear algebra directly on
+resistance values using the `data.table` package. Not only is this more
+intuitive, but it greatly simplifies the syntax necesary for many types
+of algebraically simple operations. `lbmech` storrd each possible
+movement as its own unique row, with entries for a `from` node, a `to`
+node, and either the difference in or raw final and initial values of
+the raster encountered during the transition. Nodes are named after the
+coordinates of the raster cell to which they correspond, and are stored
+as character strings in the form `'x,y'`. This allows for (1) in-place
+modification of objects, greatly increasing processing speed; (2)
+bidirectional raster analysis describing accumulated costs to and from a
+node, and (3) additive, nonlinear, and multivariate transformations of
+large rasters and independent considerations without running into
+integer overflow limits. Since `lbmech` in the end is just a wrapper for
+applying `data.table` and `igraph` functions to rasters, it’s easy to
+generate any arbitrary cost function using `data.table` syntax.
 
 To ensure that the most computationally intensive steps only need to be
 performed once for many repeated analyses, `lbmech` also modularizes
@@ -72,6 +76,10 @@ similar tools such as `enerscape` for `R` in this regard, `lbmech`
 allows for the estimation of various types of energetic losses (due to
 kinematic locomotion, work against gravity, basal metabolic processes)
 instead of simply the total energetic or metabolic expenditure.
+Moreover, through the `getVelocity` function it provides a way of
+deriving cost functions from GPS data of human and animal movement. This
+is significantly less invasive than the VO<sub>2</sub> meters required
+for direct estimation of net energetic expenditure.
 
 The workflow demonstrated in this README provides a detailed guide for a
 hypothetical analysis of least-cost energetic analysis employing the
@@ -252,7 +260,11 @@ For example, a 90 m SRTM raster cell would generally result in paths
 much straighter than a real individual would walk, while a 0.10 cm would
 result in paths much curlier than a real individual would walk. Thus,
 for humans a reasonable resolution might be between 1-10 m, while for
-ants it might be between 1-5 mm.
+ants it might be between 1-5 mm. If no `z_fix` is specified, the default
+is a resolution of 5 m. If you wish to change this, you must make sure
+to include the parameter `res = x` where `x` is desired resolution in
+any function that requires `z_fix` or `proj` in the remainder of the
+workflow.
 
 The raster projection should be selected to minimize distance distortion
 along different bearings—such as conformal projections. If your source
@@ -262,11 +274,23 @@ the original DEM (or a constituent, if it’s multiple sources) as the
 you can make one using the `fix_z` function:
 
 ``` r
-z_fix <- fix_z(region = dem,              # Desired extent and projection
+z_fix <- fix_z(proj   = crs(dem),         # Desired projection
                res    = res(dem),         # Desired resolution
-               dx     = origin(dem)[1],   # Desired horizontal offset
-               dy     = origin(dem)[2])   # Desired vertical offset
+               dx     = 0,                # Desired horizontal offset
+               dy     = 0)                # Desired vertical offset
 ```
+
+If you do not specify a `z_fix` parameter, the default is for the
+functions to assign it as
+`z_fix <- fix_z(proj = proj, res = 5, dx = 0, dy = 0)`. The functions
+will generally try to figure out what the projection is, but it’s best
+practice to define it outside of the function (ensuring it’s confromal
+and in meters) and continually refer to it. In short, if a function has
+a `z_fix` parameter, you must ALWAYS specify either a `z_fix` OR a
+`crs`. If you modify both, `z_fix` takes precedence, and if you modify
+either of them or `res`, `dx`, or `dy` when making the `world` for the
+first time, you must modify them through the remainder of the workflow
+CONSISTENTLY.
 
 Contrary to my advice, in this example we will set `z_fix = dem` since
 the resolution is low enough to minimize computational time.
@@ -456,7 +480,7 @@ to the `$to` cell.
 The next step is calculating the cost in terms of time, work, and energy
 for every possible transition. The `calculateCosts` function takes the
 changes in elevation and using the velocity information from the
-previous section, models of biomechanical work expediture, and physical
+previous section, models of biomechanical work expenditure, and physical
 limitations calculates the expected costs. There are currently three
 available models, run `?calculateCosts` for more information on each
 model and what parameters are required. This is for a 60 kg human with a
@@ -848,9 +872,10 @@ new cost name.
 
 ``` r
 # Merge the worlds
-world3 <- merge(world[,.(from,to,dU_l)],
-                world2[,.(from,to,fakeCost)],
-                by=c("from","to"), all=FALSE)
+world3 <- merge(world[,.(from,to,dU_l)],           # Keep cell names
+                world2[,.(from,to,fakeCost)],      # and costs, join
+                by=c("from","to"), all=FALSE)      # on the latter two
+                                                           
 
 # Calculate our multivariate cost
 world3[, newCost := fakeCost * dU_l]

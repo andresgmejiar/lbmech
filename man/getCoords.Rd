@@ -4,11 +4,23 @@
 \alias{getCoords}
 \title{Get "x,y" coordinates in appropriate format}
 \usage{
-getCoords(data, x = "x", y = "y", z_fix, precision = 2)
+getCoords(
+  data,
+  proj = NULL,
+  x = "x",
+  y = "y",
+  z_fix = NULL,
+  precision = 2,
+  ...
+)
 }
 \arguments{
 \item{data}{An object of class data.table or something coercible to it
-containing the coordinates needing conversion, or a SpatialPointsDataFrame}
+containing the coordinates needing conversion, or a SpatialPointsDataFrame.}
+
+\item{proj}{A crs object or character string representing the output
+projection. Required unless \code{z_fix} is provided in which case 
+\code{proj} is ignored.}
 
 \item{x}{A character vector representing the column containing the 'x' coordinates.
 Required if \code{data} is not SpatialPointsDataFrame.}
@@ -24,6 +36,8 @@ in the x and y directions. For grid sizes with nice, round numbers precisions
 can be low. This factor is controled by \code{\link[raster]{rasterFromXYZ}} and
 must be the same as the one used to generate the 
 'world' with \code{\link[lbmech]{makeWorld}}. Default is 2.}
+
+\item{...}{Additional arguments to pass to \code{\link[lbmech]{fix_z}}.}
 }
 \value{
 A vector containing the requested coordinates in appropriate format

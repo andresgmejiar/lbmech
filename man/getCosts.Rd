@@ -8,8 +8,8 @@ getCosts(
   world,
   from,
   to = NULL,
+  proj = NULL,
   id = "ID",
-  z_fix = NULL,
   x = "x",
   y = "y",
   destination = "pairs",
@@ -18,11 +18,14 @@ getCosts(
   direction = "both",
   output = "object",
   precision = 2,
-  dir = tempdir()
+  z_fix = NULL,
+  dir = tempdir(),
+  ...
 )
 }
 \arguments{
-\item{world}{The data.table output of the \code{\link[lbmech]{calculateCosts}} function.}
+\item{world}{The data.table output of the \code{\link[lbmech]{calculateCosts}} 
+function.}
 
 \item{from}{One of data.frame, data.table, SpatialPointsDataFrame, or
 SpatialPolygonsDataFrame representing the origin locations. If \code{to = NULL}
@@ -34,11 +37,12 @@ centroid.}
 SpatialPolygonsDataFrame representing the origin locations. Optional if
 \code{destination =  'pairs'}, ignored if \code{destination =  'all'}.}
 
+\item{proj}{A crs object or character string representing the workspace 
+projection. Required, unless \code{z_fix} is provided in which case
+it's ignored.}
+
 \item{id}{Character string representing the column containing the unique
 IDs for for each location in the \code{from} (and \code{to}) objects.}
-
-\item{z_fix}{A RasterLayer with the same origin and resolution as the
-\code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.}
 
 \item{x}{A character vector representing the column containing the 'x' coordinates.
 Required if \code{data} is not Spatial*.}
@@ -81,9 +85,16 @@ can be low. This factor is controled by \code{\link[raster]{rasterFromXYZ}} and
 must be the same as the one used to generate the 
 'world' with \code{\link[lbmech]{makeWorld}}. Default is 2.}
 
+\item{z_fix}{A RasterLayer with the same origin and resolution as the
+\code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.
+Do not modify this parameter if you didn't modify it when you ran
+\code{\link[lbmech]{makeWorld}}.}
+
 \item{dir}{A filepath to the directory being used as the workspace.
 Default is \code{tempdir()} but unless the analyses will only be performed a few
 times it is highly recommended to define a permanent workspace.}
+
+\item{...}{Additional arguments to pass to \code{\link[lbmech]{fix_z}}.}
 }
 \value{
 A list, with entries for each combination of selected \code{costs}
@@ -161,7 +172,8 @@ crs(region) <- crs(grid)
 # Use the canonical parameters for a human in Tobler's Function
 world <- calculateCosts(world = grid, m = 60, v_max = 1.5,
                         k = 3.5, alpha = -0.05, BMR = 93,
-                        l_s = 1.6, L = 0.8, region = region, z_fix = dem,
+                        l_s = 1.6, L = 0.8, region = region, 
+                        proj = crs(dem), res = res(dem),
                         cut_slope = 0.5, dir = dir)
                         
 # Generate five random points that fall within the region
@@ -170,13 +182,15 @@ points <- data.table(ID = 1:5,
                      y = runif(5, extent(region)[3], extent(region)[4]))
                      
 # Get 'time' and 'work' costs
-costMatrix <- getCosts(world = world, from = points, z_fix = dem,
-                       costs = c("time","work"), dir = dir)
+costMatrix <- getCosts(world = world, from = points, 
+                       costs = c("time","work"),
+                       proj = crs(dem), res = res(dem), dir = dir)
                      
 #### Example 2:
 # Calculate the cost rasters to travel to and from a set of points
-costRasters <- getCosts(world = world, from = points, z_fix = dem,
+costRasters <- getCosts(world = world, from = points,
                         destination = 'all', costs = c('time','work'),
-                        output = c("object","file"), dir = dir)
+                        output = c("object","file"), 
+                        proj = crs(dem), res = res(dem),dir = dir)
 
 }

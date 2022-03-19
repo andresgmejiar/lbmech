@@ -6,13 +6,17 @@
 \usage{
 importWorld(
   region,
-  z_fix,
   polys,
+  proj = crs(polys),
   banned = NULL,
   tile_id = "TILEID",
   xy1 = FALSE,
   xy2 = FALSE,
+  res = 5,
+  dx = 0,
+  dy = 0,
   dl = FALSE,
+  z_fix = NULL,
   dir = tempdir(),
   ...
 )
@@ -22,12 +26,14 @@ importWorld(
 representing the total area where movement is possible. Must lie within
 the area defined by \code{polys}}
 
-\item{z_fix}{A RasterLayer with the same origin and resolution as the
-\code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.}
-
 \item{polys}{An object of class SpatialPolygonsDataFrame representing
 the partitioning grid for the maximum possible area, in the same format as the
 output of the \code{\link[lbmech]{makeGrid}} function.}
+
+\item{proj}{A crs object or character string representing the output
+projection. Default is \code{proj = crs(polys)}
+unless \code{proj} or \code{z_fix} are provided in which case 
+the latter takes precedence.}
 
 \item{banned}{An object of class RasterLayer or SpatialPolygons*
 representing the total area where movement is \emph{prohibited}. Must lie within
@@ -39,16 +45,32 @@ in the \code{polys} polygon containing the unique Tile IDs. Default is \code{til
 \item{xy1}{A logical \code{TRUE} or \code{FALSE} indicating whether to generate
 unique numeric columns for the x and y coordinates of the starting points.
 Default is \code{FALSE}, and is not needed for the 
-\code{\link[lbmech]{calculateCosts}} function, which generates them on its own.}
+\code{\link[lbmech]{calculateCosts}}.
+If you intend on using a custom cost function, set this as TRUE since 
+\code{\link[lbmech]{getCosts}} will need them.}
 
 \item{xy2}{A logical \code{TRUE} or \code{FALSE} indicating whether to generate
 unique numeric columns for the x and y coordinates of the ending points.
 Default is \code{FALSE}, and is not needed for the 
 \code{\link[lbmech]{calculateCosts}} function.}
 
+\item{res}{Passed on to \code{\link[lbmech]{fix_z}}, default is 5. Ignored
+if z_fix is provided.}
+
+\item{dx}{Passed on to \code{\link[lbmech]{fix_z}}, default is 0. Ignored
+if z_fix is provided.}
+
+\item{dy}{Passed on to \code{\link[lbmech]{fix_z}}, default is 0. Ignored
+if z_fix is provided.}
+
 \item{dl}{A logical \code{TRUE} or \code{FALSE} indicating whether to 
 Default is \code{FALSE}, and is not needed for the 
 \code{\link[lbmech]{calculateCosts}} function, which generates it on its own.}
+
+\item{z_fix}{A RasterLayer with the same origin and resolution as the
+\code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.
+Do not modify this parameter if you didn't modify it when you ran
+\code{\link[lbmech]{makeWorld}}.}
 
 \item{dir}{A filepath to the directory being used as the workspace.
 Default is \code{tempdir()} but unless the analyses will only be performed a few
@@ -117,6 +139,6 @@ region <- extent(c(12000,16000,32000,36000))
 region <- as(region,"SpatialPolygons")
 crs(region) <- crs(grid)
 
-world <- importWorld(region = region, polys = grid,
-                     cut_slope = 0.5, z_fix = dem, dir = dir)
+world <- importWorld(region = region, polys = grid, cut_slope = 0.5, 
+                     res = res(dem), dir = dir)
 }

@@ -128,7 +128,7 @@ region <- as(region,"SpatialPolygons")
 crs(region) <- crs(grid)
 
 world <- importWorld(region = region, polys = grid,
-                     cut_slope = 0.5, z_fix = dem, dir = dir)
+                     cut_slope = 0.5, res = res(dem), dir = dir)
 
 # We'll run calculateCosts using the canonical parameters for Tobler's 
 # function on a human being. 
@@ -149,7 +149,8 @@ velocity <- getVelocity(data = data, z = 'elevation')
 # Run calculateCosts
 world <- calculateCosts(world = grid, m = 60, v_max = velocity$vmax,
                         k = velocity$k, alpha = velocity$alpha, BMR = 93,
-                        l_s = 1.6, L = 0.8, region = region, z_fix = dem,
+                        l_s = 1.6, L = 0.8, region = region,
+                        proj = crs(dem), res = res(dem),
                         cut_slope = 0.5, dir = dir)
 
 }

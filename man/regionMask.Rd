@@ -4,19 +4,28 @@
 \alias{regionMask}
 \title{Convert RasterLayer or SpatialPolygon* to "x,y"}
 \usage{
-regionMask(region, z_fix, precision = 2)
+regionMask(region, proj = crs(region), z_fix = NULL, precision = 2, ...)
 }
 \arguments{
 \item{region}{An object of class SpatialPolygons* to convert to "x,y"}
 
+\item{proj}{A crs object or character string representing the output
+projection. Default is \code{proj = crs(region)}
+unless \code{proj} or \code{z_fix} are provided in which case 
+the latter takes precedence.}
+
 \item{z_fix}{A RasterLayer with the same origin and resolution as the
-\code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.}
+\code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.
+Do not modify this parameter if you didn't modify it when you ran
+\code{\link[lbmech]{makeWorld}}.}
 
 \item{precision}{An integer representing the number of decimals to retain
 in the x and y directions. For grid sizes with nice, round numbers precisions
 can be low. This factor is controled by \code{\link[raster]{rasterFromXYZ}} and
 must be the same as the one used to generate the 
 'world' with \code{\link[lbmech]{makeWorld}}. Default is 2.}
+
+\item{...}{Additional arguments to pass to \code{\link[lbmech]{fix_z}}.}
 }
 \value{
 A character vector containing all cells that fall in the same
@@ -43,6 +52,5 @@ region <- extent(c(12500,12600,32500,32700))
 region <- as(region,"SpatialPolygons")
 crs(region) <- crs(dem)
 
-maskedCells <- regionMask(region = region, z_fix = dem)
-
+maskedCells <- regionMask(region = region, res = res(dem))
 }

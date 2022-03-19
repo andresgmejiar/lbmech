@@ -7,18 +7,20 @@
 makeWorld(
   tiles,
   polys,
-  tile_id = "TILEID",
   cut_slope,
-  z_fix,
+  tile_id = "TILEID",
+  proj = crs(polys),
   directions = 16,
   neighbor_distance = 100,
   keep_z = "dz",
+  z_fix = NULL,
   unit = "m",
   vals = "location",
   precision = 2,
   FUN = mean,
   sampling = "bilinear",
-  dir = tempdir()
+  dir = tempdir(),
+  ...
 )
 }
 \arguments{
@@ -30,15 +32,16 @@ should be in the workspace.}
 the partitioning grid for the maximum possible area, in the same format as the
 output of the \code{\link[lbmech]{makeGrid}} function.}
 
-\item{tile_id}{A character string representing the name of the column
-in the 'polys' polygon containing the unique Tile IDs. Default is \code{tile_id = 'TILEID'}}
-
 \item{cut_slope}{A number representing the dimensionless maximum slope
 of ascent/descent. To ignore, set \code{cut_slope = Inf}.}
 
-\item{z_fix}{A raster that will define the resolution, origin, and
-projection information for the entire "world" of possible movement. Note that
-it does NOT need the same extent.}
+\item{tile_id}{A character string representing the name of the column
+in the 'polys' polygon containing the unique Tile IDs. Default is \code{tile_id = 'TILEID'}}
+
+\item{proj}{A crs object or character string representing the output projection.
+Default projection is \code{proj = crs(polys)} unless a `z_fix` or `proj` is 
+provided, in which case the latter is ignored. Great care should be 
+employed to ensure that the projection is conformal and in meters.}
 
 \item{directions}{One of the integers \code{c(4, 8, 16)},
 the character string \code{'bishop'},or a neighborhood matrix.
@@ -58,6 +61,13 @@ of the initial or final cell's values should be stored in the output tensor.
 Since the energetic calculations only depend on a *change* in elevation, 
 the default is \code{'dz'}. However, if the specific origin or destination
 values are needed this should me modified accordingly.}
+
+\item{z_fix}{A raster that will define the resolution, origin, and
+projection information for the entire "world" of possible movement. Note that
+it does NOT need the same extent. Default resolution is 5, and offset is 0.
+Default projection is \code{proj = crs(polys)} unless a `z_fix` or `proj` is 
+provided, in which case the latter is ignored. Great care should be 
+employed to ensure that the projection is conformal and in meters.}
 
 \item{unit}{One of \code{c("m", "km", "ft", "mi")}, representing the unit of the DEM.
 All will be converted to meters, which is the default.}
@@ -84,6 +94,8 @@ although \code{'ngb'} nearest neighbor is available for categorical rasters.}
 \item{dir}{A filepath to the directory being used as the workspace.
 Default is \code{tempdir()} but unless the analyses will only be performed a few
 times it is highly recommended to define a permanent workspace.}
+
+\item{...}{Additional arguments to pass to \code{\link[lbmech]{fix_z}}.}
 }
 \value{
 A \code{.gz} file for each sector named after its sector id,
@@ -143,6 +155,7 @@ tiles <- as(tiles,"SpatialPolygons")
 crs(tiles) <- crs(grid)
 tiles <- whichTiles(region = tiles, polys = grid)
 
-makeWorld(tiles = tiles, polys = grid,
-          cut_slope = 0.5, z_fix = dem, dir = dir)
+# Make a world but limit it to the DEM grid size
+makeWorld(tiles = tiles, polys = grid, cut_slope = 0.5, 
+          res = res(dem), dir = dir)
 }

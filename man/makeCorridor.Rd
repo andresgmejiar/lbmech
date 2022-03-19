@@ -73,7 +73,8 @@ crs(region) <- crs(grid)
 # Use the canonical parameters for a human in Tobler's Function
 world <- calculateCosts(world = grid, m = 60, v_max = 1.5,
                         k = 3.5, alpha = -0.05, BMR = 93,
-                        l_s = 1.6, L = 0.8, region = region, z_fix = dem,
+                        l_s = 1.6, L = 0.8, region = region, 
+                        proj = crs(dem), res = res(dem),
                         cut_slope = 0.5, dir = dir)
                         
 # Generate five random points that fall within the region
@@ -82,9 +83,10 @@ points <- data.table(ID = 1:5,
                      y = runif(5, extent(region)[3], extent(region)[4]))
                      
 # Calculate cost rasters
-costRasters <- getCosts(world = world, from = points, z_fix = dem,
+costRasters <- getCosts(world = world, from = points, 
                         destination = 'all', costs = 'all',
-                        output = c("object","file"), dir = dir)
+                        output = c("object","file"), 
+                        proj = crs(dem), res = res(dem), dir = dir)
                         
 #### Example 1:
 # Calculating the corridors from a list of RasterStacks,
