@@ -572,7 +572,7 @@ getVelocity <- function(data, x = 'x', y ='y', dl = NULL, z = 'z',
        by = 'ID'
   ][, dl := sqrt(dx^2 + dy^2)]
   } else {
-    data[, `:=`(dl = get(dl),
+    data[, `:=`(dl = get(..dl),
                 dz = z - data.table::shift(z))]
   }
   
