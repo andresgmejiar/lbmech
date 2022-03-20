@@ -462,7 +462,7 @@ getVelocity <- function(data, x = 'x', y ='y', dl = NULL, z = 'z',
                         tile_id = "TILEID", vals = "location",
                         dir = tempdir()){
   # This bit is to silence the CRAN check warnings for literal column names
-  ..x=..y=..z=..ID=..dt=..z_vals=Order=dl=dx=dy=dz=dl_dt=NULL
+  ..x=..y=..z=..ID=..dt=..z_vals=Order=dx=dy=dz=dl_dt=NULL
   #
   
   # Standardize filepath names
