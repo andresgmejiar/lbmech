@@ -602,7 +602,8 @@ getVelocity <- function(data, x = 'x', y ='y', dl = NULL, z = 'z',
   }
   
   # Get the maximum velocity as the tauth_vmax quantile
-  v_max <- as.numeric(stats::quantile(data[,dl_dt],tau_vmax,na.rm=TRUE))
+  v_max <- as.numeric(stats::quantile(data[dl_dt <= v_lim,dl_dt],
+                                      tau_vmax,na.rm=TRUE))
   data$v_max <- v_max
   
   
