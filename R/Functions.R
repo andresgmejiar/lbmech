@@ -375,11 +375,15 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
 #' @param alpha_init A number representing the value for dimensionless slope of
 #' maximum velocity at which to initiate the nonlinear regression. Default is
 #' \code{alpha_init = -0.1}.
+#' @param v_lim The maximum velocity that will be considered. Any value above
+#' this will be excluded from the regression. Default is \code{v_lim = Inf},
+#' but it should be set to an animal's maximum possible velocity.
 #' @param tile_id a character string representing the name of the column
 #' in the \code{z} polygon containing the unique Tile IDs. Ignored if elevations are
 #' provided as a column or RasterLayer. Otherwise default is \code{tile_id = 'TILEID'}.
 #' @param vals A character string or a RasterLayer object. Required only if the
-#' \code{z} parameter is a polygon NOT the output of the \code{\link[lbmech]{makeGrid}} function as the default is
+#' \code{z} parameter is a polygon NOT the output of the 
+#' \code{\link[lbmech]{makeGrid}} function as the default is
 #' the character string \code{'location'}. If not, the \code{vals} parameter should be
 #' set to the column name containing the URL or file path to the DEM for that
 #' sector.
@@ -458,8 +462,8 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
 #' @export
 getVelocity <- function(data, x = 'x', y ='y', dl = NULL, z = 'z', 
                         dt = 'dt', ID = 'ID', tau = NULL, tau_vmax = 0.995,
-                        tau_nlrq = 0.95,k_init = 3.5, alpha_init = -0.1,
-                        tile_id = "TILEID", vals = "location",
+                        tau_nlrq = 0.95, k_init = 3.5, alpha_init = -0.1,
+                        v_lim = Inf, tile_id = "TILEID", vals = "location",
                         dir = tempdir()){
   # This bit is to silence the CRAN check warnings for literal column names
   ..x=..y=..z=..ID=..dt=..z_vals=Order=dx=dy=dz=dl_dt=NULL
@@ -470,6 +474,10 @@ getVelocity <- function(data, x = 'x', y ='y', dl = NULL, z = 'z',
   rd <- normalizePath(paste0(dir,"/Elevations"),mustWork = FALSE)
   
   data <- as.data.table(data)
+  
+  if (!(ID %in% names(data))){
+    stop(paste0("'",ID,"' not found among data columns"))
+  }
   
   # If z is a raster layer, its simply extracting the z points from xy locations
   if ("RasterLayer" %in% class(z)){
@@ -601,7 +609,9 @@ getVelocity <- function(data, x = 'x', y ='y', dl = NULL, z = 'z',
   # And obtain the other coefficients through an nlrq of the form proposed
   # by Tobler (exponential decay from an optimal angle)
   velocity <- quantreg::nlrq(dl_dt ~ v_max * exp(-k * abs(dz_dl - alpha)),
-                             data = data, tau = tau_nlrq, start=list(k=k_init,alpha=-alpha_init))
+                             data = data[dl_dt <= v_lim], 
+                             tau = tau_nlrq, 
+                             start=list(k=k_init,alpha=-alpha_init))
   data$v_max <- NULL
   
   

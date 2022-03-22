@@ -17,6 +17,7 @@ getVelocity(
   tau_nlrq = 0.95,
   k_init = 3.5,
   alpha_init = -0.1,
+  v_lim = Inf,
   tile_id = "TILEID",
   vals = "location",
   dir = tempdir()
@@ -73,12 +74,17 @@ at which to initiate the nonlinear regression. Default is \code{k_init = 3.5}.}
 maximum velocity at which to initiate the nonlinear regression. Default is
 \code{alpha_init = -0.1}.}
 
+\item{v_lim}{The maximum velocity that will be considered. Any value above
+this will be excluded from the regression. Default is \code{v_lim = Inf},
+but it should be set to an animal's maximum possible velocity.}
+
 \item{tile_id}{a character string representing the name of the column
 in the \code{z} polygon containing the unique Tile IDs. Ignored if elevations are
 provided as a column or RasterLayer. Otherwise default is \code{tile_id = 'TILEID'}.}
 
 \item{vals}{A character string or a RasterLayer object. Required only if the
-\code{z} parameter is a polygon NOT the output of the \code{\link[lbmech]{makeGrid}} function as the default is
+\code{z} parameter is a polygon NOT the output of the 
+\code{\link[lbmech]{makeGrid}} function as the default is
 the character string \code{'location'}. If not, the \code{vals} parameter should be
 set to the column name containing the URL or file path to the DEM for that
 sector.}
