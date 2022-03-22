@@ -601,7 +601,7 @@ getVelocity <- function(data, x = 'x', y ='y', dl = NULL, z = 'z',
   # And obtain the other coefficients through an nlrq of the form proposed
   # by Tobler (exponential decay from an optimal angle)
   velocity <- quantreg::nlrq(dl_dt ~ v_max * exp(-k * abs(dz_dl - alpha)),
-                             data = data, tau = tau_vmax, start=list(k=k_init,alpha=-alpha_init))
+                             data = data, tau = tau_nlrq, start=list(k=k_init,alpha=-alpha_init))
   data$v_max <- NULL
   
   
