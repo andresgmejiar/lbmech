@@ -1,4 +1,5 @@
--   [lbmech](#lbmech)
+-   [lbmech
+    <img src='man/figures/logo.png' align="right" height="139" />](#lbmech)
     -   [Installation](#installation)
     -   [Example Workflow](#example-workflow)
         -   [Part 1: Topographic Data
@@ -16,7 +17,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# lbmech
+# lbmech <img src='man/figures/logo.png' align="right" height="139" />
 
 <!-- badges: start -->
 <!-- badges: end -->
@@ -195,6 +196,7 @@ points <- data.table(x = runif(5, extent(dem)[1], extent(dem)[2]),
                            
 # Run whichTiles and getMap to prepare appropriate sector files
 tile_list <- whichTiles(region = points, polys = grid) 
+#> Loading required namespace: rgeos
 print(tile_list)
 #> [1] "SECTOR_17" "SECTOR_5"  "SECTOR_1"  "SECTOR_10"
 
