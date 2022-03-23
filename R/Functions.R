@@ -469,7 +469,7 @@ getVelocity <- function(data, x = 'x', y ='y', dl = NULL, z = 'z',
                         tile_id = "TILEID", vals = "location",
                         dir = tempdir()){
   # This bit is to silence the CRAN check warnings for literal column names
-  ..x=..y=..z=..ID=..dt=..z_vals=Order=dx=dy=dz=dl_dt=NULL
+  ..x=..y=..z=..ID=..dt=..z_vals=Order=dx=dy=dz=dl_dt=..dl=dz_dl=NULL
   #
   
   # Standardize filepath names
@@ -639,7 +639,7 @@ getVelocity <- function(data, x = 'x', y ='y', dl = NULL, z = 'z',
     data = data
   )
   # Return the environment to what it was
-  options(warn = defaultW)
+  on.exit(options(warn = defaultW))
   return(out)
   
 }

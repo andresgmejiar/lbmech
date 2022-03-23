@@ -195,7 +195,6 @@ points <- data.table(x = runif(5, extent(dem)[1], extent(dem)[2]),
                            
 # Run whichTiles and getMap to prepare appropriate sector files
 tile_list <- whichTiles(region = points, polys = grid) 
-#> Loading required namespace: rgeos
 print(tile_list)
 #> [1] "SECTOR_17" "SECTOR_5"  "SECTOR_1"  "SECTOR_10"
 
@@ -385,20 +384,20 @@ print(velocity)
     #> $model
     #> Nonlinear quantile regression
     #>    model:  dl_dt ~ v_max * exp(-k * abs(dz_dl - alpha)) 
-    #>     data:  data 
-    #>      tau:  0.995 
-    #> deviance:  428763.3 
+    #>     data:  [ data (dl_dt <= v_lim) & abs(dz_dl) <= slope_lim 
+    #>      tau:  0.95 
+    #> deviance:  20391.25 
     #>          k      alpha 
-    #>  0.7231671 34.6523385 
+    #>  0.2508193 -0.6338198 
     #> 
     #> $vmax
     #> [1] 90.81751
     #> 
     #> $alpha
-    #> [1] 34.65234
+    #> [1] -0.6338198
     #> 
     #> $k
-    #> [1] 0.7231671
+    #> [1] 0.2508193
     #> 
     #> $tau_vmax
     #> [1] 0.995
