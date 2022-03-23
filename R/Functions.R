@@ -612,7 +612,7 @@ getVelocity <- function(data, x = 'x', y ='y', dl = NULL, z = 'z',
   velocity <- quantreg::nlrq(dl_dt ~ v_max * exp(-k * abs(dz_dl - alpha)),
                              data = data[dl_dt <= v_lim], 
                              tau = tau_nlrq, 
-                             start=list(k=k_init,alpha=-alpha_init))
+                             start=list(k=k_init,alpha=alpha_init))
   data$v_max <- NULL
   
   
