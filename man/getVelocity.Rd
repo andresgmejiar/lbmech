@@ -79,6 +79,9 @@ maximum velocity at which to initiate the nonlinear regression. Default is
 this will be excluded from the regression. Default is \code{v_lim = Inf},
 but it should be set to an animal's maximum possible velocity.}
 
+\item{slope_lim}{the maximum angle that will be considered. Any value
+above this will be excluded from the regression. Default is \code{slope_lim = 1}.}
+
 \item{tile_id}{a character string representing the name of the column
 in the \code{z} polygon containing the unique Tile IDs. Ignored if elevations are
 provided as a column or RasterLayer. Otherwise default is \code{tile_id = 'TILEID'}.}
@@ -93,9 +96,6 @@ sector.}
 \item{dir}{A filepath to the directory being used as the workspace.
 Default is \code{tempdir()} but unless the analyses will only be performed a few
 times it is highly recommended to define a permanent workspace.}
-
-\item{angle_lim}{the maximum angle that will be considered. Any value
-above this will be excluded from the regression. Default is \code{angle_lim = 1}.}
 }
 \value{
 A list, containing the following entries:

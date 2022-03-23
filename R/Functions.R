@@ -378,8 +378,8 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
 #' @param v_lim The maximum velocity that will be considered. Any value above
 #' this will be excluded from the regression. Default is \code{v_lim = Inf},
 #' but it should be set to an animal's maximum possible velocity.
-#' @param angle_lim the maximum angle that will be considered. Any value
-#' above this will be excluded from the regression. Default is \code{angle_lim = 1}.
+#' @param slope_lim the maximum angle that will be considered. Any value
+#' above this will be excluded from the regression. Default is \code{slope_lim = 1}.
 #' @param tile_id a character string representing the name of the column
 #' in the \code{z} polygon containing the unique Tile IDs. Ignored if elevations are
 #' provided as a column or RasterLayer. Otherwise default is \code{tile_id = 'TILEID'}.
@@ -606,7 +606,7 @@ getVelocity <- function(data, x = 'x', y ='y', dl = NULL, z = 'z',
   
   # Get the maximum velocity as the tauth_vmax quantile
   v_max <- as.numeric(stats::quantile(data[(dl_dt <= v_lim) &
-                                             abs(dz_dl <= angle_lim),dl_dt],
+                                             abs(dz_dl <= slope_lim),dl_dt],
                                       tau_vmax,na.rm=TRUE))
   data$v_max <- v_max
   
@@ -615,7 +615,7 @@ getVelocity <- function(data, x = 'x', y ='y', dl = NULL, z = 'z',
   # by Tobler (exponential decay from an optimal angle)
   velocity <- quantreg::nlrq(dl_dt ~ v_max * exp(-k * abs(dz_dl - alpha)),
                              data = data[(dl_dt <= v_lim) & 
-                                           abs(dz_dl <= angle_lim)], 
+                                           abs(dz_dl <= slope_lim)], 
                              tau = tau_nlrq, 
                              start=list(k=k_init,alpha=alpha_init))
   data$v_max <- NULL
