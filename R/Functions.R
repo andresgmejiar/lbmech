@@ -606,7 +606,7 @@ getVelocity <- function(data, x = 'x', y ='y', dl = NULL, z = 'z',
   
   # Get the maximum velocity as the tauth_vmax quantile
   v_max <- as.numeric(stats::quantile(data[(dl_dt <= v_lim) &
-                                             abs(dz_dl <= slope_lim),dl_dt],
+                                             abs(dz_dl) <= slope_lim,dl_dt],
                                       tau_vmax,na.rm=TRUE))
   data$v_max <- v_max
   
@@ -615,7 +615,7 @@ getVelocity <- function(data, x = 'x', y ='y', dl = NULL, z = 'z',
   # by Tobler (exponential decay from an optimal angle)
   velocity <- quantreg::nlrq(dl_dt ~ v_max * exp(-k * abs(dz_dl - alpha)),
                              data = data[(dl_dt <= v_lim) & 
-                                           abs(dz_dl <= slope_lim)], 
+                                           abs(dz_dl) <= slope_lim], 
                              tau = tau_nlrq, 
                              start=list(k=k_init,alpha=alpha_init))
   data$v_max <- NULL
