@@ -111,7 +111,7 @@ devtools::install_github("andresgmejiar/lbmech")
 ```{r import}
 library(lbmech)
 # Set random seed for reproducibility's sake
-set.seed(5574741)
+set.seed(75291)
 ```
 
 

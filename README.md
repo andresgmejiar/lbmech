@@ -114,7 +114,7 @@ devtools::install_github("andresgmejiar/lbmech")
 ``` r
 library(lbmech)
 # Set random seed for reproducibility's sake
-set.seed(5574741)
+set.seed(75291)
 ```
 
 ### Part 1: Topographic Data Sources
@@ -197,36 +197,19 @@ points <- data.table(x = runif(5, extent(dem)[1], extent(dem)[2]),
                            
 # Run whichTiles and getMap to prepare appropriate sector files
 tile_list <- whichTiles(region = points, polys = grid) 
+#> Loading required namespace: rgeos
 print(tile_list)
-#> [1] "SECTOR_17" "SECTOR_5"  "SECTOR_1"  "SECTOR_10"
+#> [1] "SECTOR_24" "SECTOR_9"  "SECTOR_25" "SECTOR_18" "SECTOR_20"
 
 getMap(tiles = tile_list, polys = grid, dir = dir)
+#> [1] "Cropping Tile SECTOR_24 (1 of 5)"
+#> [1] "Cropping Tile SECTOR_9 (2 of 5)"
+#> [1] "Cropping Tile SECTOR_25 (3 of 5)"
+#> [1] "Cropping Tile SECTOR_18 (4 of 5)"
+#> [1] "Cropping Tile SECTOR_20 (5 of 5)"
 print(list.files(dir,recursive=TRUE, pattern = ".gz$"))
-#>  [1] "Categorical/Elevations/SECTOR_1.gz"      "Categorical/Elevations/SECTOR_11.gz"    
-#>  [3] "Categorical/Elevations/SECTOR_12.gz"     "Categorical/Elevations/SECTOR_13.gz"    
-#>  [5] "Categorical/Elevations/SECTOR_14.gz"     "Categorical/Elevations/SECTOR_16.gz"    
-#>  [7] "Categorical/Elevations/SECTOR_17.gz"     "Categorical/Elevations/SECTOR_18.gz"    
-#>  [9] "Categorical/Elevations/SECTOR_19.gz"     "Categorical/Elevations/SECTOR_2.gz"     
-#> [11] "Categorical/Elevations/SECTOR_3.gz"      "Categorical/Elevations/SECTOR_4.gz"     
-#> [13] "Categorical/Elevations/SECTOR_6.gz"      "Categorical/Elevations/SECTOR_7.gz"     
-#> [15] "Categorical/Elevations/SECTOR_8.gz"      "Categorical/Elevations/SECTOR_9.gz"     
-#> [17] "Categorical/Tensors/SECTOR_12_Tensor.gz" "Categorical/Tensors/SECTOR_13_Tensor.gz"
-#> [19] "Categorical/Tensors/SECTOR_7_Tensor.gz"  "Categorical/Tensors/SECTOR_8_Tensor.gz" 
-#> [21] "Elevations/SECTOR_1.gz"                  "Elevations/SECTOR_10.gz"                
-#> [23] "Elevations/SECTOR_11.gz"                 "Elevations/SECTOR_12.gz"                
-#> [25] "Elevations/SECTOR_13.gz"                 "Elevations/SECTOR_14.gz"                
-#> [27] "Elevations/SECTOR_15.gz"                 "Elevations/SECTOR_16.gz"                
-#> [29] "Elevations/SECTOR_17.gz"                 "Elevations/SECTOR_18.gz"                
-#> [31] "Elevations/SECTOR_19.gz"                 "Elevations/SECTOR_2.gz"                 
-#> [33] "Elevations/SECTOR_20.gz"                 "Elevations/SECTOR_21.gz"                
-#> [35] "Elevations/SECTOR_22.gz"                 "Elevations/SECTOR_23.gz"                
-#> [37] "Elevations/SECTOR_24.gz"                 "Elevations/SECTOR_25.gz"                
-#> [39] "Elevations/SECTOR_3.gz"                  "Elevations/SECTOR_4.gz"                 
-#> [41] "Elevations/SECTOR_5.gz"                  "Elevations/SECTOR_6.gz"                 
-#> [43] "Elevations/SECTOR_7.gz"                  "Elevations/SECTOR_8.gz"                 
-#> [45] "Elevations/SECTOR_9.gz"                  "Tensors/SECTOR_12_Tensor.gz"            
-#> [47] "Tensors/SECTOR_13_Tensor.gz"             "Tensors/SECTOR_7_Tensor.gz"             
-#> [49] "Tensors/SECTOR_8_Tensor.gz"
+#> [1] "Elevations/SECTOR_18.gz" "Elevations/SECTOR_20.gz" "Elevations/SECTOR_24.gz" "Elevations/SECTOR_25.gz"
+#> [5] "Elevations/SECTOR_9.gz"
 ```
 
 By far the most computationally intensive part of the workflow is the
@@ -247,6 +230,20 @@ crs(tiles) <- crs(grid)
 tiles <- whichTiles(region = tiles, polys = grid)
 
 makeWorld(tiles = tiles, polys = grid, cut_slope = 0.5, z_fix = dem, dir = dir)
+#> [1] "Cropping Tile SECTOR_1 (1 of 9)"
+#> [1] "Cropping Tile SECTOR_2 (2 of 9)"
+#> [1] "Cropping Tile SECTOR_3 (3 of 9)"
+#> [1] "Cropping Tile SECTOR_6 (4 of 9)"
+#> [1] "Cropping Tile SECTOR_7 (5 of 9)"
+#> [1] "Cropping Tile SECTOR_8 (6 of 9)"
+#> [1] "Cropping Tile SECTOR_11 (7 of 9)"
+#> [1] "Cropping Tile SECTOR_12 (8 of 9)"
+#> [1] "Cropping Tile SECTOR_13 (9 of 9)"
+#> [1] "Cropping Tile SECTOR_4 (1 of 2)"
+#> [1] "Cropping Tile SECTOR_14 (2 of 2)"
+#> [1] "Cropping Tile SECTOR_16 (1 of 2)"
+#> [1] "Cropping Tile SECTOR_17 (2 of 2)"
+#> [1] "Cropping Tile SECTOR_19 (1 of 1)"
 ```
 
 `makeWorld` internally calls `getMap` so you do not need to prepare the
@@ -365,6 +362,12 @@ data <- data.table(x = runif(10000,extent(dem)[1],extent(dem)[2]),
                    ID = rep(1:10,each=1000))
 
 velocity <- getVelocity(data = data, z = grid, dir = dir)
+#> [1] "Cropping Tile SECTOR_23 (1 of 6)"
+#> [1] "Cropping Tile SECTOR_21 (2 of 6)"
+#> [1] "Cropping Tile SECTOR_10 (3 of 6)"
+#> [1] "Cropping Tile SECTOR_22 (4 of 6)"
+#> [1] "Cropping Tile SECTOR_15 (5 of 6)"
+#> [1] "Cropping Tile SECTOR_5 (6 of 6)"
 ```
 
 So what happened? `getVelocity` called `whichTiles` and `getMap` to
@@ -387,18 +390,18 @@ print(velocity)
     #>    model:  dl_dt ~ v_max * exp(-k * abs(dz_dl - alpha)) 
     #>     data:  [ data (dl_dt <= v_lim) & abs(dz_dl) <= slope_lim 
     #>      tau:  0.95 
-    #> deviance:  20408 
+    #> deviance:  21038.34 
     #>          k      alpha 
-    #>  0.2894979 -0.5436051 
+    #>  0.2514320 -0.7477433 
     #> 
     #> $vmax
-    #> [1] 90.81751
+    #> [1] 94.47548
     #> 
     #> $alpha
-    #> [1] -0.5436051
+    #> [1] -0.7477433
     #> 
     #> $k
-    #> [1] 0.2894979
+    #> [1] 0.251432
     #> 
     #> $tau_vmax
     #> [1] 0.995
@@ -407,18 +410,18 @@ print(velocity)
     #> [1] 0.95
     #> 
     #> $data
-    #>        ID        x        y         z  dt         dx         dy         dz       dl    dl_dt        dz_dl
-    #>     1:  1 14184.43 37082.75 296.04593 120         NA         NA         NA       NA       NA           NA
-    #>     2:  1 13726.24 35062.09 417.70062 120  -458.1817 -2020.6651  121.65469 2071.960 17.26633  0.058714792
-    #>     3:  1 11211.38 31641.73  22.39640 120 -2514.8615 -3420.3624 -395.30422 4245.398 35.37832 -0.093113575
-    #>     4:  1 16539.87 30648.36 140.43419 120  5328.4904  -993.3627  118.03779 5420.293 45.16911  0.021777011
-    #>     5:  1 19063.24 34536.91 241.01436 120  2523.3705  3888.5521  100.58017 4635.541 38.62950  0.021697614
-    #>    ---                                                                                                   
-    #>  9996: 10 16832.04 33654.95 266.82159 120  4605.6630 -4322.2371  202.44404 6316.159 52.63466  0.032051764
-    #>  9997: 10 13210.97 38417.22 126.65144 120 -3621.0667  4762.2646 -140.17016 5982.582 49.85485 -0.023429709
-    #>  9998: 10 18523.71 37188.86  85.44712 120  5312.7413 -1228.3575  -41.20432 5452.897 45.44081 -0.007556409
-    #>  9999: 10 16082.61 34620.62 426.77194 120 -2441.1016 -2568.2359  341.32482 3543.277 29.52731  0.096330265
-    #> 10000: 10 11045.88 38322.00  20.53027 120 -5036.7365  3701.3801 -406.24168 6250.514 52.08762 -0.064993319
+    #>        ID        x        y         z  dt         dx         dy         dz        dl     dl_dt        dz_dl
+    #>     1:  1 12212.41 32529.50  91.27850 120         NA         NA         NA        NA        NA           NA
+    #>     2:  1 11505.81 30739.54  14.78457 120  -706.5965 -1789.9575  -76.49393  1924.377 16.036474 -0.039749971
+    #>     3:  1 15396.60 34388.33 468.68015 120  3890.7912  3648.7907  453.89558  5334.035 44.450292  0.085094225
+    #>     4:  1 12964.58 32482.58 142.54257 120 -2432.0223 -1905.7497 -326.13757  3089.760 25.747996 -0.105554354
+    #>     5:  1 10203.78 32573.76  58.64795 120 -2760.8021    91.1736  -83.89463  2762.307 23.019226 -0.030371216
+    #>    ---                                                                                                     
+    #>  9996: 10 11252.46 39152.06  10.87654 120 -7124.0611   832.2890  -19.38931  7172.514 59.770947 -0.002703279
+    #>  9997: 10 18621.13 31766.48  27.82283 120  7368.6690 -7385.5834   16.94628 10432.839 86.940323  0.001624321
+    #>  9998: 10 17874.49 32426.01  80.00574 120  -746.6408   659.5376   52.18292   996.224  8.301867  0.052380709
+    #>  9999: 10 19379.55 33973.62 194.80910 120  1505.0552  1547.6026  114.80335  2158.765 17.989706  0.053180114
+    #> 10000: 10 15913.79 36145.81 380.90640 120 -3465.7618  2172.1928  186.09731  4090.223 34.085194  0.045498080
 
 The velocity list contains seven entries:
 
@@ -558,30 +561,30 @@ the type of costand direction of travel:
 print(costMatrix)
 #> $time_out
 #>        To_ID
-#> From_ID         1         2         3         4         5
-#>       1    0.0000 1275.3205 2026.1966  698.3684  549.8334
-#>       2  944.7807    0.0000  857.4839 1629.1968  970.7801
-#>       3 1541.9772  674.4063    0.0000 2239.9352 1621.3863
-#>       4  942.6987 2199.1856 2968.3413    0.0000 1107.1418
-#>       5  576.2873 1310.4161 2133.3876  824.7255    0.0000
+#> From_ID        1        2        3        4        5
+#>       1    0.000 1532.404 2223.525 1350.248 1177.682
+#>       2 2068.528    0.000 3964.029 2693.584 2595.089
+#>       3 2094.784 3357.811    0.000 1365.485 2763.444
+#>       4 1057.685 1995.456 1280.776    0.000 2210.908
+#>       5 1586.090 2145.642 3307.070 2885.457    0.000
 #> 
 #> $work_out
 #>        To_ID
 #> From_ID         1         2         3         4         5
-#>       1       0.0  564923.4  888643.2  278409.9  243956.8
-#>       2  397404.3       0.0  363276.2  665565.0  401934.1
-#>       3  665752.3  345912.1       0.0  938435.0  724089.3
-#>       4  420245.4  977938.6 1308495.0       0.0  479852.0
-#>       5  239375.0  582084.8  932552.8  394436.7       0.0
+#>       1       0.0  578836.2 1001133.0  574040.4  622293.7
+#>       2  928992.8       0.0 1800309.7 1223330.2 1094888.0
+#>       3  914488.7 1287688.3       0.0  616428.9 1269990.4
+#>       4  489832.0  687518.8  577634.8       0.0 1081166.9
+#>       5  676669.0 1011337.2 1447942.2 1231266.5       0.0
 #> 
 #> $energy_out
 #>        To_ID
 #> From_ID         1         2         3         4         5
-#>       1       0.0  683528.2 1077079.5  344808.0  295194.1
-#>       2  486843.6       0.0  443022.2  818557.5  492216.7
-#>       3  809887.9  408814.7       0.0 1153919.3  874878.2
-#>       4  507916.4 1182462.8 1584550.7       0.0  582816.2
-#>       5  292969.8  703953.5 1130957.8  478083.3       0.0
+#>       1       0.0  723041.6 1211747.4  699613.4  738660.6
+#>       2 1121366.0       0.0 2172209.2 1473833.5 1336916.2
+#>       3 1110953.2 1605379.6       0.0  748910.0 1541678.3
+#>       4  594462.4  875082.6  700634.4       0.0 1301446.2
+#>       5  824175.3 1240240.1 1762764.8 1499614.1       0.0
 ```
 
 1.  If you wish to generate a RasterStack of costs from and/or to all
@@ -615,9 +618,9 @@ structure(costRasters)
 #> resolution : 20, 20  (x, y)
 #> extent     : 12000, 16040, 32000, 36040  (xmin, xmax, ymin, ymax)
 #> crs        : +proj=lcc +lat_0=0 +lon_0=-100 +lat_1=48 +lat_2=33 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs 
-#> names      :     To_4,     To_5,     To_1,     To_2,     To_3 
+#> names      :     To_2,     To_4,     To_1,     To_5,     To_3 
 #> min values :        0,        0,        0,        0,        0 
-#> max values : 3444.914, 3758.710, 3259.500, 4047.210, 4562.430 
+#> max values : 3818.361, 4093.162, 3185.502, 4128.984, 5298.897 
 #> 
 #> 
 #> $time_out
@@ -626,9 +629,9 @@ structure(costRasters)
 #> resolution : 20, 20  (x, y)
 #> extent     : 12000, 16040, 32000, 36040  (xmin, xmax, ymin, ymax)
 #> crs        : +proj=lcc +lat_0=0 +lon_0=-100 +lat_1=48 +lat_2=33 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs 
-#> names      :   From_4,   From_5,   From_1,   From_2,   From_3 
+#> names      :   From_2,   From_4,   From_1,   From_5,   From_3 
 #> min values :        0,        0,        0,        0,        0 
-#> max values : 3876.413, 3400.299, 2956.157, 2998.247, 3432.596 
+#> max values : 4296.970, 3032.289, 2508.986, 3950.910, 4384.253 
 #> 
 #> 
 #> $work_in
@@ -637,9 +640,9 @@ structure(costRasters)
 #> resolution : 20, 20  (x, y)
 #> extent     : 12000, 16040, 32000, 36040  (xmin, xmax, ymin, ymax)
 #> crs        : +proj=lcc +lat_0=0 +lon_0=-100 +lat_1=48 +lat_2=33 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs 
-#> names      :    To_4,    To_5,    To_1,    To_2,    To_3 
+#> names      :    To_2,    To_4,    To_1,    To_5,    To_3 
 #> min values :       0,       0,       0,       0,       0 
-#> max values : 1527516, 1613303, 1372397, 1812929, 2050753 
+#> max values : 1497159, 1840650, 1441920, 1801096, 2407739 
 #> 
 #> 
 #> $work_out
@@ -648,9 +651,9 @@ structure(costRasters)
 #> resolution : 20, 20  (x, y)
 #> extent     : 12000, 16040, 32000, 36040  (xmin, xmax, ymin, ymax)
 #> crs        : +proj=lcc +lat_0=0 +lon_0=-100 +lat_1=48 +lat_2=33 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs 
-#> names      :  From_4,  From_5,  From_1,  From_2,  From_3 
+#> names      :  From_2,  From_4,  From_1,  From_5,  From_3 
 #> min values :       0,       0,       0,       0,       0 
-#> max values : 1700369, 1508594, 1289124, 1226222, 1279139 
+#> max values : 1913657, 1163990, 1145783, 1710436, 1688589 
 #> 
 #> 
 #> $energy_in
@@ -659,9 +662,9 @@ structure(costRasters)
 #> resolution : 20, 20  (x, y)
 #> extent     : 12000, 16040, 32000, 36040  (xmin, xmax, ymin, ymax)
 #> crs        : +proj=lcc +lat_0=0 +lon_0=-100 +lat_1=48 +lat_2=33 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs 
-#> names      :    To_4,    To_5,    To_1,    To_2,    To_3 
+#> names      :    To_2,    To_4,    To_1,    To_5,    To_3 
 #> min values :       0,       0,       0,       0,       0 
-#> max values : 1867313, 1971370, 1677907, 2189321, 2475059 
+#> max values : 1857928, 2221315, 1738171, 2193775, 2900536 
 #> 
 #> 
 #> $energy_out
@@ -670,9 +673,9 @@ structure(costRasters)
 #> resolution : 20, 20  (x, y)
 #> extent     : 12000, 16040, 32000, 36040  (xmin, xmax, ymin, ymax)
 #> crs        : +proj=lcc +lat_0=0 +lon_0=-100 +lat_1=48 +lat_2=33 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs 
-#> names      :  From_4,  From_5,  From_1,  From_2,  From_3 
+#> names      :  From_2,  From_4,  From_1,  From_5,  From_3 
 #> min values :       0,       0,       0,       0,       0 
-#> max values : 2068809, 1834816, 1570855, 1502340, 1598683
+#> max values : 2317290, 1426514, 1390892, 2086112, 2096975
 ```
 
 It’s a list of RasterStacks, each in a slot named after the type of cost
@@ -837,12 +840,12 @@ Let’s take a look at the structure of this new world data.table
 ``` r
 head(world2)
 #>           from          to z_i z_f       dl
-#> 1: 12010,34130 12030,34130   1   4 20.00000
-#> 2: 12010,34130 12010,34110   1   2 20.00000
-#> 3: 12010,34130 12030,34110   1   2 28.28427
-#> 4: 12010,34130 12050,34110   1   2 44.72136
-#> 5: 12010,34130 12030,34090   1   3 44.72136
-#> 6: 12030,34130 12010,34130   4   1 20.00000
+#> 1: 12010,34130 12030,34130   4   4 20.00000
+#> 2: 12010,34130 12010,34110   4   4 20.00000
+#> 3: 12010,34130 12030,34110   4   2 28.28427
+#> 4: 12010,34130 12050,34110   4   1 44.72136
+#> 5: 12010,34130 12030,34090   4   1 44.72136
+#> 6: 12030,34130 12010,34130   4   4 20.00000
 ```
 
 Unlike the output of `importWorld` above, this contains five columns,
