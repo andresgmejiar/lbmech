@@ -18,6 +18,7 @@ getVelocity(
   k_init = 3.5,
   alpha_init = -0.1,
   v_lim = Inf,
+  slope_lim = 1,
   tile_id = "TILEID",
   vals = "location",
   dir = tempdir()
@@ -92,6 +93,9 @@ sector.}
 \item{dir}{A filepath to the directory being used as the workspace.
 Default is \code{tempdir()} but unless the analyses will only be performed a few
 times it is highly recommended to define a permanent workspace.}
+
+\item{angle_lim}{the maximum angle that will be considered. Any value
+above this will be excluded from the regression. Default is \code{angle_lim = 1}.}
 }
 \value{
 A list, containing the following entries:
