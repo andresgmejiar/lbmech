@@ -344,11 +344,13 @@ structured such that there is a column with x coordinates, a column with
 y coordinates, a column with changes in time, and a column with a
 trajectory id. Note that all values must be in meters (other than
 `'dt'`, which must be in seconds), and the `'x'` and `'y'` coordinates
-in a projected coordinate system. If those columns are named anything
-other than `'x'`, `'y'`, `'dt'`, and `'id'`, the column names need to be
-declared explicitly. Elevational data is provided as the `z` parameter.
-This can be either a column with elevations—such as those recorded by a
-GPS unit—a RasterLayer representing the DEM for that region, or a
+in a projected coordinate system. Alternatively, `'x'` and `'y'` may
+represent the longitude and latitude, respectively, in decimal degrees
+so long as `degs = TRUE`. If columns are named anything other than
+`'x'`, `'y'`, `'dt'`, and `'id'`, the column names need to be declared
+explicitly. Elevational data is provided as the `z` parameter. This can
+be either a column with elevations—such as those recorded by a GPS
+unit—a RasterLayer representing the DEM for that region, or a
 SpatialPolygonsDataFrame like the output of the `makeGrid` function:
 
 ``` r
@@ -375,7 +377,10 @@ identify which tiles were needed to get the elevation for the points we
 generated in `data`. It then cropped and saved each tile in a folder
 named `'Elevations'` in the `dir`. Afterwards, it extracted the
 elevation for each `data` point, and performed a nonlinear quantile
-regression to get the appropriate parameters.
+regression to get the appropriate parameters. Since GPS data can be
+noisy, `getVelocity` also allows for `slope_lim` and `v_lim` parameters
+to which dimensionless slope and velocity values are outliers before
+performing the regression.
 
 The output object is a list. Since this was calculated based on random
 data, the calculated parameters here are meaningless but let’s have a
@@ -390,18 +395,18 @@ print(velocity)
     #>    model:  dl_dt ~ v_max * exp(-k * abs(dz_dl - alpha)) 
     #>     data:  [ data (dl_dt <= v_lim) & abs(dz_dl) <= slope_lim 
     #>      tau:  0.95 
-    #> deviance:  21038.34 
-    #>          k      alpha 
-    #>  0.2514320 -0.7477433 
+    #> deviance:  15513.54 
+    #>             k         alpha 
+    #>  9.3765158628 -0.0002554502 
     #> 
     #> $vmax
     #> [1] 94.47548
     #> 
     #> $alpha
-    #> [1] -0.7477433
+    #> [1] -0.0002554502
     #> 
     #> $k
-    #> [1] 0.251432
+    #> [1] 9.376516
     #> 
     #> $tau_vmax
     #> [1] 0.995
@@ -445,6 +450,69 @@ The velocity list contains seven entries:
 
 7.  `$data`, containing a data.table with the original data in a
     standardized format
+
+Generally, the rate at which you are sampling locations should be
+comparable to the amount of time you would expect it would take you to
+travel from one cell to another. In this scenario, we can move up to
+`contiguity = 2` pixels away so we want to move at `contiguity + 1`
+pixels away. We expect to move at up to `v_est = 1.5` m/s, and each
+pixel has a length of `\code{res(dem)} = 20`, so we should downsample
+any signal that makes observations faster than
+`t_step = res(dem) / v_est * (contiguity + 1) * sqrt(2)` seconds. If our
+data is taken at a faster rate (for example, many phones record data at
+an interval of 1-10 seconds), we can use the `downsample` function
+before running the `getVelocity` function:
+
+``` r
+# Generate fake data with x,y coordinates, z elevation, and a t
+# column representing the number of seconds into the observation
+data2 <- data.table(x = runif(10000,10000,20000),
+                   y = runif(10000,30000,40000),
+                   z = runif(10000,0,200),
+                   t = 1:1000,
+                   ID = rep(1:10,each=1000))
+                   
+# Set the minimum value at 3 seconds
+data2 <- downsample(data = data2, t_step = 3, z = 'z')
+v2 <- getVelocity(data = data2)
+```
+
+Finally, we can also investigate the velocity function for various
+sub-sets of the data. For example, let’s say that each ID represents a
+unique individual, and we also have another column representing
+different tracks followed by each individual:
+
+``` r
+# Generate fake data with x,y coordinates, z elevation, and a t
+# column representing the number of seconds into the observation
+data2 <- data.table(x = runif(10000,10000,20000),
+                   y = runif(10000,30000,40000),
+                   z = runif(10000,0,200),
+                   dt = 15,
+                   AnimalID = rep(1:10,each=1000),
+                   TrackID = rep(1:100,each=100))
+                   
+# To get the velocity function for all observations togther
+v1 <- getVelocity(data2, ID = 'TrackID')
+
+# This is the same as above, but it only returns a list with the 
+# coefficients and p-values
+v2 <- dtVelocity(data2, ID = 'TrackID')
+
+# Instead this function is best to get the coefficients for 
+# each individual animal un a data.table using .SD
+v3 <- data2[, dtVelocity(.SD, ID = 'TrackID'), 
+            by = 'AnimalID', .SDcols = names(data2)]
+
+head(v3)
+#>    AnimalID        k         alpha    v_max          k_p      alpha_p
+#> 1:        1  3.50000 -5.000000e-02 737.4180 9.114769e-03 1.730733e-02
+#> 2:        2  3.50000 -5.000000e-02 727.9875 2.385765e-02 2.018783e-02
+#> 3:        3  3.50000 -5.000000e-02 750.6535 3.684702e-02 5.935256e-02
+#> 4:        4  3.50000 -5.000000e-02 739.6417 4.939626e-04 1.669016e-03
+#> 5:        5 17.96599 -5.704558e-05 745.5354 0.000000e+00 9.383468e-01
+#> 6:        6  3.50000 -5.000000e-02 733.1121 2.134099e-07 5.002490e-07
+```
 
 ### Part 3: Preparing the World
 
@@ -562,29 +630,29 @@ print(costMatrix)
 #> $time_out
 #>        To_ID
 #> From_ID        1        2        3        4        5
-#>       1    0.000 1532.404 2223.525 1350.248 1177.682
-#>       2 2068.528    0.000 3964.029 2693.584 2595.089
-#>       3 2094.784 3357.811    0.000 1365.485 2763.444
-#>       4 1057.685 1995.456 1280.776    0.000 2210.908
-#>       5 1586.090 2145.642 3307.070 2885.457    0.000
+#>       1    0.000 3785.938 2568.529 2076.004 2310.362
+#>       2 3050.684    0.000 1570.530 2929.603 1580.320
+#>       3 1961.597 2038.679    0.000 3089.954 2039.565
+#>       4 1945.193 3520.094 3380.561    0.000 1921.295
+#>       5 1711.558 1684.172 1659.327 1423.330    0.000
 #> 
 #> $work_out
 #>        To_ID
 #> From_ID         1         2         3         4         5
-#>       1       0.0  578836.2 1001133.0  574040.4  622293.7
-#>       2  928992.8       0.0 1800309.7 1223330.2 1094888.0
-#>       3  914488.7 1287688.3       0.0  616428.9 1269990.4
-#>       4  489832.0  687518.8  577634.8       0.0 1081166.9
-#>       5  676669.0 1011337.2 1447942.2 1231266.5       0.0
+#>       1       0.0 1692662.5 1083922.5  942510.9 1044711.7
+#>       2 1202161.7       0.0  750423.6 1223106.8  721523.5
+#>       3  927981.8  871342.2       0.0 1347879.8  865893.2
+#>       4  861407.5 1592498.3 1456959.0       0.0  856901.6
+#>       5  611075.4  774201.1  806600.5  569726.0       0.0
 #> 
 #> $energy_out
 #>        To_ID
 #> From_ID         1         2         3         4         5
-#>       1       0.0  723041.6 1211747.4  699613.4  738660.6
-#>       2 1121366.0       0.0 2172209.2 1473833.5 1336916.2
-#>       3 1110953.2 1605379.6       0.0  748910.0 1541678.3
-#>       4  594462.4  875082.6  700634.4       0.0 1301446.2
-#>       5  824175.3 1240240.1 1762764.8 1499614.1       0.0
+#>       1       0.0 2052520.1 1322795.7 1139740.5 1259575.3
+#>       2 1501162.6       0.0  908436.4 1502262.5  869120.5
+#>       3 1131515.0 1060939.3       0.0 1651101.7 1058009.8
+#>       4 1046297.7 1923020.9 1776951.6       0.0 1035582.0
+#>       5  770250.3  930829.0  976948.6  702095.7       0.0
 ```
 
 1.  If you wish to generate a RasterStack of costs from and/or to all
@@ -618,9 +686,9 @@ structure(costRasters)
 #> resolution : 20, 20  (x, y)
 #> extent     : 12000, 16040, 32000, 36040  (xmin, xmax, ymin, ymax)
 #> crs        : +proj=lcc +lat_0=0 +lon_0=-100 +lat_1=48 +lat_2=33 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs 
-#> names      :     To_2,     To_4,     To_1,     To_5,     To_3 
+#> names      :     To_1,     To_4,     To_5,     To_3,     To_2 
 #> min values :        0,        0,        0,        0,        0 
-#> max values : 3818.361, 4093.162, 3185.502, 4128.984, 5298.897 
+#> max values : 3826.432, 4506.113, 3700.125, 3638.810, 4838.098 
 #> 
 #> 
 #> $time_out
@@ -629,9 +697,9 @@ structure(costRasters)
 #> resolution : 20, 20  (x, y)
 #> extent     : 12000, 16040, 32000, 36040  (xmin, xmax, ymin, ymax)
 #> crs        : +proj=lcc +lat_0=0 +lon_0=-100 +lat_1=48 +lat_2=33 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs 
-#> names      :   From_2,   From_4,   From_1,   From_5,   From_3 
+#> names      :   From_1,   From_4,   From_5,   From_3,   From_2 
 #> min values :        0,        0,        0,        0,        0 
-#> max values : 4296.970, 3032.289, 2508.986, 3950.910, 4384.253 
+#> max values : 4336.080, 4417.912, 2741.120, 3259.288, 3728.537 
 #> 
 #> 
 #> $work_in
@@ -640,9 +708,9 @@ structure(costRasters)
 #> resolution : 20, 20  (x, y)
 #> extent     : 12000, 16040, 32000, 36040  (xmin, xmax, ymin, ymax)
 #> crs        : +proj=lcc +lat_0=0 +lon_0=-100 +lat_1=48 +lat_2=33 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs 
-#> names      :    To_2,    To_4,    To_1,    To_5,    To_3 
+#> names      :    To_1,    To_4,    To_5,    To_3,    To_2 
 #> min values :       0,       0,       0,       0,       0 
-#> max values : 1497159, 1840650, 1441920, 1801096, 2407739 
+#> max values : 1563957, 1958144, 1664177, 1550179, 2150581 
 #> 
 #> 
 #> $work_out
@@ -651,9 +719,9 @@ structure(costRasters)
 #> resolution : 20, 20  (x, y)
 #> extent     : 12000, 16040, 32000, 36040  (xmin, xmax, ymin, ymax)
 #> crs        : +proj=lcc +lat_0=0 +lon_0=-100 +lat_1=48 +lat_2=33 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs 
-#> names      :  From_2,  From_4,  From_1,  From_5,  From_3 
+#> names      :  From_1,  From_4,  From_5,  From_3,  From_2 
 #> min values :       0,       0,       0,       0,       0 
-#> max values : 1913657, 1163990, 1145783, 1710436, 1688589 
+#> max values : 1916192, 1948730, 1219162, 1446797, 1460012 
 #> 
 #> 
 #> $energy_in
@@ -662,9 +730,9 @@ structure(costRasters)
 #> resolution : 20, 20  (x, y)
 #> extent     : 12000, 16040, 32000, 36040  (xmin, xmax, ymin, ymax)
 #> crs        : +proj=lcc +lat_0=0 +lon_0=-100 +lat_1=48 +lat_2=33 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs 
-#> names      :    To_2,    To_4,    To_1,    To_5,    To_3 
+#> names      :    To_1,    To_4,    To_5,    To_3,    To_2 
 #> min values :       0,       0,       0,       0,       0 
-#> max values : 1857928, 2221315, 1738171, 2193775, 2900536 
+#> max values : 1928774, 2388734, 2008291, 1894229, 2602716 
 #> 
 #> 
 #> $energy_out
@@ -673,9 +741,9 @@ structure(costRasters)
 #> resolution : 20, 20  (x, y)
 #> extent     : 12000, 16040, 32000, 36040  (xmin, xmax, ymin, ymax)
 #> crs        : +proj=lcc +lat_0=0 +lon_0=-100 +lat_1=48 +lat_2=33 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs 
-#> names      :  From_2,  From_4,  From_1,  From_5,  From_3 
+#> names      :  From_1,  From_4,  From_5,  From_3,  From_2 
 #> min values :       0,       0,       0,       0,       0 
-#> max values : 2317290, 1426514, 1390892, 2086112, 2096975
+#> max values : 2326474, 2370636, 1489674, 1760632, 1821267
 ```
 
 It’s a list of RasterStacks, each in a slot named after the type of cost
@@ -840,12 +908,12 @@ Let’s take a look at the structure of this new world data.table
 ``` r
 head(world2)
 #>           from          to z_i z_f       dl
-#> 1: 12010,34130 12030,34130   4   4 20.00000
-#> 2: 12010,34130 12010,34110   4   4 20.00000
-#> 3: 12010,34130 12030,34110   4   2 28.28427
-#> 4: 12010,34130 12050,34110   4   1 44.72136
-#> 5: 12010,34130 12030,34090   4   1 44.72136
-#> 6: 12030,34130 12010,34130   4   4 20.00000
+#> 1: 12010,34130 12030,34130   3   4 20.00000
+#> 2: 12010,34130 12010,34110   3   2 20.00000
+#> 3: 12010,34130 12030,34110   3   3 28.28427
+#> 4: 12010,34130 12050,34110   3   3 44.72136
+#> 5: 12010,34130 12030,34090   3   2 44.72136
+#> 6: 12030,34130 12010,34130   4   3 20.00000
 ```
 
 Unlike the output of `importWorld` above, this contains five columns,
