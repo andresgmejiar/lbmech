@@ -19,7 +19,8 @@ Imports:
         stats,
         utils,
         methods,
-        sf
+        sf,
+        geosphere
 Depends:
         data.table,
         raster (>= 3.4-8),

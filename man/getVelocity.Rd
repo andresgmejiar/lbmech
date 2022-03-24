@@ -8,6 +8,7 @@ getVelocity(
   data,
   x = "x",
   y = "y",
+  degs = FALSE,
   dl = NULL,
   z = "z",
   dt = "dt",
@@ -16,7 +17,7 @@ getVelocity(
   tau_vmax = 0.995,
   tau_nlrq = 0.95,
   k_init = 3.5,
-  alpha_init = -0.1,
+  alpha_init = -0.05,
   v_lim = Inf,
   slope_lim = 1,
   tile_id = "TILEID",
@@ -29,14 +30,20 @@ getVelocity(
 all observations}
 
 \item{x}{A character string representing the data column containing the 'x'
-coordinates in meters. Ignored for distance calculations if \code{dl} is,
+coordinates in meters or degrees. Ignored for distance calculations if \code{dl} is,
 provided but required to extract elevations if \code{z} is of class
 RasterLayer or SpatialPolygonsDataFrame.}
 
 \item{y}{A character string representing the data column containing the 'y'
-coordinates in meters. Ignored for distance calculations if \code{dl} is,
+coordinates in meters or degrees. Ignored for distance calculations if \code{dl} is,
 provided but required to extract elevations if \code{z} is of class
 RasterLayer or SpatialPolygonsDataFrame.}
+
+\item{degs}{Logical. If FALSE, the \code{getVelocity} proceeds as if the
+input coordinates are meters in a projected coordinate system. If 
+TRUE, assumes the input coordinates are decimal degrees in lat/long, with
+\code{x} giving the longitude column name and \code{y} the latitude. See
+\code{\link[geosphere]{distGeo}}.}
 
 \item{dl}{A character string representing the data column containing the
 net displacement between this observation and the previous in meters. Optional.}
@@ -73,7 +80,7 @@ at which to initiate the nonlinear regression. Default is \code{k_init = 3.5}.}
 
 \item{alpha_init}{A number representing the value for dimensionless slope of
 maximum velocity at which to initiate the nonlinear regression. Default is
-\code{alpha_init = -0.1}.}
+\code{alpha_init = -0.05}.}
 
 \item{v_lim}{The maximum velocity that will be considered. Any value above
 this will be excluded from the regression. Default is \code{v_lim = Inf},

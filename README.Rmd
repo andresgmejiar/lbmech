@@ -293,7 +293,9 @@ such that there is a column with x coordinates, a column with y coordinates,
 a column with changes in time, and a column with a trajectory id. Note that 
 all values must be in meters (other than `'dt'`, which must be in seconds),
 and the `'x'` and `'y'` coordinates in a projected coordinate system.
-If those columns are named anything other than `'x'`, `'y'`, `'dt'`,
+Alternatively, `'x'` and `'y'` may represent the longitude and latitude,
+respectively, in decimal degrees so long as `degs = TRUE`.
+If columns are named anything other than `'x'`, `'y'`, `'dt'`,
 and `'id'`, the column names need to be declared explicitly. Elevational
 data is provided as the `z` parameter. This can be either a column with 
 elevations---such as those recorded by a GPS unit---a RasterLayer representing
@@ -323,6 +325,9 @@ which tiles were needed to get the elevation for the points we generated in
 `data`. It then cropped and saved each tile in a folder named `'Elevations'`
 in the `dir`. Afterwards, it extracted the elevation for each `data` point,
 and performed a nonlinear quantile regression to get the appropriate parameters.
+Since GPS data can be noisy, `getVelocity` also allows for `slope_lim` and
+`v_lim` parameters to which dimensionless slope and velocity values are outliers
+before performing the regression.
 
 The output object is a list. Since this was calculated based on random data,
 the calculated parameters here are meaningless but let's have a look at the 
@@ -353,6 +358,60 @@ from the nlrq of Tobler's function.
 6. `$tau_nlrq`, containing the employed `tau_nlrq`.
 
 7. `$data`, containing a data.table with the original data in a standardized format
+
+Generally, the rate at which you are sampling locations should be comparable
+to the amount of time you would expect it would take you to travel from one cell
+to another. In this scenario, we can move up to `contiguity = 2` pixels away so we want
+to move at `contiguity + 1` pixels away. We expect to move at up to 
+`v_est = 1.5` m/s, and each pixel has a length of `\code{res(dem)} = 20`, so we 
+should downsample any signal that makes observations faster than 
+`t_step = res(dem) / v_est * (contiguity + 1) * sqrt(2)` seconds. If our 
+data is taken at a faster rate (for example, many phones record data at an
+interval of 1-10 seconds), we can use the `downsample` function before
+running the `getVelocity` function:
+
+```{r downsample, results = 'hide'}
+# Generate fake data with x,y coordinates, z elevation, and a t
+# column representing the number of seconds into the observation
+data2 <- data.table(x = runif(10000,10000,20000),
+                   y = runif(10000,30000,40000),
+                   z = runif(10000,0,200),
+                   t = 1:1000,
+                   ID = rep(1:10,each=1000))
+                   
+# Set the minimum value at 3 seconds
+data2 <- downsample(data = data2, t_step = 3, z = 'z')
+v2 <- getVelocity(data = data2)
+```
+Finally, we can also investigate the velocity function for various sub-sets
+of the data. For example, let's say that each ID represents a unique individual,
+and we also have another column representing different tracks followed by each
+individual:
+
+```{r dtVelocity}
+# Generate fake data with x,y coordinates, z elevation, and a t
+# column representing the number of seconds into the observation
+data2 <- data.table(x = runif(10000,10000,20000),
+                   y = runif(10000,30000,40000),
+                   z = runif(10000,0,200),
+                   dt = 15,
+                   AnimalID = rep(1:10,each=1000),
+                   TrackID = rep(1:100,each=100))
+                   
+# To get the velocity function for all observations togther
+v1 <- getVelocity(data2, ID = 'TrackID')
+
+# This is the same as above, but it only returns a list with the 
+# coefficients and p-values
+v2 <- dtVelocity(data2, ID = 'TrackID')
+
+# Instead this function is best to get the coefficients for 
+# each individual animal un a data.table using .SD
+v3 <- data2[, dtVelocity(.SD, ID = 'TrackID'), 
+            by = 'AnimalID', .SDcols = names(data2)]
+
+head(v3)
+```
 
 ### Part 3: Preparing the World
 You'll have noticed that `makeWorld` simply made the `gz` files in the working

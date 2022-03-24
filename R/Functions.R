@@ -333,6 +333,152 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
   }
 }
 
+#' Downsample high-resolution *(x,y,t)* or *(x,y,z,t)* data
+#' to match a minimum spatial resolution. 
+#' 
+#' @title Downsample high-resolution GPS data
+#' @param data A data.frame or something coercible to a data.table containing
+#' all observations
+#' @param t_step The smallest allowable median time interval between observations.
+#' Any track with a median value below this will be resampled to a track of 
+#' equally-spaced observations with time difference \code{t_step}. This should
+#' be selected based on the parameters that will be used to generate a
+#' \code{world} object such that each successive step is likely to fall outside
+#' of the range of possible raster transitions. For example, for a given source
+#' \code{dem} in \code{\link[lbmech]{makeGrid}}, a given \code{distances = 16} in
+#' \code{\link[lbmech]{makeWorld}} (implying that \code{contiguity = 2}), and 
+#' an estimated animal maximum velocity of \code{v_max = 1.5} m/s, t_step
+#' should be at least \code{t_step = res(dem) / v_max * (contiguity + 1) * sqrt(2)}
+#' @param t_cut A numeric. Any gap exceeding this value in seconds in a given
+#' track will be treated as the start of a new segment. Default is \code{t_step * 10}.
+#' @param x A character string representing the data column containing the 'x'
+#' coordinates in any projection.
+#' @param y A character string representing the data column containing the 'y'
+#' coordinates in any projection.
+#' @param z Optional. A character string representing the data column containing 
+#' the 'z' elevations. 
+#' @param t A character string representing the data column containing the time
+#' values, either as a numeric of successive seconds or as a date time string
+#' @param ID A character string representing the data column containing the
+#' unique ID for each observed trajectory. In other words, each set of points
+#' for each continuous observation for each observed individual would merit a
+#' unique id.
+#' @return A data.table, containing the original input data but with all 
+#' overly-high resolution tracks downsampled to an acceptable rate of observations
+#' and column names prepared for the \code{\link[lbmech]{getVelocity}} function. 
+#' @importFrom data.table data.table
+#' @examples 
+#' # Generate fake data with x,y coordinates, z elevation, and a t
+#' # column representing the number of seconds into the observation
+#' data <- data.table(x = runif(10000,10000,20000),
+#'                    y = runif(10000,30000,40000),
+#'                    z = runif(10000,0,200),
+#'                    t = 1:1000,
+#'                    ID = rep(1:10,each=1000))
+#'                    
+#' # Set the minimum value at 3 seconds
+#' data <- downsample(data = data, t_step = 3, z = 'z')
+#' @export
+downsample <- function(data, t_step, t_cut = t_step * 10,
+                       x = 'x', y = 'y', z = NULL,
+                       t = 't', ID = "ID"){
+  # This bit is to silence the CRAN check warnings for literal column names
+  ..ID=..x=..y=..t=..z=dt=V1=LegID=NULL
+  #
+  
+  if (is.null(z)){
+    data <- data[, .(ID = get(..ID), x = get(..x), y = get(..y), t = get(..t))]
+  } else {
+    data <- data[, .(ID = get(..ID), x = get(..x), y = get(..y), 
+                     z = get(..z), t = get(..t))] 
+  }
+  
+  # Start by calculating dt, make sure it's a numeric
+  data[, dt := t - data.table::shift(t), by = 'ID'
+  ][, dt := as.numeric(dt,units='secs')]
+  
+  # Get a list of tracks that exceed the minimum allowable time interval
+  upsamp <- data[,stats::median(dt,na.rm=TRUE),by='ID'
+  ][V1 < t_step, ID]
+  
+  # We need a new Unique ID that separates individual tracks
+  # into sub-tracks where if a track is high-resolution AND
+  # any two sub-points are more than `t_Cut` in time from each
+  # other, they are two different tracks
+  data[ID %in% upsamp & (dt > t_cut), dt := NA
+  ][is.na(dt), LegID := 1
+  ][!is.na(dt), LegID := 0
+  ][, LegID := cumsum(LegID)] 
+  
+  legs <- unique(data[,.(ID,LegID)])
+  
+  # Any leg that belongs to a high-res track must be downsampled
+  whichlegs <- legs[ID %in% upsamp, LegID]
+  
+  # Add modified data to this blank data.table
+  newData <- data.table()
+  pb <- utils::txtProgressBar(min = 0 , max = max(whichlegs),style=3)
+  i = 0
+  
+  # Iterate over every 'leg' subtrack, performing a smooth
+  # spline to join the points and sampling at t_step
+  for (track in whichlegs){
+    
+    # Select points corresponding to the leg
+    points <- data[LegID == track]
+    tryCatch({
+      # Save initial time; temporarily strip units if present
+      t_i <- points[1,t]
+      points[1,dt := 0][, t := cumsum(dt)]
+      
+      # Get smoothing splines for xy
+      x_sp <- stats::smooth.spline(points[,.(x = t, y = x)])
+      y_sp <- stats::smooth.spline(points[,.(x = t, y = y)])
+      
+      # Get a list of times where we'll sample from
+      t_new <- seq(from = 0, to = max(points$t), by = t_step)
+      if (is.null(z)){
+        # If no z is provided
+        points <- data.table(
+          ID = legs[LegID == track, ID],
+          t = t_i + t_new,
+          x = stats::predict(x_sp,t_new)$y,
+          y = stats::predict(y_sp,t_new)$y,
+          dt = t_step,
+          LegID = track
+        )
+      } else {
+        # Smooth spline if z was provided
+        z_sp <- stats::smooth.spline(points[,.(x = t, y = z)])
+        points <- data.table(
+          ID = legs[LegID == track, ID],
+          t = t_i + t_new,
+          x = stats::predict(x_sp,t_new)$y,
+          y = stats::predict(y_sp,t_new)$y,
+          z = stats::predict(z_sp,t_new)$y,
+          dt = t_step,
+          LegID = track
+        )
+      }
+      newData <- rbind(newData,points)
+    }, error = function(x) {
+      1
+    })
+    i <- i + 1
+    utils::setTxtProgressBar(pb,val = i)
+  }
+  changed <- unique(newData$ID)
+  return(
+    if (is.null(z)){
+      rbind(data[!(ID %in% changed)], newData)[order(t)
+      ][order(ID),.(ID,LegID,x,y,t,dt)]
+    } else {
+    rbind(data[!(ID %in% changed)], newData)[order(t)
+      ][order(ID),.(ID,LegID,x,y,z,t,dt)]
+    }
+  )
+}
+
 #' Calculate the velocity function for an animal from \emph{(x,y,z,t)} data
 #' such as from GPS collars, assuming a function of form Tobler (see ####)
 #'
@@ -340,13 +486,18 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
 #' @param data A data.frame or something coercible to a data.table containing
 #' all observations
 #' @param x A character string representing the data column containing the 'x'
-#' coordinates in meters. Ignored for distance calculations if \code{dl} is,
+#' coordinates in meters or degrees. Ignored for distance calculations if \code{dl} is,
 #' provided but required to extract elevations if \code{z} is of class
 #' RasterLayer or SpatialPolygonsDataFrame.
 #' @param y A character string representing the data column containing the 'y'
-#' coordinates in meters. Ignored for distance calculations if \code{dl} is,
+#' coordinates in meters or degrees. Ignored for distance calculations if \code{dl} is,
 #' provided but required to extract elevations if \code{z} is of class
 #' RasterLayer or SpatialPolygonsDataFrame.
+#' @param degs Logical. If FALSE, the \code{getVelocity} proceeds as if the
+#' input coordinates are meters in a projected coordinate system. If 
+#' TRUE, assumes the input coordinates are decimal degrees in lat/long, with
+#' \code{x} giving the longitude column name and \code{y} the latitude. See
+#' \code{\link[geosphere]{distGeo}}.
 #' @param dl A character string representing the data column containing the
 #' net displacement between this observation and the previous in meters. Optional.
 #' @param z Either a character string, a RasterLayer, or a SpatialPolygonsDataFrame
@@ -374,7 +525,7 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
 #' at which to initiate the nonlinear regression. Default is \code{k_init = 3.5}.
 #' @param alpha_init A number representing the value for dimensionless slope of
 #' maximum velocity at which to initiate the nonlinear regression. Default is
-#' \code{alpha_init = -0.1}.
+#' \code{alpha_init = -0.05}.
 #' @param v_lim The maximum velocity that will be considered. Any value above
 #' this will be excluded from the regression. Default is \code{v_lim = Inf},
 #' but it should be set to an animal's maximum possible velocity.
@@ -462,9 +613,9 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
 #' velocity <- getVelocity(data = data, z = grid, dir = dir)
 #' 
 #' @export
-getVelocity <- function(data, x = 'x', y ='y', dl = NULL, z = 'z', 
+getVelocity <- function(data, x = 'x', y ='y', degs = FALSE, dl = NULL, z = 'z', 
                         dt = 'dt', ID = 'ID', tau = NULL, tau_vmax = 0.995,
-                        tau_nlrq = 0.95, k_init = 3.5, alpha_init = -0.1,
+                        tau_nlrq = 0.95, k_init = 3.5, alpha_init = -0.05,
                         v_lim = Inf, slope_lim = 1,
                         tile_id = "TILEID", vals = "location",
                         dir = tempdir()){
@@ -577,14 +728,25 @@ getVelocity <- function(data, x = 'x', y ='y', dl = NULL, z = 'z',
   
   # Calculate displacement, then speed and slope
   if (is.null(dl)){
+    if (degs == FALSE) {
   data[, `:=`(dx = x - data.table::shift(x),
               dy = y - data.table::shift(y),
               dz = z - data.table::shift(z)),
        by = 'ID'
   ][, dl := sqrt(dx^2 + dy^2)]
+    } else if (degs == TRUE){
+      # If what we provided was latitude and longitude
+      data[, `:=`(dl = data.table::shift(
+        geosphere::distGeo(
+          matrix(c(x,y),
+                 nrow=length(x)))),
+        dz = z - data.table::shift(z)),
+        by = 'ID']
+    }
   } else {
     data[, `:=`(dl = get(..dl),
-                dz = z - data.table::shift(z))]
+                dz = z - data.table::shift(z)), 
+         by = 'ID']
   }
   
   data[, `:=`(dl_dt = dl / dt,
@@ -642,6 +804,67 @@ getVelocity <- function(data, x = 'x', y ='y', dl = NULL, z = 'z',
   on.exit(options(warn = defaultW))
   return(out)
   
+}
+
+#' A wrapper for \code\link[lbmech]{getVelocity} for use inside
+#' of a data.table with observations from multiple sources
+#' (be it different individual animals and/or different instances
+#' from the same animal). In a \code{\link[data.table]{data.table}},
+#' use this function in the \code{j} slot, passing it along \code{.SD}.
+#' 
+#' @title Estimate multiple velocity functions in data.tables
+#' @param data A data.frame or something coercible to a data.table 
+#' containing all observations.
+#' @param ... Additional arguments to pass along to
+#' \code{\link[lbmech]{getVelocity}}. Set the \code{ID} parameter
+#' parameter to the column name representing each individual track
+#' segment. Otherwise, employ the same singular column name as in \code{by=}
+#' (data.table syntax).
+#' @return A list with five entries: \code{$k}, the sample's
+#' topographic sensitivity factor and its associated
+#' p-value \code{$k_p}; \code{$alpha}, the sample's slope of fastest
+#' travel and its associated p-value \code{$alpha_p}; and the
+#' estimated maximum walking speed \code{$v_max}. 
+#' @examples 
+#' # Generate fake data with x,y coordinates, z elevation, and a t
+#' # column representing the number of seconds into the observation
+#' data <- data.table(x = runif(10000,10000,20000),
+#'                    y = runif(10000,30000,40000),
+#'                    z = runif(10000,0,200),
+#'                    dt = 15,
+#'                    ID = rep(1:10,each=1000))
+#'                    
+#' # To get the velocity function for all observations together
+#' v1 <- getVelocity(data)
+#' 
+#' # This is the same as above, but it only returns a list with the 
+#' # coefficients and p-values
+#' v2 <- dtVelocity(data)
+#' 
+#' # Instead this function is best to get the coefficients for 
+#' # each individual track un a data.table using .SD
+#' v3 <- data[, dtVelocity(.SD), by = 'ID', .SDcols = names(data)]
+#' @export
+dtVelocity <- function(data, ...){
+  j <- list()
+  tryCatch(
+    {
+      n <- getVelocity(data = data, ...)
+      j <- as.list(coef(n$model))
+      j[['v_max']] <- as.numeric(n$vmax)
+      n <- summary(n$model)$coefficients
+      j[['k_p']] <- as.numeric(n[,"Pr(>|t|)"][1])
+      j[['alpha_p']] <- as.numeric(n[,"Pr(>|t|)"][2])
+      j
+    }, 
+    error = function(e) {
+      j[['k']] <- as.numeric(NA)
+      j[['alpha']] <- as.numeric(NA)
+      j[['v_max']] <- as.numeric(NA)
+      j[['k_p']] <- as.numeric(NA)
+      j[['alpha_p']] <- as.numeric(NA)
+      j
+    })
 }
 
 
