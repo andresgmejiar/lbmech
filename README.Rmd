@@ -287,8 +287,9 @@ how sensitive changes in speed are to changes in slope. Canonical applications
 of this function to humans set $v_{\mathrm{max}}= 1.5$ m/s, $k = 3.5$, and
 $\alpha = -0.05 = \tan{(-2.83^\circ)}$.
 
-`lbmech` provides the getVelocity  function by which these parameters can be 
-estimated from locational data for different species. Data should be structured 
+`lbmech` provides the `getVelocity`  function by which these parameters can be 
+estimated from locational data for different species. GPS data from GPX files
+can be imported using the `importGPX` function. Data should be structured 
 such that there is a column with x coordinates, a column with y coordinates, 
 a column with changes in time, and a column with a trajectory id. Note that 
 all values must be in meters (other than `'dt'`, which must be in seconds),

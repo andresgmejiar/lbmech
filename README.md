@@ -338,11 +338,12 @@ m/s,
 and
 ![\\alpha = -0.05 = \\tan{(-2.83^\\circ)}](https://latex.codecogs.com/png.latex?%5Calpha%20%3D%20-0.05%20%3D%20%5Ctan%7B%28-2.83%5E%5Ccirc%29%7D "\alpha = -0.05 = \tan{(-2.83^\circ)}").
 
-`lbmech` provides the getVelocity function by which these parameters can
-be estimated from locational data for different species. Data should be
-structured such that there is a column with x coordinates, a column with
-y coordinates, a column with changes in time, and a column with a
-trajectory id. Note that all values must be in meters (other than
+`lbmech` provides the `getVelocity` function by which these parameters
+can be estimated from locational data for different species. GPS data
+from GPX files can be imported using the `importGPX` function. Data
+should be structured such that there is a column with x coordinates, a
+column with y coordinates, a column with changes in time, and a column
+with a trajectory id. Note that all values must be in meters (other than
 `'dt'`, which must be in seconds), and the `'x'` and `'y'` coordinates
 in a projected coordinate system. Alternatively, `'x'` and `'y'` may
 represent the longitude and latitude, respectively, in decimal degrees

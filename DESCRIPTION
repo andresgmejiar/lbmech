@@ -20,7 +20,8 @@ Imports:
         utils,
         methods,
         sf,
-        geosphere
+        geosphere,
+        tmaptools
 Depends:
         data.table,
         raster (>= 3.4-8),

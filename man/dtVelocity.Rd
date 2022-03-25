@@ -24,7 +24,7 @@ travel and its associated p-value \code{$alpha_p}; and the
 estimated maximum walking speed \code{$v_max}.
 }
 \description{
-A wrapper for \code\link[lbmech]{getVelocity} for use inside
+A wrapper for \code{\link[lbmech]{getVelocity}} for use inside
 of a data.table with observations from multiple sources
 (be it different individual animals and/or different instances
 from the same animal). In a \code{\link[data.table]{data.table}},
