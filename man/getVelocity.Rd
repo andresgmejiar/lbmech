@@ -48,12 +48,12 @@ TRUE, assumes the input coordinates are decimal degrees in lat/long, with
 \item{dl}{A character string representing the data column containing the
 net displacement between this observation and the previous in meters. Optional.}
 
-\item{z}{Either a character string, a RasterLayer, or a SpatialPolygonsDataFrame
+\item{z}{Either a character string, a SpatRaster or RasterLayer, or a SpatVector
 object. If character string, it represents the data column containing the 'z'
-coordinates/elevations in meters. If RasterLayer, a DEM containing
-the elevation in meters. If SpatialPolygonsDataFrame, it must represent the
-sectors and filepaths/URLs (see the output of \code{\link[lbmech]{makeGrid}}).
-Elevations}
+coordinates/elevations in meters. If a SpatRaster or RasterLayer, a DEM containing
+the elevation in meters. If SpatVector, it must represent the
+sectors and filepaths/URLs corresponding to the region's elevations
+(see the output of \code{\link[lbmech]{makeGrid}}).}
 
 \item{dt}{A character string representing the data column containing the
 time difference from the previous observation in seconds.}
@@ -151,8 +151,8 @@ dem <- expand.grid(list(x = 1:(n * 100),
 dem <- as.data.table(dem)
 dem[, z := 250 * exp(-(x - n/2)^2) + 
       250 * exp(-(y - n/2)^2)]
-dem <- rasterFromXYZ(dem)
-extent(dem) <- c(10000, 20000, 30000, 40000)
+dem <- rast(dem)
+ext(dem) <- c(10000, 20000, 30000, 40000)
 crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
 
 velocity <- getVelocity(data = data, z = dem)
@@ -164,10 +164,10 @@ velocity <- getVelocity(data = data, z = dem)
 
 # Export the DEM so it's not just stored on the memory
 dir <- tempdir()
-writeRaster(dem, paste0(dir,"/DEM.tif"),format="GTiff",overwrite=TRUE)
+writeRaster(dem, paste0(dir,"/DEM.tif"),overwrite=TRUE)
 
 # Import raster, get the grid
-dem <- raster(paste0(dir,"/DEM.tif"))
+dem <- rast(paste0(dir,"/DEM.tif"))
 grid <- makeGrid(dem = dem, nx = n, ny = n)
 
 velocity <- getVelocity(data = data, z = grid, dir = dir)

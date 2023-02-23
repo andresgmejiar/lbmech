@@ -4,27 +4,58 @@
 \alias{makeGrid}
 \title{Make partitioning grid}
 \usage{
-makeGrid(dem, nx, ny, crs = NULL, prefix = "SECTOR_")
+makeGrid(
+  dem,
+  nx,
+  ny,
+  path = NA,
+  proj = NULL,
+  prefix = "SECTOR_",
+  crop = TRUE,
+  zoom = 13,
+  overlap = 0.005
+)
 }
 \arguments{
-\item{dem}{A raster object containing the elevations for the maximum possible
-extent imaginable for a study. Note that this only works for rasters that
-have been read in, not those that exist exclusively in the memory. If you
-have just generated the raster and it is in memory, export it first with
-\code{\link[raster]{writeRaster}} then re-import it with \code{\link[raster]{raster}}.}
+\item{dem}{One of either a SpatRaster, Raster, SpatVector (polygon),
+or SpatialPolygons*. 
+
+If SpatRaster or Raster, such an object containing the elevations for the 
+maximum possible extent imaginable for a study. Note that this only works for 
+rasters that have been read in, not those that exist exclusively in the memory. 
+If you  have just generated the raster and it is in memory, export it first with
+\code{\link[terra]{writeRaster}} then re-import it with \code{\link[terra]{rast}}.
+
+If SpatVector or SpatialPolygons*, the extent of possible movement.}
 
 \item{nx}{The integer-number of columns in the output grid}
 
 \item{ny}{The integer-number of rows in the output grid}
 
-\item{crs}{A crs object representing the desired output projection.
-Default is the input raster's projection.}
+\item{path}{(Optional) The filepath or URL of the source DEM. Ignored if 
+\code{dem} is of class raster or SpatRaster. If a SpatVector or SpatialPolygons
+is provided but no path, \code{\link[lbmech]{getMap}} will use
+\code{\link[elevatr]{get_elev_raster}} to download topographic data.}
+
+\item{proj}{A \code{\link[terra]{crs}} or something coercible to it representing 
+the desired output projection. Default is the input raster's projection.}
 
 \item{prefix}{A character string containing the prefix to name individual sectors.
 Default is \code{prefix = "SECTOR_"}}
+
+\item{crop}{Logical. If TRUE (the default), the output polygons will be cropped
+by the original \code{dem} (if SpatVector or SpatialPolygons*), or by
+the area covered by non-NA cells (if raster or SpatRaster).}
+
+\item{zoom}{Considered only no data source is set. The zoom level to be downloaded. 
+Default is 13, but see documentation for the \code{z} parameter in 
+\code{\link[elevatr]{get_elev_raster}}.}
+
+\item{overlap}{How much should adjacent polygons overlap to ensure there's
+contiguity between different tiles? Default is \code{overlap = 0.005}.}
 }
 \value{
-An object of class SpatialPolygonsDataFrame representing the individual sectors ('tiles'),
+Polygons of class SpatVector representing the individual sectors ('tiles'),
 with a dataframe containing three columns: the "TILEID", the raster's filepath,
 and a dummy column indicating that the grid was made using the makeGrid function.
 This will be necessary for future functions. The object MUST be stored 
@@ -45,16 +76,16 @@ dem <- expand.grid(list(x = 1:(n * 100),
 dem <- as.data.table(dem)
 dem[, z := 250 * exp(-(x - n/2)^2) + 
       250 * exp(-(y - n/2)^2)]
-dem <- rasterFromXYZ(dem)
-extent(dem) <- c(10000, 20000, 30000, 40000)
+dem <- rast(dem)
+ext(dem) <- c(10000, 20000, 30000, 40000)
 crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
 
 dir <- tempdir()
-writeRaster(dem, paste0(dir,"/DEM.tif"),format="GTiff",overwrite=TRUE)
+writeRaster(dem, paste0(dir,"/DEM.tif"),overwrite=TRUE)
 
 
 # Import raster, get the grid
-dem <- raster(paste0(dir,"/DEM.tif"))
+dem <- rast(paste0(dir,"/DEM.tif"))
 grid <- makeGrid(dem = dem, nx = n, ny = n)
 
 }

@@ -2,26 +2,37 @@
 % Please edit documentation in R/Functions.R
 \name{regionMask}
 \alias{regionMask}
-\title{Convert RasterLayer or SpatialPolygon* to "x,y"}
+\title{Convert SpatRaster, RasterLayer, SpatVector, or SpatialPolygon* to "x,y"}
 \usage{
-regionMask(region, proj = crs(region), z_fix = NULL, precision = 2, ...)
+regionMask(
+  region,
+  proj = crs(region),
+  id = NULL,
+  z_fix = NULL,
+  precision = 2,
+  ...
+)
 }
 \arguments{
-\item{region}{An object of class SpatialPolygons* to convert to "x,y"}
+\item{region}{An object of class SpatRaster, RasterLayer, SpatVector, 
+or SpatialPolygon* to convert to "x,y"}
 
 \item{proj}{A crs object or character string representing the output
 projection. Default is \code{proj = crs(region)}
 unless \code{proj} or \code{z_fix} are provided in which case 
 the latter takes precedence.}
 
-\item{z_fix}{A RasterLayer with the same origin and resolution as the
+\item{id}{A character string indicating which column in a Spatial* or Spat*
+contains each feature's unique ID. Otherwise ignored}
+
+\item{z_fix}{A SpatRaster with the same origin and resolution as the
 \code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.
 Do not modify this parameter if you didn't modify it when you ran
 \code{\link[lbmech]{makeWorld}}.}
 
 \item{precision}{An integer representing the number of decimals to retain
 in the x and y directions. For grid sizes with nice, round numbers precisions
-can be low. This factor is controled by \code{\link[raster]{rasterFromXYZ}} and
+can be low. This factor is controled by \code{\link[terra]{rast}} and
 must be the same as the one used to generate the 
 'world' with \code{\link[lbmech]{makeWorld}}. Default is 2.}
 
@@ -29,7 +40,7 @@ must be the same as the one used to generate the
 }
 \value{
 A character vector containing all cells that fall in the same
-location as the input 'region'.
+location as the input 'region'. If \code{id} is provided, a data.table.
 }
 \description{
 Function that converts raster and SpatialPolygon* objects
@@ -43,13 +54,13 @@ dem <- expand.grid(list(x = 1:(n * 100),
 dem <- as.data.table(dem)
 dem[, z := 250 * exp(-(x - n/2)^2) + 
       250 * exp(-(y - n/2)^2)]
-dem <- rasterFromXYZ(dem)
-extent(dem) <- c(10000, 20000, 30000, 40000)
+dem <- rast(dem)
+ext(dem) <- c(10000, 20000, 30000, 40000)
 crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
 
 # Generate a polygon that falls within the DEM's extent
-region <- extent(c(12500,12600,32500,32700))
-region <- as(region,"SpatialPolygons")
+region <- ext(c(12500,12600,32500,32700))
+region <- as.polygons(region)
 crs(region) <- crs(dem)
 
 maskedCells <- regionMask(region = region, res = res(dem))

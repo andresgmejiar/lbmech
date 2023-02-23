@@ -7,12 +7,12 @@
 makeCorridor(rasters = tempdir(), order, costs = "all")
 }
 \arguments{
-\item{rasters}{One of either a character string or list of
-RasterStacks. If character string, it represents the filepath
+\item{rasters}{One of either a character string or multilayer SpatRaster. 
+If character string, it represents the filepath
 to the workspace used as \code{dir} for the previous functions.
 Default is \code{tempdir()} but unless you are not following best
-practices you will have to change it to your output directory. If list
-of RasterStacks, it should be the output (or identical in form) to
+practices you will have to change it to your output directory. If multilayer
+SpatRaster, it should be the output (or identical in form) to
 the \code{\link[lbmech]{getCosts}} function with \code{"object" \%in\% output}.}
 
 \item{order}{A character vector containing the desired path in
@@ -26,7 +26,7 @@ function and must have previously been calculated}
 output of of the \code{\link[lbmech]{calculateCosts}} function. Otherwise
 a character string or vector containing the names of the columns where the 
 cost values are stored in the custom-produced data.table.
-This selects which types of costs will be calculated.
+This selects which types of costs will be calculated. 
 \code{costs = 'all'} is shorthand for \code{costs = c("time","work","energy")}
 while \code{costs = 'energetics'} is shorthand for \code{c("work","energy")}.
 Default is \code{'all'}. Note that these must have previously been calculated.}
@@ -51,22 +51,22 @@ dem <- expand.grid(list(x = 1:(n * 100),
 dem <- as.data.table(dem)
 dem[, z := 250 * exp(-(x - n/2)^2) + 
       250 * exp(-(y - n/2)^2)]
-dem <- rasterFromXYZ(dem)
-extent(dem) <- c(10000, 20000, 30000, 40000)
+dem <- rast(dem)
+ext(dem) <- c(10000, 20000, 30000, 40000)
 crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
 
 # Export it so it doesn't just exist on the memory
 dir <- tempdir()
-writeRaster(dem, paste0(dir,"/DEM.tif"),format="GTiff",overwrite=TRUE)
+writeRaster(dem, paste0(dir,"/DEM.tif"),overwrite=TRUE)
 
 
 # Import raster, get the grid
-dem <- raster(paste0(dir,"/DEM.tif"))
+dem <- rast(paste0(dir,"/DEM.tif"))
 grid <- makeGrid(dem = dem, nx = n, ny = n)
 
 # Import the data lying between x = (12000,16000) and y = (32000,36000)
-region <- extent(c(12000,16000,32000,36000))
-region <- as(region,"SpatialPolygons")
+region <- ext(c(12000,16000,32000,36000))
+region <- as.polygons(region)
 crs(region) <- crs(grid)
 
 
@@ -79,8 +79,8 @@ world <- calculateCosts(world = grid, m = 60, v_max = 1.5,
                         
 # Generate five random points that fall within the region
 points <- data.table(ID = 1:5,
-                     x = runif(5, extent(region)[1], extent(region)[2]),
-                     y = runif(5, extent(region)[3], extent(region)[4]))
+                     x = runif(5, ext(region)[1], ext(region)[2]),
+                     y = runif(5, ext(region)[3], ext(region)[4]))
                      
 # Calculate cost rasters
 costRasters <- getCosts(world = world, from = points, 

@@ -19,6 +19,7 @@ getCosts(
   output = "object",
   precision = 2,
   z_fix = NULL,
+  res = NULL,
   dir = tempdir(),
   ...
 )
@@ -27,13 +28,13 @@ getCosts(
 \item{world}{The data.table output of the \code{\link[lbmech]{calculateCosts}} 
 function.}
 
-\item{from}{One of data.frame, data.table, SpatialPointsDataFrame, or
+\item{from}{One of data.frame, data.table, SpatVector, SpatialPointsDataFrame, or
 SpatialPolygonsDataFrame representing the origin locations. If \code{to = NULL}
 and \code{destination = 'pairs'}, this will also be used as the \code{to} parameter.
 If object is of class SpatialPolygonsDataFrame, the location will be taken at the
 centroid.}
 
-\item{to}{One of data.frame, data.table, SpatialPointsDataFrame, or
+\item{to}{One of data.frame, data.table, SpatVector SpatialPointsDataFrame, or
 SpatialPolygonsDataFrame representing the origin locations. Optional if
 \code{destination =  'pairs'}, ignored if \code{destination =  'all'}.}
 
@@ -56,7 +57,7 @@ a distance matrix will be generated between every pair of locations in
 If \code{'all'}, rasters will be generated for each node representing the cost
 to travel to every cell in the given \code{world}.}
 
-\item{region}{An object of class RasterLayer or SpatialPolygons*
+\item{region}{An object of class SpatRaster, SpatVector, RasterLayer or SpatialPolygons*
 representing the total area where movement is possible. Optional; used
 to constrain the \code{world} more than it may already have been.}
 
@@ -81,14 +82,17 @@ to the workspace directory \code{dir}. Ignored if \code{destination = 'pairs'}.}
 
 \item{precision}{An integer representing the number of decimals to retain
 in the x and y directions. For grid sizes with nice, round numbers precisions
-can be low. This factor is controled by \code{\link[raster]{rasterFromXYZ}} and
+can be low. This factor is controled by \code{\link[terra]{rast}} and
 must be the same as the one used to generate the 
 'world' with \code{\link[lbmech]{makeWorld}}. Default is 2.}
 
-\item{z_fix}{A RasterLayer with the same origin and resolution as the
+\item{z_fix}{A SpatVector with the same origin and resolution as the
 \code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.
 Do not modify this parameter if you didn't modify it when you ran
 \code{\link[lbmech]{makeWorld}}.}
+
+\item{res}{The res used to generate the world. Required if 
+\code{dist != 'proj'} and \code{z_fix == NULL}, otherwise ignored.}
 
 \item{dir}{A filepath to the directory being used as the workspace.
 Default is \code{tempdir()} but unless the analyses will only be performed a few
@@ -150,36 +154,35 @@ dem <- expand.grid(list(x = 1:(n * 100),
 dem <- as.data.table(dem)
 dem[, z := 250 * exp(-(x - n/2)^2) + 
       250 * exp(-(y - n/2)^2)]
-dem <- rasterFromXYZ(dem)
-extent(dem) <- c(10000, 20000, 30000, 40000)
+dem <- rast(dem)
+ext(dem) <- c(10000, 20000, 30000, 40000)
 crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
 
 # Export it so it doesn't just exist on the memory
 dir <- tempdir()
-writeRaster(dem, paste0(dir,"/DEM.tif"),format="GTiff",overwrite=TRUE)
+writeRaster(dem, paste0(dir,"/DEM.tif"),overwrite=TRUE)
 
 
 # Import raster, get the grid
-dem <- raster(paste0(dir,"/DEM.tif"))
+dem <- rast(paste0(dir,"/DEM.tif"))
 grid <- makeGrid(dem = dem, nx = n, ny = n)
 
 # Import the data lying between x = (12000,16000) and y = (32000,36000)
-region <- extent(c(12000,16000,32000,36000))
-region <- as(region,"SpatialPolygons")
+region <- ext(c(12000,16000,32000,36000))
+region <- as.polygons(region)
 crs(region) <- crs(grid)
-
 
 # Use the canonical parameters for a human in Tobler's Function
 world <- calculateCosts(world = grid, m = 60, v_max = 1.5,
                         k = 3.5, alpha = -0.05, BMR = 93,
                         l_s = 1.6, L = 0.8, region = region, 
                         proj = crs(dem), res = res(dem),
-                        cut_slope = 0.5, dir = dir)
+                        cut_slope = 0.5, dir = dir, dist = 'proj')
                         
 # Generate five random points that fall within the region
 points <- data.table(ID = 1:5,
-                     x = runif(5, extent(region)[1], extent(region)[2]),
-                     y = runif(5, extent(region)[3], extent(region)[4]))
+                     x = runif(5, ext(region)[1], ext(region)[2]),
+                     y = runif(5, ext(region)[3], ext(region)[4]))
                      
 # Get 'time' and 'work' costs
 costMatrix <- getCosts(world = world, from = points, 
@@ -191,6 +194,7 @@ costMatrix <- getCosts(world = world, from = points,
 costRasters <- getCosts(world = world, from = points,
                         destination = 'all', costs = c('time','work'),
                         output = c("object","file"), 
-                        proj = crs(dem), res = res(dem),dir = dir)
+                        proj = crs(dem), res = res(dem),
+                        dir = dir)
 
 }

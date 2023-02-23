@@ -51,8 +51,8 @@ size for most reasonable purposes.
 
 `lbmech` stores data and performs all linear algebra directly on resistance values
 using the `data.table` package. Not only is this more intuitive, but it greatly
-simplifies the syntax necesary for many types of algebraically simple operations. 
-`lbmech` storrd each possible movement as its own unique row, with entries for a `from`
+simplifies the syntax necessary for many types of algebraically simple operations. 
+`lbmech` stored each possible movement as its own unique row, with entries for a `from`
 node, a `to` node, and either the difference in or raw final and initial values of
 the raster encountered during the transition. Nodes are named after the coordinates
 of the raster cell to which they correspond, and are stored as character strings
@@ -67,7 +67,7 @@ using `data.table` syntax.
 
 To ensure that the most computationally intensive steps only need to be performed
 once for many repeated analyses, `lbmech` also modularizes important aspects of
-the cost-distance workflow. This allows for ootherwise prohibitively-large 
+the cost-distance workflow. This allows for otherwise prohibitively-large 
 spatial regions and fine spatial resolutions to be considered. This is arguably
 necessary when land-based transport requires decision-making to be made 
 at scales on the order of 1-10 m. Files by default are stored in the temporary
@@ -157,7 +157,7 @@ plot(dem, main = "Digital Elevation Model")
 sectors with unique DEM sources stored as a file path or URL in the data frame
 object. You can often find these from state agencies.
     * As of the most recent version, `lbmech` supports file types 
-    readible by `rgdal` and `raster`, as well as such files compressed in `gz` 
+    readable by `rgdal` and `raster`, as well as such files compressed in `gz` 
     and `zip` files--although the latter is likely to fail in Unix systems. 
 
 Even if you have already downloaded or imported a raster to use as a
@@ -282,7 +282,7 @@ where $\ell$ is horizontal displacement, $t$ time, ${d \ell}/{d t}$ horizontal
 speed, $v_{\mathrm{max}}$ the maximum walking speed, ${d z}/{d \ell}$ the 
 change in elevation versus the change in horizontal distance (dimensionless
 slope, or $\arctan \theta$ where $\theta$ is the slope in degrees or radians),
-$\alpha$ the ideal slope of maximum walking speed, and $k$ a parameter controling
+$\alpha$ the ideal slope of maximum walking speed, and $k$ a parameter controlling
 how sensitive changes in speed are to changes in slope. Canonical applications
 of this function to humans set $v_{\mathrm{max}}= 1.5$ m/s, $k = 3.5$, and
 $\alpha = -0.05 = \tan{(-2.83^\circ)}$.
@@ -306,7 +306,7 @@ the DEM for that region, or a SpatialPolygonsDataFrame like the output of the
 ```{r getVelocity}
 
 # Generate dummy GPS data
-# 10,000 observations falling within the extent of the generted DEM
+# 10,000 observations falling within the extent of the generated DEM
 # taken at an interval of 120 seconds between observations
 # and of 10 different individuals (1000 per individual)
 data <- data.table(x = runif(10000,extent(dem)[1],extent(dem)[2]),
@@ -327,7 +327,7 @@ which tiles were needed to get the elevation for the points we generated in
 in the `dir`. Afterwards, it extracted the elevation for each `data` point,
 and performed a nonlinear quantile regression to get the appropriate parameters.
 Since GPS data can be noisy, `getVelocity` also allows for `slope_lim` and
-`v_lim` parameters to which dimensionless slope and velocity values are outliers
+`v_lim` parameters to which dimensionless slope and velocity values are outlines
 before performing the regression.
 
 The output object is a list. Since this was calculated based on random data,
@@ -500,7 +500,7 @@ costMatrix <- getCosts(world = world, from = points, z_fix = dem,
                        costs ='all', direction = 'out', dir = dir)
 ```
 The output will be a list of cost matrices, with elements named after the type
-of costand direction of travel:
+of constant direction of travel:
 ```{r print-matrix}
 print(costMatrix)
 ```
@@ -546,7 +546,7 @@ print(list.files(normalizePath(paste0(dir,"/CostRasters"))))
 These rasters---be they stored as an object on the memory with `'object' %in% output`
 or on the hard drive with `'file' %in% output'` are required to compute cost 
 corridors. For a given series of origins and destinations (e.g. A -> B -> C)
-a cost raster gives the absolute minimum expectedtotal cost that would be required 
+a cost raster gives the absolute minimum expected total cost that would be required 
 to route the path through any given point on the landscape. The cells with the 
 lowest value correspond to the least-cost path, while the value of all other
 cells minus the lowest value represents the cost to perform a SINGLE detour
@@ -635,7 +635,7 @@ the raw values are needed, the `keep_z` parameter in `makeWorld` should
 be a character vector including `c('z_i','z_f')`, and also `dz` when
 the difference between them is needed. If the raster is categorical (such as
 those representing discrete landcover types), `dz` should be omitted. 
-In the event of a tie in mosaicing rasters, we'll select the highest integer value 
+In the event of a tie in mosaiking rasters, we'll select the highest integer value 
 (`FUN = max`). Don't forget to set `sampling = 'ngb'` if the data is categorical 
 and thus it's inappropriate to employ the default `'bilinear'` interpolation. 
 If the origin x or y coordinates are needed, the `xy1` parameter in `importWorld`

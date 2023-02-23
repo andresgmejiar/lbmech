@@ -17,7 +17,7 @@ makeWorld(
   unit = "m",
   vals = "location",
   precision = 2,
-  FUN = mean,
+  FUN = NULL,
   sampling = "bilinear",
   dir = tempdir(),
   ...
@@ -28,7 +28,7 @@ makeWorld(
 \code{\link[lbmech]{whichTiles}}---containing the unique tile IDs for sectors that
 should be in the workspace.}
 
-\item{polys}{An object of class SpatialPolygonsDataFrame representing
+\item{polys}{An object of class SpatVector representing
 the partitioning grid for the maximum possible area, in the same format as the
 output of the \code{\link[lbmech]{makeGrid}} function.}
 
@@ -62,7 +62,7 @@ Since the energetic calculations only depend on a *change* in elevation,
 the default is \code{'dz'}. However, if the specific origin or destination
 values are needed this should me modified accordingly.}
 
-\item{z_fix}{A raster that will define the resolution, origin, and
+\item{z_fix}{A SpatRaster or RasterLayer that will define the resolution, origin, and
 projection information for the entire "world" of possible movement. Note that
 it does NOT need the same extent. Default resolution is 5, and offset is 0.
 Default projection is \code{proj = crs(polys)} unless a `z_fix` or `proj` is 
@@ -72,7 +72,7 @@ employed to ensure that the projection is conformal and in meters.}
 \item{unit}{One of \code{c("m", "km", "ft", "mi")}, representing the unit of the DEM.
 All will be converted to meters, which is the default.}
 
-\item{vals}{A character string or a RasterLayer object. Ignored unless the
+\item{vals}{A character string or a SpatRaster or RasterLayer object. Ignored unless the
 \code{polys} parameter is a polygon NOT the output of the \code{\link[lbmech]{makeGrid}}
 function as the default is the character string \code{'location'},
 AND the appropriate world \code{.gz} file is NOT
@@ -82,11 +82,12 @@ filepath or URL.}
 
 \item{precision}{An integer representing the number of decimals to retain
 in the x and y directions. For grid sizes with nice, round numbers precisions
-can be low. This factor is controled by \code{\link[raster]{rasterFromXYZ}}.
+can be low. This factor is controled by \code{\link[terra]{rast}}.
 Default is 2.}
 
 \item{FUN}{Function to deal with overlapping values for overlapping sectors.
-Default is \code{\link[base]{mean}}. See \code{\link[raster]{mosaic}}.}
+Default is NA, which uses \code{\link[terra]{merge}}. 
+To use \code{\link[terra]{mosaic}}, provide a compatible function.}
 
 \item{sampling}{How to resample rasters. Default is \code{'bilinear'} interpolation,
 although \code{'ngb'} nearest neighbor is available for categorical rasters.}
@@ -136,22 +137,22 @@ dem <- expand.grid(list(x = 1:(n * 100),
 dem <- as.data.table(dem)
 dem[, z := 250 * exp(-(x - n/2)^2) + 
       250 * exp(-(y - n/2)^2)]
-dem <- rasterFromXYZ(dem)
-extent(dem) <- c(10000, 20000, 30000, 40000)
+dem <- rast(dem)
+ext(dem) <- c(10000, 20000, 30000, 40000)
 crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
 
 # Export it so it doesn't just exist on the memory
 dir <- tempdir()
-writeRaster(dem, paste0(dir,"/DEM.tif"),format="GTiff",overwrite=TRUE)
+writeRaster(dem, paste0(dir,"/DEM.tif"),overwrite=TRUE)
 
 
 # Import raster, get the grid
-dem <- raster(paste0(dir,"/DEM.tif"))
+dem <- rast(paste0(dir,"/DEM.tif"))
 grid <- makeGrid(dem = dem, nx = n, ny = n)
 
 # Select all tiles that exist between x = (12000,16000) and y = (32000,36000)
-tiles <- extent(c(12000,16000,32000,36000))
-tiles <- as(tiles,"SpatialPolygons")
+tiles <- ext(c(12000,16000,32000,36000))
+tiles <- as.polygons(tiles)
 crs(tiles) <- crs(grid)
 tiles <- whichTiles(region = tiles, polys = grid)
 

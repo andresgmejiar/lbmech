@@ -7,13 +7,12 @@
 whichTiles(region, polys, tile_id = "TILEID", x = "x", y = "y")
 }
 \arguments{
-\item{region}{An object of class RasterLayer, SpatialPolygons,
-SpatialPolygonsDataFrame, SpatialPoints, SpatialPointsDataFrame, data.frame,
-or data.table indicating the region-of-interest. If input is of class
+\item{region}{An object of class SpatRaster, SpatVector RasterLayer, Spatial*, 
+data.frame, or data.table indicating the region-of-interest. If input is of class
 SpatialPoints*, data.table, or data.frame the \code{region} represents sectors containing the
 individual points.}
 
-\item{polys}{An object of class SpatialPolygonsDataFrame representing
+\item{polys}{A polygon of class SpatVector representing
 the partitioning grid for the maximum possible area, in the same format as the
 output of the \code{\link[lbmech]{makeGrid}} function.}
 
@@ -42,15 +41,21 @@ by a source grid.
 # If the grid is the product if the makeGrid function
 # Make the grid
 n <- 6
-dem <- raster(ncol = n * 6000, nrow = n * 6000)
-extent(dem) <- c(10000, 20000, 30000, 40000)
+dem <- rast(ncol = n * 600, nrow = n * 600, vals = 1)
+ext(dem) <- c(1000, 2000, 3000, 4000)
 crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
+# Export it so it doesn't just exist on the memory
+dir <- tempdir()
+writeRaster(dem, paste0(dir,"/DEM.tif"),overwrite=TRUE)
+
+# Import raster, get the grid
+dem <- rast(paste0(dir,"/DEM.tif"))
 grid <- makeGrid(dem = dem, nx = n, ny = n)
 
 # Select five random points that fall within the grid
-points <- data.table(x = runif(5, extent(dem)[1], extent(dem)[2]),
-                     y = runif(5, extent(dem)[3], extent(dem)[4]))
-                     
+points <- data.table(x = runif(5, ext(dem)[1], ext(dem)[2]),
+                     y = runif(5, ext(dem)[3], ext(dem)[4]))
+
 tile_list <- whichTiles(region = points, polys = grid)
 
 #### Example 2 (Do not execute):

@@ -28,12 +28,12 @@ Required if \code{data} is not SpatialPointsDataFrame.}
 \item{y}{A character vector representing the column containing the 'y' coordinates.
 Required if \code{data} is not SpatialPointsDataFrame.}
 
-\item{z_fix}{A RasterLayer with the same origin and resolution as the
+\item{z_fix}{A SpatRaster with the same origin and resolution as the
 \code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.}
 
 \item{precision}{An integer representing the number of decimals to retain
 in the x and y directions. For grid sizes with nice, round numbers precisions
-can be low. This factor is controled by \code{\link[raster]{rasterFromXYZ}} and
+can be low. This factor is controled by \code{\link[terra]{rast}} and
 must be the same as the one used to generate the 
 'world' with \code{\link[lbmech]{makeWorld}}. Default is 2.}
 
@@ -54,13 +54,13 @@ dem <- expand.grid(list(x = 1:(n * 100),
 dem <- as.data.table(dem)
 dem[, z := 250 * exp(-(x - n/2)^2) + 
       250 * exp(-(y - n/2)^2)]
-dem <- rasterFromXYZ(dem)
-extent(dem) <- c(10000, 20000, 30000, 40000)
+dem <- rast(dem)
+ext(dem) <- c(10000, 20000, 30000, 40000)
 crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
 
 # Generate five random points that fall within the DEM
-points <- data.table(x = runif(5, extent(dem)[1], extent(dem)[2]),
-                     y = runif(5, extent(dem)[3], extent(dem)[4]))
+points <- data.table(x = runif(5, ext(dem)[1], ext(dem)[2]),
+                     y = runif(5, ext(dem)[3], ext(dem)[4]))
 
 # Get the coordinates
 points$Cell <- getCoords(points, z_fix = dem)

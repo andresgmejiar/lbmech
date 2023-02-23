@@ -17,6 +17,13 @@ calculateCosts(
   l_s = NULL,
   L = NULL,
   gamma = NULL,
+  dist = "proj",
+  z_fix = NULL,
+  proj = NULL,
+  res = NULL,
+  r = 6378137,
+  f = 1/298.257223563,
+  b = 6356752.3142,
   ...
 )
 }
@@ -57,10 +64,40 @@ ignored for \code{'heglund'} and \code{'oscillator'}.}
 \item{gamma}{The fractional maximal deviation from average velocity per stride.
 Required for \code{method = 'oscillator'}, ignored for \code{'kuo'} and \code{'heglund'}.}
 
+\item{dist}{A character string specifying the method by which to calculate
+linear distances. One of \code{proj} (for source projection distance units; the fastest and default),
+\code{karney} (the second most accurate and second fastest but by far best choice), 
+\code{cosine}, \code{haversine}, \code{meeus}, 
+\code{vincentyEllipsoid} or \code{vincentySphere} (see documentation for the
+\code{\link[geosphere]{geosphere}} package for further documentation). If
+\code{dist != 'proj'}, one of \code{z_fix}, or \code{proj} and \code{res}
+must be provided. Recall default \code{res = 5} in other functions but here
+it is \code{NULL}.}
+
+\item{z_fix}{A SpatRaster with the same origin and resolution as the
+\code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.}
+
+\item{proj}{The projection used to generate the world. Required if 
+\code{dist != 'proj'} and \code{z_fix == NULL}, otherwise ignored.}
+
+\item{res}{The res used to generate the world. Required if 
+\code{dist != 'proj'} and \code{z_fix == NULL}, otherwise ignored.}
+
+\item{r}{The earth's radius, or semimajor axis (a) for ellipsoidal models. 
+Default is 6378137 for WGS1984. Ignored unless \code{dist != 'proj'}.}
+
+\item{f}{The ellipsoidal flattening of the earth for ellipsoidal models.
+Default is \code{f=1/298.257223563} for WGS1984.  Ignored unless
+\code{dist == c('karney','meeus','vincentyEllipsoid')}.}
+
+\item{b}{The earth's semiminor axis. 
+Default is \code{b=6356752.3142} for WGS1984.  Ignored unless  
+\code{dist == 'vincentyEllipsoid'}.}
+
 \item{...}{Additional arguments to pass to \code{\link[lbmech]{importWorld}}.}
 }
 \value{
-A data.table with twelve columns, representing:
+A data.table with thirteen columns, representing:
 
 (1) \code{$from} The "x,y"-format coordinates of each possible origin cell
 
@@ -73,24 +110,26 @@ cells
 
 (5) \code{$y_i} The numeric y coordinate of the origin cell
 
-(6) \code{$dl} The distance between the \code{from} and \code{to} cells
+(6) \code{$dl} The planimetric distance between the \code{from} and \code{to} cells
 
-(7) \code{$dl_t} The predicted walking speed in meters per second
+(7) \code{$dr} The 3D distance between the \code{from} and \code{to} cells
+
+(8) \code{$dl_t} The predicted walking speed in meters per second
 when walking between the \code{from} and \code{to} cells
 
-(8) \code{$dt} The predicted amount of time spent walking between
+(9) \code{$dt} The predicted amount of time spent walking between
 the \code{from} and \code{to} cells
 
-(9) \code{$dU_l} The predicted work against gravitational potential energy
+(10) \code{$dU_l} The predicted work against gravitational potential energy
 in Joules when walking between the \code{from} and \code{to} cells
 
-(10) \code{$dK_l} The predicted kinematic work in Joules when walking
+(11) \code{$dK_l} The predicted kinematic work in Joules when walking
 between the \code{from} and \code{to} cells
 
-(11) \code{$dW_l} The total predicted energy lost due to biomechanical
+(12) \code{$dW_l} The total predicted energy lost due to biomechanical
 work when walking between the \code{from} and \code{to} cells.
 
-(12) \code{$dE_l} The net metabolic expenditure exerted when walking
+(13) \code{$dE_l} The net metabolic expenditure exerted when walking
 between the \code{from} and \code{to} cells.
 }
 \description{
@@ -109,31 +148,33 @@ dem <- expand.grid(list(x = 1:(n * 100),
 dem <- as.data.table(dem)
 dem[, z := 250 * exp(-(x - n/2)^2) + 
       250 * exp(-(y - n/2)^2)]
-dem <- rasterFromXYZ(dem)
-extent(dem) <- c(10000, 20000, 30000, 40000)
+dem <- rast(dem)
+ext(dem) <- c(10000, 20000, 30000, 40000)
 crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
 
 # Export it so it doesn't just exist on the memory
 dir <- tempdir()
-writeRaster(dem, paste0(dir,"/DEM.tif"),format="GTiff",overwrite=TRUE)
+writeRaster(dem, paste0(dir,"/DEM.tif"),overwrite=TRUE)
 
 
 # Import raster, get the grid
-dem <- raster(paste0(dir,"/DEM.tif"))
+dem <- rast(paste0(dir,"/DEM.tif"))
 grid <- makeGrid(dem = dem, nx = n, ny = n)
 
 # Import the data lying between x = (12000,16000) and y = (32000,36000)
-region <- extent(c(12000,16000,32000,36000))
-region <- as(region,"SpatialPolygons")
+region <- ext(c(12000,16000,32000,36000))
+region <- as.polygons(region)
 crs(region) <- crs(grid)
 
 world <- importWorld(region = region, polys = grid,
                      cut_slope = 0.5, res = res(dem), dir = dir)
 
 # We'll run calculateCosts using the canonical parameters for Tobler's 
-# function on a human being. 
+# function on a human being. Note dist = 'proj' since the coordinates
+# are somewhat nonsensical. If real-world scenario, employ a geodesic method
 world <- calculateCosts(world = world, m = 60, v_max = 1.5,
-                        BMR = 93, k = 3, alpha = -0.05, l_s = 1.6, L = 0.8)
+                        BMR = 93, k = 3, alpha = -0.05, l_s = 1.6, L = 0.8,
+                        dist = 'proj')
                         
                         
 #### Example 2:
@@ -151,6 +192,6 @@ world <- calculateCosts(world = grid, m = 60, v_max = velocity$vmax,
                         k = velocity$k, alpha = velocity$alpha, BMR = 93,
                         l_s = 1.6, L = 0.8, region = region,
                         proj = crs(dem), res = res(dem),
-                        cut_slope = 0.5, dir = dir)
+                        cut_slope = 0.5, dir = dir, dist = 'proj')
 
 }

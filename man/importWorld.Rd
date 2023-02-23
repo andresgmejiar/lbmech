@@ -16,6 +16,10 @@ importWorld(
   dx = 0,
   dy = 0,
   dl = FALSE,
+  dist = "karney",
+  r = 6378137,
+  f = 1/298.257223563,
+  b = 6356752.3142,
   z_fix = NULL,
   dir = tempdir(),
   ...
@@ -67,7 +71,27 @@ if z_fix is provided.}
 Default is \code{FALSE}, and is not needed for the 
 \code{\link[lbmech]{calculateCosts}} function, which generates it on its own.}
 
-\item{z_fix}{A RasterLayer with the same origin and resolution as the
+\item{dist}{A character string specifying the method by which to calculate
+linear distances. One of \code{proj} (for source projection distance units; the fastest),
+\code{karney} (the second most accurate and second fastest; the default), 
+\code{cosine}, \code{haversine}, \code{meeus}, 
+\code{vincentyEllipsoid} or \code{vincentySphere} (see documentation for the
+\code{\link[geosphere]{geosphere}} package for further documentation). Ignored
+unless \code{dl = TRUE}.}
+
+\item{r}{The earth's radius, or semimajor axis (a) for ellipsoidal models. 
+Default is 6378137 for WGS1984. Ignored unless \code{dl == TRUE} and 
+\code{dist != 'proj'}.}
+
+\item{f}{The ellipsoidal flattening of the earth for ellipsoidal models. 
+Default is \code{f=1/298.257223563} for WGS1984.  Ignored unless \code{dl == TRUE} and 
+\code{dist == c('karney','meeus','vincentyEllipsoid')}.}
+
+\item{b}{The earth's semiminor axis. 
+Default is \code{b=6356752.3142} for WGS1984.  Ignored unless \code{dl == TRUE} and 
+\code{dist == 'vincentyEllipsoid'}.}
+
+\item{z_fix}{A SpatRaster with the same origin and resolution as the
 \code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.
 Do not modify this parameter if you didn't modify it when you ran
 \code{\link[lbmech]{makeWorld}}.}
@@ -92,7 +116,8 @@ rounded to the next-lowest integer
 If \code{xy1} and/or \code{xy2} are \code{TRUE}, then an additional columns
 for the start and/or end 'x' and 'y' coordinates are included (e.g. \code{$x_i}
 for the initial 'x' and \code{$y_f} for the final 'y'). If \code{dl = TRUE},
-then a final \code{$dl} column is added with the total displacement.
+then a final \code{$dl} column is added with the total displacement based on the
+chosen \code{dist} method.
 }
 \description{
 A function that for a given region imports all cells from the
@@ -121,22 +146,22 @@ dem <- expand.grid(list(x = 1:(n * 100),
 dem <- as.data.table(dem)
 dem[, z := 250 * exp(-(x - n/2)^2) + 
       250 * exp(-(y - n/2)^2)]
-dem <- rasterFromXYZ(dem)
-extent(dem) <- c(10000, 20000, 30000, 40000)
+dem <- rast(dem)
+ext(dem) <- c(10000, 20000, 30000, 40000)
 crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
 
 # Export it so it doesn't just exist on the memory
 dir <- tempdir()
-writeRaster(dem, paste0(dir,"/DEM.tif"),format="GTiff",overwrite=TRUE)
+writeRaster(dem, paste0(dir,"/DEM.tif"),overwrite=TRUE)
 
 
 # Import raster, get the grid
-dem <- raster(paste0(dir,"/DEM.tif"))
+dem <- rast(paste0(dir,"/DEM.tif"))
 grid <- makeGrid(dem = dem, nx = n, ny = n)
 
 # Import the data lying between x = (12000,16000) and y = (32000,36000)
-region <- extent(c(12000,16000,32000,36000))
-region <- as(region,"SpatialPolygons")
+region <- ext(c(12000,16000,32000,36000))
+region <- as.polygons(region)
 crs(region) <- crs(grid)
 
 world <- importWorld(region = region, polys = grid, cut_slope = 0.5, 
