@@ -1,3 +1,101 @@
+#' Convert a raster to a data.table keeping the geometry properties. Note that
+#' the raster may not have any layers named 'x' or 'y' (lowercase). This does
+#' not preserve projection information.
+#' 
+#' @title Convert raster to data.table
+#' @param z An object of class Raster* or SpatRaster
+#' @return A data.table containing the raster values in column names after
+#' the raster layers, and 'x' and 'y' columns containing the cell locations
+#' @importFrom terra init
+#' @importFrom terra rast
+#' @importFrom data.table as.data.table
+#' @examples 
+#' n <- 5
+#' dem <- expand.grid(list(x = 1:(n * 100),
+#'                         y = 1:(n * 100))) / 100
+#' dem <- as.data.table(dem)
+#' dem[, z := 250 * exp(-(x - n/2)^2) + 
+#'       250 * exp(-(y - n/2)^2)]
+#' dem <- rast(dem)
+#' ext(dem) <- c(10000, 20000, 30000, 40000)
+#' crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
+#' dem <- rastToTable(dem)
+#' @export
+rastToTable <- function(z){
+  if (methods::is(z,"Raster")){
+    z <- rast(z)
+  }
+  if ("x" %in% names(z)){
+    warning("Object contains a layer named 'x'. Did not calculate easting")
+  } else {
+   z$x <- init(z,'x')
+  }
+  if ("y" %in% names(z)){
+    warning("Object contains a layer named 'y'. Did not calculate easting")
+  } else {
+    z$y <- init(z,'y')
+  }
+  return(na.omit(as.data.table(z)))
+}
+
+#' Read and write rasters using the fst library
+#' 
+#' @title Fast read and write rasters
+#' @name fstrast_write
+#' @aliases fstrast_read
+#' @param x An object of class SpatRaster or Raster. It may not contain
+#' layers named 'x' or 'y'
+#' @param filename Character. Output filename. Do not use extensions.
+#' @param ... Additional parameters to pass on to \code{\link[fst]{read_fst}} or
+#' \code{\link[fst]{write_fst}}
+#' @importFrom terra crs
+#' @importFrom terra crs<-
+#' @examples  
+#' n <- 5
+#' dem <- expand.grid(list(x = 1:(n * 100),
+#'                         y = 1:(n * 100))) / 100
+#' dem <- as.data.table(dem)
+#' dem[, z := 250 * exp(-(x - n/2)^2) + 
+#'       250 * exp(-(y - n/2)^2)]
+#' dem <- rast(dem)
+#' ext(dem) <- c(10000, 20000, 30000, 40000)
+#' crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
+#' fstrast_write(dem, 'DEM.fst')
+#' fstrast_read('DEM.fst')
+NULL
+
+#' @rdname fstrast_write
+#' @export
+fstrast_write <- function(x, filename, ...){
+  filename <- normalizePath(filename, mustWork = FALSE)
+  if ('x' %in% names(x) | 'y' %in% names(x)){
+    stop("Raster may not contain layers named 'x' or 'y'. Operation aborted")
+  }
+  fst::write_fst(rbind(data.table(x = res(x)[1],
+                                  y = res(x)[2]),
+                       rastToTable(x), fill = TRUE), 
+                 paste0(filename,'.fst'), compress = 0, ...)
+  write(crs(x), paste0(filename,'.fstproj'))
+}
+
+#' @rdname fstrast_write
+#' @export
+fstrast_read <- function(filename, ...){
+  filename <- normalizePath(filename, mustWork = FALSE)
+  x <- fst::read_fst(paste0(filename,'.fst'),as.data.table = TRUE)
+  xres <- x[1]$x
+  yres <- x[1]$y
+  x[, `:=`(x = round(x/..xres)*..xres,
+           y = round(y/..yres)*..yres)]
+  x <- rast(x[!1],
+            crs = as.character(
+              noquote(
+                paste(
+                  readLines(
+                    paste0(filename,'.fstproj')),collapse='\n')))
+  )
+}
+
 #' Generate a partitioning grid for a single raster source representing regional
 #' elevations. Smaller partitioning grids (i.e. a greater value of \code{nx * ny})
 #' results in a greater number of saved files and a greater number of
@@ -75,7 +173,7 @@ makeGrid <- function(dem, nx, ny, path = NA,
   #Silences CRAN check warnings
   x=..dx=y=..dy=left=right=bottom=top=NULL
   # Convert raster to SpatRast if raster is provided
-  if (methods::is(dem, 'RasterLayer')){
+  if (methods::is(dem, 'Raster')){
     dem <- rast(dem)
   } else if (methods::is(dem,"Spatial")){
     dem <- vect(dem)
@@ -162,7 +260,7 @@ makeGrid <- function(dem, nx, ny, path = NA,
 #' by a source grid.
 #'
 #' @title Identify necessary tiles/sectors
-#' @param region An object of class SpatRaster, SpatVector RasterLayer, Spatial*, 
+#' @param region An object of class SpatRaster, SpatVector Raster*, Spatial*, 
 #' data.frame, or data.table indicating the region-of-interest. If input is of class
 #' SpatialPoints*, data.table, or data.frame the \code{region} represents sectors containing the
 #' individual points.
@@ -185,6 +283,7 @@ makeGrid <- function(dem, nx, ny, path = NA,
 #' @importFrom terra vect
 #' @importFrom terra rast
 #' @importFrom terra as.polygons
+#' @importFrom raster SpPolygons
 #' @examples 
 #' 
 #' #### Example 1:
@@ -222,7 +321,7 @@ whichTiles <- function(region, polys, tile_id = "TILEID", x = "x", y = "y"){
   if ("data.frame" %in% class(region)){
     region <- vect(region, geom = c(x,y), crs = crs(polys), keepgeom=TRUE)
   }   
-  if (methods::is(region, "RasterLayer")){
+  if (methods::is(region, "Raster")){
     region <- rast(region)
   }
   if (methods::is(region,"SpatRaster")){
@@ -254,7 +353,7 @@ whichTiles <- function(region, polys, tile_id = "TILEID", x = "x", y = "y"){
 #' output of the \code{\link[lbmech]{makeGrid}} function.
 #' @param tile_id a character string representing the name of the column
 #' in the \code{polys} polygon containing the unique Tile IDs. Default is \code{tile_id = 'TILEID'}
-#' @param vals A character string or a SpatRast or RasterLayer object. Optional if the
+#' @param vals A character string or a SpatRast or Raster* object. Optional if the
 #' \code{polys} polygon is the output of the \code{\link[lbmech]{makeGrid}} function as the default is
 #' the character string \code{'location'}. If no DEM was provided when \code{\link[lbmech]{makeGrid}} 
 #' was initially run (i.e. polys$location == NA), then the function will 
@@ -314,6 +413,7 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
   dir <- normalizePath(dir)
   # Check to see if elevations directory exists. If not, make it
   rd <- normalizePath(paste0(dir,"/Elevations/"),mustWork=FALSE)
+  
   if(!dir.exists(rd)){
     dir.create(rd)
   }
@@ -322,7 +422,7 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
   down <- c()
   
   for (tile_name in tiles){
-    if (!file.exists(normalizePath(paste0(rd,"/",tile_name,".gz"),
+    if (!file.exists(normalizePath(paste0(rd,"/",tile_name,".fst"),
                                    mustWork=FALSE))){
       down <- c(down,which(polys[[tile_id]] == tile_name))
     }
@@ -332,7 +432,8 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
   if (!is.null(down)){
     
     # If we don't provide a raster layer and polys doesn't come from makeGrid
-    if (!(class(vals) %in% c("RasterLayer",'SpatRaster')) & is.null(polys$makeGrid)){
+    if (!((methods::is(vals,"Raster")) | (methods::is(vals,"SpatRaster"))) &
+        is.null(polys$makeGrid)){
       # If what we provide is a polygon with URLs to the source,
       # download the file
       for (i in 1:length(down)){
@@ -365,8 +466,9 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
           if (!is.null(filt) | filt != 0){
             files <- focal(files,w=filt,fun=mean,na.policy='omit')
           }
-          writeRaster(files, normalizePath(paste0(file_path,".tif")),
-                      overwrite=TRUE)
+          names(files) <- 'z'
+          
+          fstrast_write(rastToTable(files), normalizePath(file_path))
           unlink(paste0(file_path,".zip"),recursive=TRUE)
         } 
         
@@ -390,7 +492,7 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
           if (!is.null(filt) | filt != 0){
             files <- focal(files,w=filt,fun=mean,na.policy='omit')
           }
-          writeRaster(files, normalizePath(paste0(file_path,".tif")),overwrite=TRUE)
+          fstrast_write(files, normalizePath(file_path))
           unlink(normalizePath(paste0(rd,"/",tile_name),
                                mustWork = FALSE),recursive=TRUE)
         } 
@@ -403,7 +505,7 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
           if (!is.null(filt) | filt != 0){
             files <- focal(files,w=filt,fun=mean,na.policy='omit')
           }
-          writeRaster(files, paste0(file_path,".tif"),overwrite=TRUE)
+          fstrast_write(files, normalizePath(file_path))
           unlink(paste0(file_path,".",extension),recursive=TRUE)
         }
       }
@@ -416,7 +518,7 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
         print(paste0("Downloading Tile ",tile_name," (",
                      i," of ",length(down),")"))
         file_path <- normalizePath(paste0(rd,"/",tile_name),mustWork = FALSE)
-        clip <- suppressWarnings(rast(elevatr::get_elev_raster(sf::st_as_sf(methods::as(polys[down[i],],'Spatial')),
+        clip <- suppressWarnings(rast(elevatr::get_elev_raster(sf::st_as_sf(as(polys[down[i],],'Spatial')),
                                               z = zoom,
                                               src = 'aws')))
         poly <- which(polys[[tile_id]] == tile_name)
@@ -426,17 +528,17 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
         clip <- focal(clip,w=filt,fun=mean,na.policy='omit')
         }
         clip <- crop(clip,polys[poly,], snap = 'out')
-        writeRaster(clip, paste0(file_path,".tif"),overwrite=TRUE)
+        fstrast_write(clip, file_path)
       }
     } else {
       # If what we provide is a polygon and a raster or a path to a singular
       # DEM as the source, crop the necessary DEM
-      if (!(class(vals) %in% c("RasterLayer","SpatRaster"))){
+      if (!((methods::is(vals,"Raster")) | (methods::is(vals,"SpatRaster")))){
         # If dem is not a raster, it's because the source raster is stored
         # elsewhere. Import it
         dem <- rast(unique(polys$location))
       } else {
-        if (methods::is(vals,"RasterLayer")){
+        if (methods::is(vals,"Raster")){
           dem <- rast(vals)
         } else if (methods::is(vals,'SpatRaster')){
           dem <- vals
@@ -459,7 +561,7 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
         # Save it to the above filepath, zip it, and delete the tiff
         poly <- which(polys[[tile_id]] == tile_name)
         clip <- crop(dem,polys[poly,], snap = 'out') * 1.0
-        writeRaster(clip, paste0(file_path,".tif"),overwrite=TRUE)
+        fstrast_write(clip,file_path)
       }
     }
   }
@@ -680,11 +782,11 @@ downsample <- function(data, t_step, t_cut = t_step * 10,
 #' @param x A character string representing the data column containing the 'x'
 #' coordinates in meters or degrees. Ignored for distance calculations if \code{dl} is,
 #' provided but required to extract elevations if \code{z} is of class
-#' RasterLayer or SpatialPolygonsDataFrame.
+#' Raster* or SpatialPolygonsDataFrame.
 #' @param y A character string representing the data column containing the 'y'
 #' coordinates in meters or degrees. Ignored for distance calculations if \code{dl} is,
-#' provided but required to extract elevations if \code{z} is of class
-#' RasterLayer or SpatialPolygonsDataFrame.
+#' provided but required to extract elevations if \code{z} is of class SpatRaster,
+#' Raster*, or SpatVector, SpatialPolygonsDataFrame.
 #' @param degs Logical. If FALSE, the \code{getVelocity} proceeds as if the
 #' input coordinates are meters in a projected coordinate system. If 
 #' TRUE, assumes the input coordinates are decimal degrees in lat/long, with
@@ -692,9 +794,9 @@ downsample <- function(data, t_step, t_cut = t_step * 10,
 #' \code{\link[geosphere]{distGeo}}.
 #' @param dl A character string representing the data column containing the
 #' net displacement between this observation and the previous in meters. Optional.
-#' @param z Either a character string, a SpatRaster or RasterLayer, or a SpatVector
+#' @param z Either a character string, a SpatRaster or Raster*, or a SpatVector
 #' object. If character string, it represents the data column containing the 'z'
-#' coordinates/elevations in meters. If a SpatRaster or RasterLayer, a DEM containing
+#' coordinates/elevations in meters. If a SpatRaster or Raster*, a DEM containing
 #' the elevation in meters. If SpatVector, it must represent the
 #' sectors and filepaths/URLs corresponding to the region's elevations
 #' (see the output of \code{\link[lbmech]{makeGrid}}).
@@ -725,8 +827,8 @@ downsample <- function(data, t_step, t_cut = t_step * 10,
 #' above this will be excluded from the regression. Default is \code{slope_lim = 1}.
 #' @param tile_id a character string representing the name of the column
 #' in the \code{z} polygon containing the unique Tile IDs. Ignored if elevations are
-#' provided as a column or RasterLayer. Otherwise default is \code{tile_id = 'TILEID'}.
-#' @param vals A character string or a RasterLayer object. Required only if the
+#' provided as a column or Raster*. Otherwise default is \code{tile_id = 'TILEID'}.
+#' @param vals A character string or a Raster* object. Required only if the
 #' \code{z} parameter is a polygon NOT the output of the 
 #' \code{\link[lbmech]{makeGrid}} function as the default is
 #' the character string \code{'location'}. If not, the \code{vals} parameter should be
@@ -773,7 +875,7 @@ downsample <- function(data, t_step, t_cut = t_step * 10,
 #' 
 #' 
 #' #### Example 2:
-#' # If the data do not contain elevation, and 'z' is a RasterLayer
+#' # If the data do not contain elevation, and 'z' is a raster
 #' data$z <- NULL
 #' 
 #' # Generate a DEM
@@ -826,7 +928,7 @@ getVelocity <- function(data, x = 'x', y ='y', degs = FALSE, dl = NULL, z = 'z',
   }
   
   # If z is a raster its simply extracting the z points from xy locations
-  if ("RasterLayer" %in% class(z)){
+  if (methods::is(z,"Raster")){
     z <- rast(z)
   } 
   if (methods::is(z, "SpatRaster")){
@@ -854,7 +956,7 @@ getVelocity <- function(data, x = 'x', y ='y', degs = FALSE, dl = NULL, z = 'z',
     
     
     # If z is a polygon defining sector locations...
-  } else if ("SpatVector" %in% class(z)){
+  } else if (methods::is(z,"SpatVector")){
     
     # Create an FID to keep the observations in order since the process will
     # shuffle them
@@ -882,7 +984,7 @@ getVelocity <- function(data, x = 'x', y ='y', degs = FALSE, dl = NULL, z = 'z',
     # to collect all and consolidate
     data_new <- data.table()
     for (tile in tiles){
-      elevs <- rast(normalizePath(paste0(rd,"/",tile,".tif"),mustWork=FALSE))
+      elevs <- fstrast_read(normalizePath(paste0(rd,"/",tile),mustWork=FALSE))
       
       d <- data_points[get(tile_id) == tile]
       z_vals <- elevs[cellFromXY(elevs,d[,.(get(..x),get(..y))])]
@@ -1069,7 +1171,7 @@ dtVelocity <- function(data, ...){
 #' Default is 0 (this does not correspond to an origin of zero however).
 #' @param dy The vertical offset from the origin (see \code{\link[raster]{origin}}).
 #' Default is 0 (this does not correspond to an origin of zero however).
-#' @return A RasterLayer object consisting of four cells, with resolution \code{res} and
+#' @return A SpatRaster object consisting of four cells, with resolution \code{res} and
 #'  the origin at \code{x = nx} and \code{y = ny}.
 #' @importFrom terra rast
 #' @importFrom data.table data.table
@@ -1134,7 +1236,7 @@ fix_z <- function(proj, res = 5, dx = 0, dy = 0){
 #' Since the energetic calculations only depend on a *change* in elevation, 
 #' the default is \code{'dz'}. However, if the specific origin or destination
 #' values are needed this should me modified accordingly. 
-#' @param z_fix A SpatRaster or RasterLayer that will define the resolution, origin, and
+#' @param z_fix A SpatRaster or Raster* that will define the resolution, origin, and
 #' projection information for the entire "world" of possible movement. Note that
 #' it does NOT need the same extent. Default resolution is 5, and offset is 0.
 #' Default projection is \code{proj = crs(polys)} unless a `z_fix` or `proj` is 
@@ -1142,7 +1244,7 @@ fix_z <- function(proj, res = 5, dx = 0, dy = 0){
 #' employed to ensure that the projection is conformal and in meters. 
 #' @param unit One of \code{c("m", "km", "ft", "mi")}, representing the unit of the DEM.
 #' All will be converted to meters, which is the default.
-#' @param vals A character string or a SpatRaster or RasterLayer object. Ignored unless the
+#' @param vals A character string or a SpatRaster or Raster* object. Ignored unless the
 #' \code{polys} parameter is a polygon NOT the output of the \code{\link[lbmech]{makeGrid}}
 #' function as the default is the character string \code{'location'},
 #' AND the appropriate world \code{.gz} file is NOT
@@ -1255,7 +1357,7 @@ makeWorld <- function(tiles,polys,cut_slope,tile_id = 'TILEID', proj = crs(polys
   # If no z_fix is provided, make one
   if (is.null(z_fix)){
     z_fix <- fix_z(proj = proj, ...)
-  } else if (methods::is(z_fix, "RasterLayer")){
+  } else if (methods::is(z_fix, "Raster")){
     z_fix <- rast(z_fix)
   }
   l_p <- res(z_fix)
@@ -1265,7 +1367,7 @@ makeWorld <- function(tiles,polys,cut_slope,tile_id = 'TILEID', proj = crs(polys
     dir.create(rd)
   }
   for (i in tiles){
-    if (!file.exists(normalizePath(paste0(rd,"/",i,".gz"),mustWork=FALSE))){
+    if (!file.exists(normalizePath(paste0(rd,"/",i,".fst"),mustWork=FALSE))){
       # Get the appropriate polygon and name; create a temporary folder
       tensors <- normalizePath(paste0(rd,"/",i),mustWork=FALSE)
       poly <- which(polys[[tile_id]] == i)
@@ -1278,8 +1380,8 @@ makeWorld <- function(tiles,polys,cut_slope,tile_id = 'TILEID', proj = crs(polys
       getMap(mzip, polys = polys, tile_id = tile_id, vals = vals,dir = dir)
       
       # Import all DEMs
-      dem <- normalizePath(paste0(dir,"/Elevations/",mzip,".tif"),mustWork=FALSE)
-      dem <- lapply(dem,rast)
+      dem <- normalizePath(paste0(dir,"/Elevations/",mzip),mustWork=FALSE)
+      dem <- lapply(dem,fstrast_read)
       dem <- suppressWarnings(lapply(dem,
                                      project,
                                      y = dem[[1]],
@@ -1356,8 +1458,8 @@ makeWorld <- function(tiles,polys,cut_slope,tile_id = 'TILEID', proj = crs(polys
       # This exports the cost tensor so that it can be called later by
       # the lbm.distance tool to calculate paths and catchments
       cols <- c("from","to",keep_z)
-      saveRDS(adj[,..cols],
-              file = normalizePath(paste0(rd,"/",i,".gz"),mustWork=FALSE))
+      fst::write_fst(adj[,..cols],
+              path = normalizePath(paste0(rd,"/",i,".fst"),mustWork=FALSE))
     }
   }
 }
@@ -1366,8 +1468,8 @@ makeWorld <- function(tiles,polys,cut_slope,tile_id = 'TILEID', proj = crs(polys
 #' Function that converts raster and SpatialPolygon* objects
 #' to a list of cells that fall within such a region.
 #'
-#' @title Convert SpatRaster, RasterLayer, SpatVector, or SpatialPolygon* to "x,y"
-#' @param region An object of class SpatRaster, RasterLayer, SpatVector, 
+#' @title Convert SpatRaster, Raster*, SpatVector, or SpatialPolygon* to "x,y"
+#' @param region An object of class SpatRaster, Raster*, SpatVector, 
 #' or SpatialPolygon* to convert to "x,y"
 #' @param proj A crs object or character string representing the output
 #' projection. Default is \code{proj = crs(region)}
@@ -1451,7 +1553,7 @@ regionMask <- function(region, proj = crs(region), id = NULL,
     } else {
     region <- rasterize(region,z_fix)  
     }
-  } else if (methods::is(region, "RasterLayer")){
+  } else if (methods::is(region, "Raster")){
     region <- rast(region)
   }
    if (methods::is(region, "SpatRaster")){
@@ -1496,7 +1598,7 @@ regionMask <- function(region, proj = crs(region), id = NULL,
 #' may perform algebraic operations using any of the 
 #' \code{c('x_i','x_f','y_i','y_f','z_i','z_f','dl','dz')} columns.
 #' @title Import a world where movement is possible
-#' @param region An object of class RasterLayer or SpatialPolygons*
+#' @param region An object of class Raster* or SpatialPolygons*
 #' representing the total area where movement is possible. Must lie within
 #' the area defined by \code{polys}
 #' @param polys An object of class SpatialPolygonsDataFrame representing
@@ -1506,7 +1608,7 @@ regionMask <- function(region, proj = crs(region), id = NULL,
 #' projection. Default is \code{proj = crs(polys)}
 #' unless \code{proj} or \code{z_fix} are provided in which case 
 #' the latter takes precedence. 
-#' @param banned An object of class RasterLayer or SpatialPolygons*
+#' @param banned An object of class Raster* or SpatialPolygons*
 #' representing the total area where movement is \emph{prohibited}. Must lie within
 #' the area defined by \code{polys}
 #' @param tile_id A character string representing the name of the column
@@ -1639,7 +1741,7 @@ importWorld <- function(region, polys, proj = crs(polys), banned = NULL,
   makeWorld(tiles = tiles, polys = polys, tile_id = tile_id, dir = dir,
             z_fix = z_fix, ...)
   
-  tiles <- normalizePath(paste0(dir,"/Tensors/",tiles,".gz"),
+  tiles <- normalizePath(paste0(dir,"/Tensors/",tiles,".fst"),
                          mustWork=FALSE)
   
   # Convert the regions into a list of the allowable cells
@@ -1657,7 +1759,7 @@ importWorld <- function(region, polys, proj = crs(polys), banned = NULL,
   
   # Import tensors one-by-one, keeping only the allowable cells
   for (i in 1:length(tiles)) {
-    import <- readRDS(tiles[i])
+    import <- fst::read_fst(tiles[i], as.data.table = TRUE)
     import <- import[(!(from %in% banned) | !(to %in% banned)) &
                        ((from %in% region) | (to %in% region)),]
     Edges <- rbind(Edges, import)
@@ -2121,7 +2223,7 @@ getCoords <- function(data, proj = NULL, x = "x", y = "y",
 #' \code{from}, or every pair of locations between \code{from} and \code{to}.
 #' If \code{'all'}, rasters will be generated for each node representing the cost
 #' to travel to every cell in the given \code{world}.
-#' @param region An object of class SpatRaster, SpatVector, RasterLayer or SpatialPolygons*
+#' @param region An object of class SpatRaster, SpatVector, Raster* or SpatialPolygons*
 #' representing the total area where movement is possible. Optional; used
 #' to constrain the \code{world} more than it may already have been.
 #' @param costs A character vector containing any combination of the strings
@@ -2161,7 +2263,7 @@ getCoords <- function(data, proj = NULL, x = "x", y = "y",
 #'
 #' (1) If \code{destination = 'pairs'}, entries are distance matrices.
 #' (2) If \code{destination = 'all'} and \code{'object' \%in\% output},
-#' entries are RasterStacks with each RasterLayer representing the cost to/from
+#' entries are RasterStacks with each Raster* representing the cost to/from
 #' each node.
 #' (3) If \code{destination = 'all'} and \code{output == 'file'}, no list is output.
 #'
@@ -2565,8 +2667,8 @@ getCosts <- function(world, from, to = NULL, proj = NULL, id = 'ID',
 #' while \code{costs = 'energetics'} is shorthand for \code{c("work","energy")}.
 #' Default is \code{'all'}. Note that these must have previously been calculated.
 #' @return Rasters representing cost corridors.
-#' If \code{length(costs) == 1}, a RasterLayer. If \code{length(costs) > 1}
-#' a list of RasterLayers with one slot for each \code{cost}.
+#' If \code{length(costs) == 1}, a Raster* If \code{length(costs) > 1}
+#' a list of Raster* with one slot for each \code{cost}.
 #' @importFrom terra rast
 #' @importFrom terra global
 #' @examples 
@@ -2636,7 +2738,7 @@ makeCorridor <- function(rasters = tempdir(), order, costs = "all"){
   }
   
   costs <- stringr::str_to_sentence(costs)
-  # Get the names of files/RasterLayers that will be needed for each leg
+  # Get the names of files/rasters that will be needed for each leg
   starts <- paste0("_From_",order[1:(length(order)-1)])
   stops <-  paste0("_To_",order[2:length(order)])
   
@@ -2652,7 +2754,7 @@ makeCorridor <- function(rasters = tempdir(), order, costs = "all"){
       to <- rasters[[paste0(cost,stops)]]
       
     } else if (methods::is(rasters,'character')){
-      # If the input is a directory with RasterLayers, then we need to import
+      # If the input is a directory with rasters, then we need to import
       # each individual raster and stack them
       rd <- normalizePath(paste0(rasters,"/CostRasters"),mustWork=FALSE)
       
@@ -2716,7 +2818,7 @@ makeCorridor <- function(rasters = tempdir(), order, costs = "all"){
 #' Required if \code{data} is not Spatial*.
 #' @param y A character vector representing the column containing the 'y' coordinates.
 #' Required if \code{data} is not Spatial*.
-#' @param region An object of class RasterLayer or SpatialPolygons*
+#' @param region An object of class Raster* or SpatialPolygons*
 #' representing the total area where movement is possible. Optional; used
 #' to constrain the \code{world} more than it may already have been.
 #' @param costs A character vector containing any combination of the strings

@@ -7,7 +7,7 @@
 whichTiles(region, polys, tile_id = "TILEID", x = "x", y = "y")
 }
 \arguments{
-\item{region}{An object of class SpatRaster, SpatVector RasterLayer, Spatial*, 
+\item{region}{An object of class SpatRaster, SpatVector Raster*, Spatial*, 
 data.frame, or data.table indicating the region-of-interest. If input is of class
 SpatialPoints*, data.table, or data.frame the \code{region} represents sectors containing the
 individual points.}

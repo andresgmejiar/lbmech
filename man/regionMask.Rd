@@ -2,7 +2,7 @@
 % Please edit documentation in R/Functions.R
 \name{regionMask}
 \alias{regionMask}
-\title{Convert SpatRaster, RasterLayer, SpatVector, or SpatialPolygon* to "x,y"}
+\title{Convert SpatRaster, Raster*, SpatVector, or SpatialPolygon* to "x,y"}
 \usage{
 regionMask(
   region,
@@ -14,7 +14,7 @@ regionMask(
 )
 }
 \arguments{
-\item{region}{An object of class SpatRaster, RasterLayer, SpatVector, 
+\item{region}{An object of class SpatRaster, Raster*, SpatVector, 
 or SpatialPolygon* to convert to "x,y"}
 
 \item{proj}{A crs object or character string representing the output

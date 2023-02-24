@@ -46,7 +46,7 @@ Required if \code{data} is not Spatial*.}
 \item{y}{A character vector representing the column containing the 'y' coordinates.
 Required if \code{data} is not Spatial*.}
 
-\item{region}{An object of class RasterLayer or SpatialPolygons*
+\item{region}{An object of class Raster* or SpatialPolygons*
 representing the total area where movement is possible. Optional; used
 to constrain the \code{world} more than it may already have been.}
 

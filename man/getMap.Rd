@@ -26,7 +26,7 @@ output of the \code{\link[lbmech]{makeGrid}} function.}
 \item{tile_id}{a character string representing the name of the column
 in the \code{polys} polygon containing the unique Tile IDs. Default is \code{tile_id = 'TILEID'}}
 
-\item{vals}{A character string or a SpatRast or RasterLayer object. Optional if the
+\item{vals}{A character string or a SpatRast or Raster* object. Optional if the
 \code{polys} polygon is the output of the \code{\link[lbmech]{makeGrid}} function as the default is
 the character string \code{'location'}. If no DEM was provided when \code{\link[lbmech]{makeGrid}} 
 was initially run (i.e. polys$location == NA), then the function will 

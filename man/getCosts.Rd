@@ -57,7 +57,7 @@ a distance matrix will be generated between every pair of locations in
 If \code{'all'}, rasters will be generated for each node representing the cost
 to travel to every cell in the given \code{world}.}
 
-\item{region}{An object of class SpatRaster, SpatVector, RasterLayer or SpatialPolygons*
+\item{region}{An object of class SpatRaster, SpatVector, Raster* or SpatialPolygons*
 representing the total area where movement is possible. Optional; used
 to constrain the \code{world} more than it may already have been.}
 
@@ -107,7 +107,7 @@ and \code{directions}. The object class of the list entries depends on the
 
 (1) If \code{destination = 'pairs'}, entries are distance matrices.
 (2) If \code{destination = 'all'} and \code{'object' \%in\% output},
-entries are RasterStacks with each RasterLayer representing the cost to/from
+entries are RasterStacks with each Raster* representing the cost to/from
 each node.
 (3) If \code{destination = 'all'} and \code{output == 'file'}, no list is output.
 

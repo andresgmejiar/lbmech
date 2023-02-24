@@ -1,7 +1,7 @@
 Package: lbmech
 Type: Package
 Title: A Package to Study the Mechanics of Landscape and Behavior
-Version: 0.3.0
+Version: 0.3.1
 Author: Andres G. Mejia Ramon
 Maintainer: Andres G. Mejia Ramon <andres.mejiaramon@oist.jp>
 Description: A series of functions to calculate the cost required to move across the landscape in terms of time, mechanical work, and net metabolic expenditure (energy). 
@@ -21,10 +21,11 @@ Imports:
         geosphere,
         tmaptools,
         gtools,
-        elevatr
+        elevatr,
+        fst
 Depends:
         data.table,
         terra
 Suggests:
-        rgdal,
-        R.utils
+        R.utils,
+        raster

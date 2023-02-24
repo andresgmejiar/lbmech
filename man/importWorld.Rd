@@ -26,7 +26,7 @@ importWorld(
 )
 }
 \arguments{
-\item{region}{An object of class RasterLayer or SpatialPolygons*
+\item{region}{An object of class Raster* or SpatialPolygons*
 representing the total area where movement is possible. Must lie within
 the area defined by \code{polys}}
 
@@ -39,7 +39,7 @@ projection. Default is \code{proj = crs(polys)}
 unless \code{proj} or \code{z_fix} are provided in which case 
 the latter takes precedence.}
 
-\item{banned}{An object of class RasterLayer or SpatialPolygons*
+\item{banned}{An object of class Raster* or SpatialPolygons*
 representing the total area where movement is \emph{prohibited}. Must lie within
 the area defined by \code{polys}}
 

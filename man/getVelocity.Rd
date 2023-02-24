@@ -32,12 +32,12 @@ all observations}
 \item{x}{A character string representing the data column containing the 'x'
 coordinates in meters or degrees. Ignored for distance calculations if \code{dl} is,
 provided but required to extract elevations if \code{z} is of class
-RasterLayer or SpatialPolygonsDataFrame.}
+Raster* or SpatialPolygonsDataFrame.}
 
 \item{y}{A character string representing the data column containing the 'y'
 coordinates in meters or degrees. Ignored for distance calculations if \code{dl} is,
-provided but required to extract elevations if \code{z} is of class
-RasterLayer or SpatialPolygonsDataFrame.}
+provided but required to extract elevations if \code{z} is of class SpatRaster,
+Raster*, or SpatVector, SpatialPolygonsDataFrame.}
 
 \item{degs}{Logical. If FALSE, the \code{getVelocity} proceeds as if the
 input coordinates are meters in a projected coordinate system. If 
@@ -48,9 +48,9 @@ TRUE, assumes the input coordinates are decimal degrees in lat/long, with
 \item{dl}{A character string representing the data column containing the
 net displacement between this observation and the previous in meters. Optional.}
 
-\item{z}{Either a character string, a SpatRaster or RasterLayer, or a SpatVector
+\item{z}{Either a character string, a SpatRaster or Raster*, or a SpatVector
 object. If character string, it represents the data column containing the 'z'
-coordinates/elevations in meters. If a SpatRaster or RasterLayer, a DEM containing
+coordinates/elevations in meters. If a SpatRaster or Raster*, a DEM containing
 the elevation in meters. If SpatVector, it must represent the
 sectors and filepaths/URLs corresponding to the region's elevations
 (see the output of \code{\link[lbmech]{makeGrid}}).}
@@ -91,9 +91,9 @@ above this will be excluded from the regression. Default is \code{slope_lim = 1}
 
 \item{tile_id}{a character string representing the name of the column
 in the \code{z} polygon containing the unique Tile IDs. Ignored if elevations are
-provided as a column or RasterLayer. Otherwise default is \code{tile_id = 'TILEID'}.}
+provided as a column or Raster*. Otherwise default is \code{tile_id = 'TILEID'}.}
 
-\item{vals}{A character string or a RasterLayer object. Required only if the
+\item{vals}{A character string or a Raster* object. Required only if the
 \code{z} parameter is a polygon NOT the output of the 
 \code{\link[lbmech]{makeGrid}} function as the default is
 the character string \code{'location'}. If not, the \code{vals} parameter should be
@@ -141,7 +141,7 @@ velocity <- getVelocity(data = data, z = 'elevation')
 
 
 #### Example 2:
-# If the data do not contain elevation, and 'z' is a RasterLayer
+# If the data do not contain elevation, and 'z' is a raster
 data$z <- NULL
 
 # Generate a DEM

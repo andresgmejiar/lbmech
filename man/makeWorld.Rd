@@ -62,7 +62,7 @@ Since the energetic calculations only depend on a *change* in elevation,
 the default is \code{'dz'}. However, if the specific origin or destination
 values are needed this should me modified accordingly.}
 
-\item{z_fix}{A SpatRaster or RasterLayer that will define the resolution, origin, and
+\item{z_fix}{A SpatRaster or Raster* that will define the resolution, origin, and
 projection information for the entire "world" of possible movement. Note that
 it does NOT need the same extent. Default resolution is 5, and offset is 0.
 Default projection is \code{proj = crs(polys)} unless a `z_fix` or `proj` is 
@@ -72,7 +72,7 @@ employed to ensure that the projection is conformal and in meters.}
 \item{unit}{One of \code{c("m", "km", "ft", "mi")}, representing the unit of the DEM.
 All will be converted to meters, which is the default.}
 
-\item{vals}{A character string or a SpatRaster or RasterLayer object. Ignored unless the
+\item{vals}{A character string or a SpatRaster or Raster* object. Ignored unless the
 \code{polys} parameter is a polygon NOT the output of the \code{\link[lbmech]{makeGrid}}
 function as the default is the character string \code{'location'},
 AND the appropriate world \code{.gz} file is NOT

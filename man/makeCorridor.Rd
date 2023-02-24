@@ -33,8 +33,8 @@ Default is \code{'all'}. Note that these must have previously been calculated.}
 }
 \value{
 Rasters representing cost corridors.
-If \code{length(costs) == 1}, a RasterLayer. If \code{length(costs) > 1}
-a list of RasterLayers with one slot for each \code{cost}.
+If \code{length(costs) == 1}, a Raster* If \code{length(costs) > 1}
+a list of Raster* with one slot for each \code{cost}.
 }
 \description{
 A function to automatically perform the raster arithmetic

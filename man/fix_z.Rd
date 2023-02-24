@@ -20,7 +20,7 @@ Default is 0 (this does not correspond to an origin of zero however).}
 Default is 0 (this does not correspond to an origin of zero however).}
 }
 \value{
-A RasterLayer object consisting of four cells, with resolution \code{res} and
+A SpatRaster object consisting of four cells, with resolution \code{res} and
  the origin at \code{x = nx} and \code{y = ny}.
 }
 \description{
