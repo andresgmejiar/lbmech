@@ -71,8 +71,15 @@ fstrast_write <- function(x, filename, ...){
   if ('x' %in% names(x) | 'y' %in% names(x)){
     stop("Raster may not contain layers named 'x' or 'y'. Operation aborted")
   }
-  fst::write_fst(rbind(data.table(x = res(x)[1],
-                                  y = res(x)[2]),
+  xres <- res(x)[1]
+  yres <- res(x)[2]
+  xoff <- round(as.numeric(xFromCell(x,1))/xres) * 
+    xres - as.numeric(xFromCell(x,1))
+  yoff <- round(as.numeric(yFromCell(x,1))/yres) * 
+    yres - as.numeric(yFromCell(x,1))
+  
+  fst::write_fst(rbind(data.table(x = c(xres,xoff),
+                                  y = c(yres,yoff)),
                        rastToTable(x), fill = TRUE), 
                  paste0(filename,'.fst'), compress = 0, ...)
   write(crs(x), paste0(filename,'.fstproj'))
@@ -85,9 +92,11 @@ fstrast_read <- function(filename, ...){
   x <- fst::read_fst(paste0(filename,'.fst'),as.data.table = TRUE)
   xres <- x[1]$x
   yres <- x[1]$y
-  x[, `:=`(x = round(x/..xres)*..xres,
-           y = round(y/..yres)*..yres)]
-  x <- rast(x[!1],
+  xoff <- x[2]$x
+  yoff <- x[2]$y
+  x[, `:=`(x = round(x/..xres)*..xres + xoff,
+           y = round(y/..yres)*..yres + yoff)]
+  x <- rast(x[!c(1,2)],
             crs = as.character(
               noquote(
                 paste(
@@ -436,7 +445,7 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
         is.null(polys$makeGrid)){
       # If what we provide is a polygon with URLs to the source,
       # download the file
-      for (i in 1:length(down)){
+      for (i in seq(1,length(down))){
         tile_name <- as.character(polys[down[i],][[tile_id]])
         print(paste0("Downloading Tile ",tile_name," (",
                      i," of ",length(down),")"))
@@ -513,7 +522,7 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
       # If what we provide is a polygon from makeGrid but no URLs to the source,
       # download from AWS
       zoom <- unique(polys$location)
-      for (i in 1:length(down)){
+      for (i in seq(1,length(down))){
         tile_name <- as.character(polys[down[i],][[tile_id]])
         print(paste0("Downloading Tile ",tile_name," (",
                      i," of ",length(down),")"))
@@ -550,7 +559,7 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
         dem <- focal(dem,w=filt,fun=mean,na.policy='omit')
       }
       # For every tile that needs to be acquired...
-      for (i in 1:length(down)){
+      for (i in seq(1,length(down))){
         
         # Get the unique tile id, and define the output filepath
         tile_name <- as.character(polys[down[i],][[tile_id]])
@@ -611,7 +620,7 @@ importGPX <- function(tracks){
       
       gpx <- data.table(TrackID = stringr::str_extract(i,
                                                        pattern="(?<=/)[0-9A-Za-z_\\-]+(?=.gpx)"),
-                        PID = 1:nrow(gpx),
+                        PID = seq(1,nrow(gpx)),
                         t = gpx@data$time,
                         long = gpx@coords[,"coords.x1"],
                         lat = gpx@coords[,"coords.x2"],
@@ -960,7 +969,7 @@ getVelocity <- function(data, x = 'x', y ='y', degs = FALSE, dl = NULL, z = 'z',
     
     # Create an FID to keep the observations in order since the process will
     # shuffle them
-    data$Order <- 1:nrow(data)
+    data$Order <- seq(1,nrow(data))
     
     # If z locations have already been provided but the input contains a DEM,
     # warn the user
@@ -1194,7 +1203,9 @@ fix_z <- function(proj, res = 5, dx = 0, dy = 0){
 
 #' Function that defines the grid that can be traversed--the "world"--as well as the
 #' cells that can be accessed from each individual cell. This is the most
-#' time-intensive function. It first checks to see if the required transition \code{.gz}
+#' time-intensive function. 
+#' 
+#' It first checks to see if the required transition \code{.gz}
 #' files have already been created in the \code{dir} workspace. If not, it checks to see if the
 #' DEMs required to generate the transition \code{.gz} files have been downloaded/cropped,
 #' and generates the latter if so. If not, it downloads/crops them and proceeds.
@@ -1758,7 +1769,7 @@ importWorld <- function(region, polys, proj = crs(polys), banned = NULL,
   pb <- utils::txtProgressBar(max = length(tiles), style = 3)
   
   # Import tensors one-by-one, keeping only the allowable cells
-  for (i in 1:length(tiles)) {
+  for (i in seq(1,length(tiles))) {
     import <- fst::read_fst(tiles[i], as.data.table = TRUE)
     import <- import[(!(from %in% banned) | !(to %in% banned)) &
                        ((from %in% region) | (to %in% region)),]
@@ -2157,7 +2168,7 @@ getCoords <- function(data, proj = NULL, x = "x", y = "y",
   crs(z_temp) <- crs(z_fix)
   z_fix <- suppressWarnings(project(z_temp,z_fix, align= TRUE))
   
-  for (i in 1:nrow(data)){
+  for (i in seq(1,nrow(data))){
     centroid <- data[i, .(x = get(..x),y = get(..y))]
     poi <- cellFromXY(z_fix, centroid[,.(x,y)])
     poi <- paste(format(round(xyFromCell(z_fix, poi),precision), 
@@ -2360,7 +2371,7 @@ getCosts <- function(world, from, to = NULL, proj = NULL, id = 'ID',
   id2 <- 1
   # If no Unique ID column is given, make one
   if (is.null(id)){
-    from$Node_ID <- 1:nrow(from)
+    from$Node_ID <- seq(1,nrow(from))
     id <- "Node_ID"
     id2 <- NULL
   }
@@ -2416,7 +2427,7 @@ getCosts <- function(world, from, to = NULL, proj = NULL, id = 'ID',
       if (methods::is(to,"SpatVector")){
         # If no column ID is provided, make one as above
         if (is.null(id2)){
-          to$Node_ID <- 1:nrow(to)
+          to$Node_ID <- seq(1,nrow(to))
         }
         if (geomtype(from) == 'polygons'){
         toMask <- regionMask(to, z_fix = z_fix, id = id)
@@ -2739,8 +2750,8 @@ makeCorridor <- function(rasters = tempdir(), order, costs = "all"){
   
   costs <- stringr::str_to_sentence(costs)
   # Get the names of files/rasters that will be needed for each leg
-  starts <- paste0("_From_",order[1:(length(order)-1)])
-  stops <-  paste0("_To_",order[2:length(order)])
+  starts <- paste0("_From_",order[seq(1,(length(order)-1))])
+  stops <-  paste0("_To_",order[seq(2,length(order))])
   
   # Empty output list, as in getCosts
   outList <- rast()
@@ -2997,8 +3008,8 @@ getPaths <- function(world, nodes, proj = NULL, id = "ID", order = NULL, x = "x"
   }
   
   # Get the IDs of nodes that will be needed for each leg
-  starts <- order[1:(length(order)-1)]
-  stops <-  order[2:length(order)]
+  starts <- order[seq(1,(length(order)-1))]
+  stops <-  order[seq(2,length(order))]
   order <- paste0(starts,"_to_",stops)
   
   # We only need to do the calculations once for each origin node,

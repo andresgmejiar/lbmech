@@ -117,12 +117,14 @@ initial and final cells may appear depending on the setting of the
 \description{
 Function that defines the grid that can be traversed--the "world"--as well as the
 cells that can be accessed from each individual cell. This is the most
-time-intensive function. It first checks to see if the required transition \code{.gz}
+time-intensive function.
+}
+\details{
+It first checks to see if the required transition \code{.gz}
 files have already been created in the \code{dir} workspace. If not, it checks to see if the
 DEMs required to generate the transition \code{.gz} files have been downloaded/cropped,
 and generates the latter if so. If not, it downloads/crops them and proceeds.
-}
-\details{
+
 The default parameters are sufficient for a workflow involving calculating
 costs with the \code{\link[lbmech]{calculateCosts}} function. However, if
 non-energetic analyses are desired, or if the user wishes to employ functions
