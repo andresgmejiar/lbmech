@@ -24,8 +24,8 @@ Imports:
         elevatr,
         fst
 Depends:
-        data.table,
-        terra
+        terra,
+        data.table
 Suggests:
         R.utils,
         raster
