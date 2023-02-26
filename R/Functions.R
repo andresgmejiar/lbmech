@@ -421,7 +421,7 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
   # DEM
   dir <- normalizePath(dir)
   # Check to see if elevations directory exists. If not, make it
-  rd <- normalizePath(paste0(dir,"/Elevations/"),mustWork=FALSE)
+  rd <- normalizePath(dir,mustWork=FALSE)
   
   if(!dir.exists(rd)){
     dir.create(rd)
@@ -986,7 +986,8 @@ getVelocity <- function(data, x = 'x', y ='y', degs = FALSE, dl = NULL, z = 'z',
     tiles <- unique(data_points[,get(tile_id)])
     
     # Make sure that the necessary files exist
-    getMap(tiles=tiles,polys=z,tile_id=tile_id,vals=vals,dir=dir)
+    getMap(tiles=tiles,polys=z,tile_id=tile_id,vals=vals,
+           dir= normalizePath(paste0(dir,"/Elevations/")))
     
     # Create an empty data.table in which to store extracted values. There's a
     # small chance some points will land in two sectors, so we'll have
@@ -1388,7 +1389,8 @@ makeWorld <- function(tiles,polys,cut_slope,tile_id = 'TILEID', proj = crs(polys
       poly_buff <- buffer(poly,width=neighbor_distance)
       mzip <- intersect(poly_buff[,NA],polys)[[tile_id]]
       mzip <- unlist(mzip)
-      getMap(mzip, polys = polys, tile_id = tile_id, vals = vals,dir = dir)
+      getMap(mzip, polys = polys, tile_id = tile_id, vals = vals,dir = 
+               normalizePath(paste0(dir,"/Elevations/")))
       
       # Import all DEMs
       dem <- normalizePath(paste0(dir,"/Elevations/",mzip),mustWork=FALSE)
