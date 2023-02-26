@@ -41,8 +41,8 @@ rastToTable <- function(z){
 #' Read and write rasters using the fst library
 #' 
 #' @title Fast read and write rasters
-#' @name fstrast_write
-#' @aliases fstrast_read
+#' @name writeRST
+#' @aliases importRST
 #' @param x An object of class SpatRaster or Raster. It may not contain
 #' layers named 'x' or 'y'
 #' @param filename Character. Output filename. Do not use extensions.
@@ -60,13 +60,13 @@ rastToTable <- function(z){
 #' dem <- rast(dem)
 #' ext(dem) <- c(10000, 20000, 30000, 40000)
 #' crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
-#' fstrast_write(dem, 'DEM.fst')
-#' fstrast_read('DEM.fst')
+#' writeRST(dem, 'DEM.fst')
+#' importRST('DEM.fst')
 NULL
 
-#' @rdname fstrast_write
+#' @rdname writeRST
 #' @export
-fstrast_write <- function(x, filename, ...){
+writeRST <- function(x, filename, ...){
   filename <- normalizePath(filename, mustWork = FALSE)
   if ('x' %in% names(x) | 'y' %in% names(x)){
     stop("Raster may not contain layers named 'x' or 'y'. Operation aborted")
@@ -85,9 +85,9 @@ fstrast_write <- function(x, filename, ...){
   write(crs(x), paste0(filename,'.fstproj'))
 }
 
-#' @rdname fstrast_write
+#' @rdname writeRST
 #' @export
-fstrast_read <- function(filename, ...){
+importRST <- function(filename, ...){
   filename <- normalizePath(filename, mustWork = FALSE)
   x <- fst::read_fst(paste0(filename,'.fst'),as.data.table = TRUE)
   xres <- x[1]$x
@@ -477,7 +477,7 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
           }
           names(files) <- 'z'
           
-          fstrast_write(rastToTable(files), normalizePath(file_path))
+          writeRST(rastToTable(files), normalizePath(file_path))
           unlink(paste0(file_path,".zip"),recursive=TRUE)
         } 
         
@@ -501,7 +501,7 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
           if (!is.null(filt) | filt != 0){
             files <- focal(files,w=filt,fun=mean,na.policy='omit')
           }
-          fstrast_write(files, normalizePath(file_path))
+          writeRST(files, normalizePath(file_path))
           unlink(normalizePath(paste0(rd,"/",tile_name),
                                mustWork = FALSE),recursive=TRUE)
         } 
@@ -514,7 +514,7 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
           if (!is.null(filt) | filt != 0){
             files <- focal(files,w=filt,fun=mean,na.policy='omit')
           }
-          fstrast_write(files, normalizePath(file_path))
+          writeRST(files, normalizePath(file_path))
           unlink(paste0(file_path,".",extension),recursive=TRUE)
         }
       }
@@ -537,7 +537,7 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
         clip <- focal(clip,w=filt,fun=mean,na.policy='omit')
         }
         clip <- crop(clip,polys[poly,], snap = 'out')
-        fstrast_write(clip, file_path)
+        writeRST(clip, file_path)
       }
     } else {
       # If what we provide is a polygon and a raster or a path to a singular
@@ -570,7 +570,7 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
         # Save it to the above filepath, zip it, and delete the tiff
         poly <- which(polys[[tile_id]] == tile_name)
         clip <- crop(dem,polys[poly,], snap = 'out') * 1.0
-        fstrast_write(clip,file_path)
+        writeRST(clip,file_path)
       }
     }
   }
@@ -994,7 +994,7 @@ getVelocity <- function(data, x = 'x', y ='y', degs = FALSE, dl = NULL, z = 'z',
     # to collect all and consolidate
     data_new <- data.table()
     for (tile in tiles){
-      elevs <- fstrast_read(normalizePath(paste0(rd,"/",tile),mustWork=FALSE))
+      elevs <- importRST(normalizePath(paste0(rd,"/",tile),mustWork=FALSE))
       
       d <- data_points[get(tile_id) == tile]
       z_vals <- elevs[cellFromXY(elevs,d[,.(get(..x),get(..y))])]
@@ -1394,7 +1394,7 @@ makeWorld <- function(tiles,polys,cut_slope,tile_id = 'TILEID', proj = crs(polys
       
       # Import all DEMs
       dem <- normalizePath(paste0(dir,"/Elevations/",mzip),mustWork=FALSE)
-      dem <- lapply(dem,fstrast_read)
+      dem <- lapply(dem,importRST)
       dem <- suppressWarnings(lapply(dem,
                                      project,
                                      y = dem[[1]],
