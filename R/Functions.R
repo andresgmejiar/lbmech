@@ -472,9 +472,10 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
           print(paste0("Downloading Tile ",tile_name," (",
                        i," of ",length(down),")"))
         }
-        extension <- stringr::str_split_fixed(polys[down[i],][[vals]],"/.")[2]
+        extension <- unlist(stringr::str_split(polys[down[i],][[vals]],"\\."))
+        extension <- extension[length(extension)]
         file_path <- normalizePath(paste0(rd,"/",tile_name),mustWork = FALSE)
-        utils::download.file(url=polys[down[i],][[vals]],
+        utils::download.file(url=unlist(polys[down[i],][[vals]]),
                              destfile=paste0(file_path,".",extension))
         
         
