@@ -6,139 +6,61 @@
 \usage{
 importWorld(
   region,
-  polys,
-  proj = crs(polys),
   banned = NULL,
-  tile_id = "TILEID",
-  xy1 = FALSE,
-  xy2 = FALSE,
-  res = 5,
-  dx = 0,
-  dy = 0,
-  dl = FALSE,
-  dist = "karney",
-  r = 6378137,
-  f = 1/298.257223563,
-  b = 6356752.3142,
-  z_fix = NULL,
   dir = tempdir(),
+  vars = NULL,
+  costFUN = NULL,
   ...
 )
 }
 \arguments{
-\item{region}{An object of class Raster* or SpatialPolygons*
-representing the total area where movement is possible. Must lie within
-the area defined by \code{polys}}
-
-\item{polys}{An object of class SpatialPolygonsDataFrame representing
-the partitioning grid for the maximum possible area, in the same format as the
-output of the \code{\link[lbmech]{makeGrid}} function.}
-
-\item{proj}{A crs object or character string representing the output
-projection. Default is \code{proj = crs(polys)}
-unless \code{proj} or \code{z_fix} are provided in which case 
-the latter takes precedence.}
+\item{region}{An object of class SpatRraster, Raster* or SpatialPolygons*
+representing the total area where movement is possible.}
 
 \item{banned}{An object of class Raster* or SpatialPolygons*
 representing the total area where movement is \emph{prohibited}. Must lie within
 the area defined by \code{polys}}
 
-\item{tile_id}{A character string representing the name of the column
-in the \code{polys} polygon containing the unique Tile IDs. Default is \code{tile_id = 'TILEID'}}
-
-\item{xy1}{A logical \code{TRUE} or \code{FALSE} indicating whether to generate
-unique numeric columns for the x and y coordinates of the starting points.
-Default is \code{FALSE}, and is not needed for the 
-\code{\link[lbmech]{calculateCosts}}.
-If you intend on using a custom cost function, set this as TRUE since 
-\code{\link[lbmech]{getCosts}} will need them.}
-
-\item{xy2}{A logical \code{TRUE} or \code{FALSE} indicating whether to generate
-unique numeric columns for the x and y coordinates of the ending points.
-Default is \code{FALSE}, and is not needed for the 
-\code{\link[lbmech]{calculateCosts}} function.}
-
-\item{res}{Passed on to \code{\link[lbmech]{fix_z}}, default is 5. Ignored
-if z_fix is provided.}
-
-\item{dx}{Passed on to \code{\link[lbmech]{fix_z}}, default is 0. Ignored
-if z_fix is provided.}
-
-\item{dy}{Passed on to \code{\link[lbmech]{fix_z}}, default is 0. Ignored
-if z_fix is provided.}
-
-\item{dl}{A logical \code{TRUE} or \code{FALSE} indicating whether to 
-Default is \code{FALSE}, and is not needed for the 
-\code{\link[lbmech]{calculateCosts}} function, which generates it on its own.}
-
-\item{dist}{A character string specifying the method by which to calculate
-linear distances. One of \code{proj} (for source projection distance units; the fastest),
-\code{karney} (the second most accurate and second fastest; the default), 
-\code{cosine}, \code{haversine}, \code{meeus}, 
-\code{vincentyEllipsoid} or \code{vincentySphere} (see documentation for the
-\code{\link[geosphere]{geosphere}} package for further documentation). Ignored
-unless \code{dl = TRUE}.}
-
-\item{r}{The earth's radius, or semimajor axis (a) for ellipsoidal models. 
-Default is 6378137 for WGS1984. Ignored unless \code{dl == TRUE} and 
-\code{dist != 'proj'}.}
-
-\item{f}{The ellipsoidal flattening of the earth for ellipsoidal models. 
-Default is \code{f=1/298.257223563} for WGS1984.  Ignored unless \code{dl == TRUE} and 
-\code{dist == c('karney','meeus','vincentyEllipsoid')}.}
-
-\item{b}{The earth's semiminor axis. 
-Default is \code{b=6356752.3142} for WGS1984.  Ignored unless \code{dl == TRUE} and 
-\code{dist == 'vincentyEllipsoid'}.}
-
-\item{z_fix}{A SpatRaster with the same origin and resolution as the
-\code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.
-Do not modify this parameter if you didn't modify it when you ran
-\code{\link[lbmech]{makeWorld}}.}
-
-\item{dir}{A filepath to the directory being used as the workspace.
+\item{dir}{A filepath to the directory being used as the workspace, the same
+one instantiated with \code{\link[lbmech]{defineWorld}}. 
 Default is \code{tempdir()} but unless the analyses will only be performed a few
 times it is highly recommended to define a permanent workspace.}
 
-\item{...}{Additional arguments to pass to \code{\link[lbmech]{makeWorld}}}
+\item{vars}{The variable names to import.}
+
+\item{costFUN}{A cost function such as (\code{\link[lbmech]{timeCosts}} or
+\code{\link[lbmech]{energyCosts}}). The input to such a function should be 
+a \code{data.table} object with column names present in the makeWorld file
+(initially \code{c('x_i','x_f','y_i','y_f','z_i','z_f','dz','dl','dr')}), and
+the output should be an data.table object with the same number of rows and the
+desired output variables as the only column names. Constants can be passed in the 
+\code{...} slot. Default is 
+\code{costFUN = \link[lbmech]{energyCosts}}.}
+
+\item{...}{Additional arguments to pass to \code{\link[lbmech]{calculateCosts}}
+and \code{costFUN}.}
 }
 \value{
-An object of class data.table containing three  under the default settings:
+An object of class data.table containing at least three columns:
 
 (1) \code{$from}, a character string of all possible origin cells in format "x,y",
-rounded to the next-lowest integer
 
 (2) \code{$to},  a character string of all possible destination cells in format "x,y"
-rounded to the next-lowest integer
 
-(3) \code{$dz}, an integer representing the change in elevation for each origin-destination pair
-
-If \code{xy1} and/or \code{xy2} are \code{TRUE}, then an additional columns
-for the start and/or end 'x' and 'y' coordinates are included (e.g. \code{$x_i}
-for the initial 'x' and \code{$y_f} for the final 'y'). If \code{dl = TRUE},
-then a final \code{$dl} column is added with the total displacement based on the
-chosen \code{dist} method.
+(3+) a numeric representing the imported costs(s)
 }
 \description{
 A function that for a given region imports all cells from the
-transition \code{.gz} files. If such files have not yet been generated,
+transition \code{.fst} files. If such files have not yet been generated,
 they can be created by passing along the necessary parameters to this
-function as with \code{\link[lbmech]{makeWorld}}.
+function as with \code{\link[lbmech]{calculateCosts}}.
 }
 \details{
 The default parameters are sufficient for a workflow involving calculating
-costs with the \code{\link[lbmech]{calculateCosts}} function. However, if
-non-energetic analyses are desired, or if the user wishes to employ functions
-relying on the coordinates of each cell or the distance traveled in each
-segment, \code{xy1}, \code{xy2} and \code{dl} should be modified accordingly.
-
-After running this function, the user may plug in the output world into
-the \code{\link[lbmech]{calculateCosts}} function. Alternatively, the user
-may perform algebraic operations using any of the 
-\code{c('x_i','x_f','y_i','y_f','z_i','z_f','dl','dz')} columns.
+costs with the \code{\link[lbmech]{energyCosts}} function. However, if
+non-energetic analyses are desired, the user must define their own.
 }
 \examples{
-
 # Generate a DEM
 n <- 5
 dem <- expand.grid(list(x = 1:(n * 100),
@@ -157,13 +79,20 @@ writeRaster(dem, paste0(dir,"/DEM.tif"),overwrite=TRUE)
 
 # Import raster, get the grid
 dem <- rast(paste0(dir,"/DEM.tif"))
-grid <- makeGrid(dem = dem, nx = n, ny = n)
+grid <- makeGrid(dem = dem, nx = n, ny = n, sources = TRUE)
 
-# Import the data lying between x = (12000,16000) and y = (32000,36000)
-region <- ext(c(12000,16000,32000,36000))
-region <- as.polygons(region)
-crs(region) <- crs(grid)
+# Select all tiles that exist between x = (12000,16000) and y = (32000,36000)
+tiles <- ext(c(12000,16000,32000,36000))
+tiles <- as.polygons(tiles)
+crs(tiles) <- crs(grid)
+tiles <- whichTiles(region = tiles, polys = grid)
 
-world <- importWorld(region = region, polys = grid, cut_slope = 0.5, 
-                     res = res(dem), dir = dir)
+#' # Make a world but limit it to the DEM grid size
+defineWorld(source = grid, cut_slope = 0.5, 
+            res = res(dem), dir = dir, overwrite=TRUE)
+
+# Make a world but limit it to the DEM grid size
+world <- importWorld(grid[8,], dir = dir, vars = 'dE_l', costFUN = energyCosts,
+m = 70, v_max = 1.5, BMR = 76, k = 3.5, alpha = 0.05, l_s = 1,
+L = 0.8)
 }

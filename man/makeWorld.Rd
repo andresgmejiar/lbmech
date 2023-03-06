@@ -2,105 +2,37 @@
 % Please edit documentation in R/Functions.R
 \name{makeWorld}
 \alias{makeWorld}
-\title{Define which cells are adjacent}
+\title{Build the world from a defined environment}
 \usage{
 makeWorld(
-  tiles,
-  polys,
-  cut_slope,
-  tile_id = "TILEID",
-  proj = crs(polys),
-  directions = 16,
-  neighbor_distance = 100,
-  keep_z = "dz",
-  z_fix = NULL,
-  unit = "m",
-  vals = "location",
-  precision = 2,
-  FUN = NULL,
-  sampling = "bilinear",
+  tiles = NULL,
   dir = tempdir(),
-  ...
+  cols = c("x_i", "y_i", "dz", "dl", "dr"),
+  output = "file"
 )
 }
 \arguments{
 \item{tiles}{A character vector--such as the output to
 \code{\link[lbmech]{whichTiles}}---containing the unique tile IDs for sectors that
-should be in the workspace.}
+should be in the workspace. Default is \code{NULL}.}
 
-\item{polys}{An object of class SpatVector representing
-the partitioning grid for the maximum possible area, in the same format as the
-output of the \code{\link[lbmech]{makeGrid}} function.}
-
-\item{cut_slope}{A number representing the dimensionless maximum slope
-of ascent/descent. To ignore, set \code{cut_slope = Inf}.}
-
-\item{tile_id}{A character string representing the name of the column
-in the 'polys' polygon containing the unique Tile IDs. Default is \code{tile_id = 'TILEID'}}
-
-\item{proj}{A crs object or character string representing the output projection.
-Default projection is \code{proj = crs(polys)} unless a `z_fix` or `proj` is 
-provided, in which case the latter is ignored. Great care should be 
-employed to ensure that the projection is conformal and in meters.}
-
-\item{directions}{One of the integers \code{c(4, 8, 16)},
-the character string \code{'bishop'},or a neighborhood matrix.
-Default is \code{directions = 16}, implying that all 'knight and one-cell
-queen moves' are permissible movements on the grid. See \code{\link[raster]{adjacent}}.}
-
-\item{neighbor_distance}{An integer representing the distance in meters
-that tiles are buffered. In other words, to ensure that all transitions in the
-'world' are recorded, files for each tile will contain a number of observations
-that fall outside of the tile in other ones. Default is 100 m, but adjust
-on raster size.}
-
-\item{keep_z}{A \code{NULL}, character string, or character vector consisting of 
-one, two, or three of (respectively) \code{c('z_i','z_f','dz')} indicating which
-of the initial or final cell's values should be stored in the output tensor.
-\code{keep_z = 'all'} is shorthand for \code{c('z_i','z_f','dz')}.
-Since the energetic calculations only depend on a *change* in elevation, 
-the default is \code{'dz'}. However, if the specific origin or destination
-values are needed this should me modified accordingly.}
-
-\item{z_fix}{A SpatRaster or Raster* that will define the resolution, origin, and
-projection information for the entire "world" of possible movement. Note that
-it does NOT need the same extent. Default resolution is 5, and offset is 0.
-Default projection is \code{proj = crs(polys)} unless a `z_fix` or `proj` is 
-provided, in which case the latter is ignored. Great care should be 
-employed to ensure that the projection is conformal and in meters.}
-
-\item{unit}{One of \code{c("m", "km", "ft", "mi")}, representing the unit of the DEM.
-All will be converted to meters, which is the default.}
-
-\item{vals}{A character string or a SpatRaster or Raster* object. Ignored unless the
-\code{polys} parameter is a polygon NOT the output of the \code{\link[lbmech]{makeGrid}}
-function as the default is the character string \code{'location'},
-AND the appropriate world \code{.gz} file is NOT
-present in the workspace directory. In which case it must represent either the
-original DEM or a character string with the column representing the DEM
-filepath or URL.}
-
-\item{precision}{An integer representing the number of decimals to retain
-in the x and y directions. For grid sizes with nice, round numbers precisions
-can be low. This factor is controled by \code{\link[terra]{rast}}.
-Default is 2.}
-
-\item{FUN}{Function to deal with overlapping values for overlapping sectors.
-Default is NA, which uses \code{\link[terra]{merge}}. 
-To use \code{\link[terra]{mosaic}}, provide a compatible function.}
-
-\item{sampling}{How to resample rasters. Default is \code{'bilinear'} interpolation,
-although \code{'ngb'} nearest neighbor is available for categorical rasters.}
-
-\item{dir}{A filepath to the directory being used as the workspace.
+\item{dir}{A filepath to the directory being used as the workspace, the same
+one instantiated with \code{\link[lbmech]{defineWorld}}. 
 Default is \code{tempdir()} but unless the analyses will only be performed a few
 times it is highly recommended to define a permanent workspace.}
 
-\item{...}{Additional arguments to pass to \code{\link[lbmech]{fix_z}}.}
+\item{cols}{A character vector containing the name of the important 
+spatial variables to be retained. Default is \code{cols = c("x_i","y_i","dz","dl","dr")},
+but \code{c("x_f","y_f","z_i","z_f")} are also available.}
+
+\item{output}{A character string or vector, consisting of one or both of 
+\code{c('file','object')}, representing whether a file should be written and/or
+whether an object should be returned. Default is \code{output = file}.}
 }
 \value{
-A \code{.gz} file for each sector named after its sector id,
-containing a data.table with three columns in the default setting:
+An \code{.fst} file for each sector named after its sector id
+stored in the \code{/World/Diff} directory, and/or a data.table object (depending
+on the output parameter) containing a data.table with five columns
 
 (1) \code{$from}, a character string of all possible origin cells in format "x,y",
 rounded to the next-lowest integer
@@ -108,11 +40,14 @@ rounded to the next-lowest integer
 (2) \code{$to},  a character string of all possible destination cells in format "x,y"
 rounded to the next-lowest integer
 
-(3) \code{$dz}, an integer representing the change in elevation for each origin-destination pair
+(3) \code{$dz}, a numeric representing the change in elevation for each origin-destination pair
 
-Additionally, \code{$z_i} and \code{$z_f} columns containing the values of the
-initial and final cells may appear depending on the setting of the 
-\code{keep_z} parameter.
+(4) \code{$dl}, a numeric representing the change in planimetric distance (x,y)
+
+(5) \code{$dr}, a numeric representing the change in displacement (x,y,z)
+
+Likewise, in the \code{/World/Loc} directory the local \code{z} elevation 
+values projected to the locally defined grid as a \code{\link[lbmech]{writeRST}}  file.
 }
 \description{
 Function that defines the grid that can be traversed--the "world"--as well as the
@@ -120,16 +55,11 @@ cells that can be accessed from each individual cell. This is the most
 time-intensive function.
 }
 \details{
-It first checks to see if the required transition \code{.gz}
-files have already been created in the \code{dir} workspace. If not, it checks to see if the
-DEMs required to generate the transition \code{.gz} files have been downloaded/cropped,
-and generates the latter if so. If not, it downloads/crops them and proceeds.
-
-The default parameters are sufficient for a workflow involving calculating
-costs with the \code{\link[lbmech]{calculateCosts}} function. However, if
-non-energetic analyses are desired, or if the user wishes to employ functions
-relying on the raw values at each cell (not just the *difference*), \code{keep_z}
-should be modified accordingly.
+It first checks to see if the required elevation models have been downloaded
+for each source file for the requested tiles grid, and then if  transition \code{.gz}
+then if they have been converted to a sector's local
+files have already been created in the \code{dir} workspace. If not,
+it generates each at each step
 }
 \examples{
 # Generate a DEM
@@ -150,7 +80,7 @@ writeRaster(dem, paste0(dir,"/DEM.tif"),overwrite=TRUE)
 
 # Import raster, get the grid
 dem <- rast(paste0(dir,"/DEM.tif"))
-grid <- makeGrid(dem = dem, nx = n, ny = n)
+grid <- makeGrid(dem = dem, nx = n, ny = n, sources = TRUE)
 
 # Select all tiles that exist between x = (12000,16000) and y = (32000,36000)
 tiles <- ext(c(12000,16000,32000,36000))
@@ -159,6 +89,8 @@ crs(tiles) <- crs(grid)
 tiles <- whichTiles(region = tiles, polys = grid)
 
 # Make a world but limit it to the DEM grid size
-makeWorld(tiles = tiles, polys = grid, cut_slope = 0.5, 
-          res = res(dem), dir = dir)
+defineWorld(source = grid, cut_slope = 0.5, 
+            res = res(dem), dir = dir, overwrite=TRUE)
+            
+makeWorld(tiles = tiles, dir = dir)
 }

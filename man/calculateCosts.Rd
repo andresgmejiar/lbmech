@@ -2,102 +2,46 @@
 % Please edit documentation in R/Functions.R
 \name{calculateCosts}
 \alias{calculateCosts}
-\title{Calculate movement costs}
+\title{Calculate movement costs according to a cost function}
 \usage{
 calculateCosts(
-  world,
-  method = "kuo",
-  m = NULL,
-  v_max = NULL,
-  epsilon = 0.2,
-  BMR = NULL,
-  k = NULL,
-  alpha = NULL,
-  g = 9.81,
-  l_s = NULL,
-  L = NULL,
-  gamma = NULL,
-  dist = "proj",
-  z_fix = NULL,
-  proj = NULL,
-  res = NULL,
-  r = 6378137,
-  f = 1/298.257223563,
-  b = 6356752.3142,
+  tiles = NULL,
+  costFUN = energyCosts,
+  dir = tempdir(),
+  costname = deparse(substitute(costFUN)),
   ...
 )
 }
 \arguments{
-\item{world}{Either the output of the \code{\link[lbmech]{importWorld}} function,
-or a an object of class SpatialPolygonsDataFrame representing
-the partitioning grid for the maximum possible area, in the same format as the
-output of the \code{\link[lbmech]{makeGrid}} function.}
+\item{tiles}{A character vector--such as the output to
+\code{\link[lbmech]{whichTiles}}---containing the unique tile IDs for sectors that
+should be in the workspace. Default is \code{NULL}.}
 
-\item{method}{one of either \code{'kuo'}, \code{'heglund'}, or \code{'oscillator'} defining
-the method by which to calculate work per stride; see details below.}
+\item{costFUN}{A cost function such as (\code{\link[lbmech]{timeCosts}} or
+\code{\link[lbmech]{energyCosts}}). The input to such a function should be 
+a \code{data.table} object with column names present in the makeWorld file
+(initially \code{c('x_i','x_f','y_i','y_f','z_i','z_f','dz','dl','dr')}), and
+the output should be an data.table object with the same number of rows and the
+desired output variables as the only column names. Constants can be passed in the 
+\code{...} slot. Default is 
+\code{costFUN = \link[lbmech]{energyCosts}}}
 
-\item{m}{The mass of the animal moving across the landscape, in kilograms.}
+\item{dir}{A filepath to the directory being used as the workspace, the same
+one instantiated with \code{\link[lbmech]{defineWorld}}. 
+Default is \code{tempdir()} but unless the analyses will only be performed a few
+times it is highly recommended to define a permanent workspace.
+\code{\link[lbmech]{whichTiles}}---containing the unique tile IDs for sectors that
+should be in the workspace. Default is \code{NULL}.}
 
-\item{v_max}{The maximum velocity of the animal moving across the landscape,
-in meters per second; see \code{\link[lbmech]{getVelocity}}.}
+\item{costname}{A name to save the cost call parametrs. Default is the name 
+of the costFUN variable.}
 
-\item{epsilon}{The biomechanical efficiency factor for an animal moving across
-the landscape. Default is \code{epsilon = 0.2}.}
-
-\item{BMR}{The base metabolic rate of the object moving across the landscape
-in Joules per second.}
-
-\item{k}{The topographic sensitivity factor; see \code{\link[lbmech]{getVelocity}}.}
-
-\item{alpha}{The dimensionless slope of maximum velocity;
-see \code{\link[lbmech]{getVelocity}}}
-
-\item{g}{The acceleration due to gravity, in meters per second per second.
-Default is \code{g = 9.81} m/s^2, as for the surface of planet Earth.}
-
-\item{l_s}{The average stride length, in meters. Required for
-\code{method =  'kuo'} or \code{'oscillator'}, ignored for \code{'heglund'}}
-
-\item{L}{The average leg length. Required for \code{method =  'kuo'},
-ignored for \code{'heglund'} and \code{'oscillator'}.}
-
-\item{gamma}{The fractional maximal deviation from average velocity per stride.
-Required for \code{method = 'oscillator'}, ignored for \code{'kuo'} and \code{'heglund'}.}
-
-\item{dist}{A character string specifying the method by which to calculate
-linear distances. One of \code{proj} (for source projection distance units; the fastest and default),
-\code{karney} (the second most accurate and second fastest but by far best choice), 
-\code{cosine}, \code{haversine}, \code{meeus}, 
-\code{vincentyEllipsoid} or \code{vincentySphere} (see documentation for the
-\code{\link[geosphere]{geosphere}} package for further documentation). If
-\code{dist != 'proj'}, one of \code{z_fix}, or \code{proj} and \code{res}
-must be provided. Recall default \code{res = 5} in other functions but here
-it is \code{NULL}.}
-
-\item{z_fix}{A SpatRaster with the same origin and resolution as the
-\code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.}
-
-\item{proj}{The projection used to generate the world. Required if 
-\code{dist != 'proj'} and \code{z_fix == NULL}, otherwise ignored.}
-
-\item{res}{The res used to generate the world. Required if 
-\code{dist != 'proj'} and \code{z_fix == NULL}, otherwise ignored.}
-
-\item{r}{The earth's radius, or semimajor axis (a) for ellipsoidal models. 
-Default is 6378137 for WGS1984. Ignored unless \code{dist != 'proj'}.}
-
-\item{f}{The ellipsoidal flattening of the earth for ellipsoidal models.
-Default is \code{f=1/298.257223563} for WGS1984.  Ignored unless
-\code{dist == c('karney','meeus','vincentyEllipsoid')}.}
-
-\item{b}{The earth's semiminor axis. 
-Default is \code{b=6356752.3142} for WGS1984.  Ignored unless  
-\code{dist == 'vincentyEllipsoid'}.}
-
-\item{...}{Additional arguments to pass to \code{\link[lbmech]{importWorld}}.}
+\item{...}{Additional parameters to pass to \code{costFUN}}
 }
 \value{
-A data.table with thirteen columns, representing:
+An \code{.fst} file for each sector named after its sector id
+stored in the \code{/World/Diff} directory, and/or a data.table object (depending
+on the output parameter) containing a data.table with at least eight columns
 
 (1) \code{$from} The "x,y"-format coordinates of each possible origin cell
 
@@ -114,33 +58,13 @@ cells
 
 (7) \code{$dr} The 3D distance between the \code{from} and \code{to} cells
 
-(8) \code{$dl_t} The predicted walking speed in meters per second
-when walking between the \code{from} and \code{to} cells
-
-(9) \code{$dt} The predicted amount of time spent walking between
-the \code{from} and \code{to} cells
-
-(10) \code{$dU_l} The predicted work against gravitational potential energy
-in Joules when walking between the \code{from} and \code{to} cells
-
-(11) \code{$dK_l} The predicted kinematic work in Joules when walking
-between the \code{from} and \code{to} cells
-
-(12) \code{$dW_l} The total predicted energy lost due to biomechanical
-work when walking between the \code{from} and \code{to} cells.
-
-(13) \code{$dE_l} The net metabolic expenditure exerted when walking
-between the \code{from} and \code{to} cells.
+(8+) The output cost variables
 }
 \description{
 A function that for a given world of possible movement calculates
-the transition cost for each in terms of caloric work, caloric energy,
-and time.
+the transition cost for each in terms of a user-defined cost function
 }
 \examples{
-
-#### Example 1:
-# Running importWorld before calculating costs
 # Generate a DEM
 n <- 5
 dem <- expand.grid(list(x = 1:(n * 100),
@@ -159,39 +83,20 @@ writeRaster(dem, paste0(dir,"/DEM.tif"),overwrite=TRUE)
 
 # Import raster, get the grid
 dem <- rast(paste0(dir,"/DEM.tif"))
-grid <- makeGrid(dem = dem, nx = n, ny = n)
+grid <- makeGrid(dem = dem, nx = n, ny = n, sources = TRUE)
 
-# Import the data lying between x = (12000,16000) and y = (32000,36000)
-region <- ext(c(12000,16000,32000,36000))
-region <- as.polygons(region)
-crs(region) <- crs(grid)
+# Select all tiles that exist between x = (12000,16000) and y = (32000,36000)
+tiles <- ext(c(12000,16000,32000,36000))
+tiles <- as.polygons(tiles)
+crs(tiles) <- crs(grid)
+tiles <- whichTiles(region = tiles, polys = grid)
 
-world <- importWorld(region = region, polys = grid,
-                     cut_slope = 0.5, res = res(dem), dir = dir)
+# Make a world but limit it to the DEM grid size
+defineWorld(source = grid, cut_slope = 0.5, 
+            res = res(dem), dir = dir, overwrite=TRUE)
 
-# We'll run calculateCosts using the canonical parameters for Tobler's 
-# function on a human being. Note dist = 'proj' since the coordinates
-# are somewhat nonsensical. If real-world scenario, employ a geodesic method
-world <- calculateCosts(world = world, m = 60, v_max = 1.5,
-                        BMR = 93, k = 3, alpha = -0.05, l_s = 1.6, L = 0.8,
-                        dist = 'proj')
-                        
-                        
-#### Example 2:
-# Running all of the previous steps within calculateCosts
-# We'll first get velocity parameters from the getVelocity function
-data <- data.table(x = runif(10000,10000,20000),
-                   y = runif(10000,30000,40000),
-                   elevation = runif(10000,0,200),
-                   dt = 120,
-                   ID = rep(1:10,each=1000))
-velocity <- getVelocity(data = data, z = 'elevation')
-
-# Run calculateCosts
-world <- calculateCosts(world = grid, m = 60, v_max = velocity$vmax,
-                        k = velocity$k, alpha = velocity$alpha, BMR = 93,
-                        l_s = 1.6, L = 0.8, region = region,
-                        proj = crs(dem), res = res(dem),
-                        cut_slope = 0.5, dir = dir, dist = 'proj')
-
+# Calculate the costs within the world
+calculateCosts(tiles = tiles, dir = dir,
+m = 70, v_max = 1.5, BMR = 76, k = 3.5, alpha = 0.05, l_s = 1,
+L = 0.8)
 }

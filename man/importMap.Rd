@@ -9,10 +9,9 @@ importMap(
   polys,
   tile_id = "TILEID",
   z_fix = NULL,
-  res = NULL,
   neighbor_distance = 5,
   FUN = NULL,
-  mask = TRUE,
+  mask = FALSE,
   vals = "location",
   dir = tempdir(),
   ...
@@ -33,10 +32,6 @@ for the maximum possible area, in the same format as the output of the
 \item{z_fix}{A SpatRaster or Raster* object with the desired output projection, 
 resolution, and origin. Required if \code{tiles} is of classes SpatVector,
 Spatial*, or character, unless \code{res} is provided.}
-
-\item{res}{The desired ouput resolution, in units of \code{region}'s projection. 
-Ignored if \code{z_fix} is provided or if \code{region} is of class SpatRaster
-or Raster*}
 
 \item{neighbor_distance}{An integer representing the number of cells that 
 tiles are buffered. In other words, to ensure that there are no gaps between tiles,
@@ -64,8 +59,6 @@ is \code{tempdir()}, but unless the analyses will only be performed a few times
 it is highly recommended to define a permanent workspace.}
 
 \item{...}{Additional agruments to pass to \code{\link[lbmech]{fix_z}}}
-
-\item{terra}{mask}
 }
 \description{
 Import a raster for a specific region from a multisource environment, 
@@ -89,7 +82,7 @@ writeRaster(dem, paste0(dir,"/DEM.tif"),overwrite=TRUE)
 
 # Import raster, get the grid
 dem <- rast(paste0(dir,"/DEM.tif"))
-grid <- makeGrid(dem = dem, nx = n, ny = n)
+grid <- makeGrid(dem = dem, nx = n, ny = n, sources = TRUE)
 
 # Import the map for the center tile resampled to a different resolution
 dem2 <- importMap('SECTOR_13', grid, res = 20)

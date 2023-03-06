@@ -22,7 +22,8 @@ getVelocity(
   slope_lim = 1,
   tile_id = "TILEID",
   vals = "location",
-  dir = tempdir()
+  dir = tempdir(),
+  ...
 )
 }
 \arguments{
@@ -103,6 +104,9 @@ sector.}
 \item{dir}{A filepath to the directory being used as the workspace.
 Default is \code{tempdir()} but unless the analyses will only be performed a few
 times it is highly recommended to define a permanent workspace.}
+
+\item{...}{Additional parameters to pass to \code{\link[lbmech]{importMap}}.
+Ignored unless \code{z} is a polygon pointing to source dem files.}
 }
 \value{
 A list, containing the following entries:
@@ -142,7 +146,7 @@ velocity <- getVelocity(data = data, z = 'elevation')
 
 #### Example 2:
 # If the data do not contain elevation, and 'z' is a raster
-data$z <- NULL
+suppressWarnings( data[, z := NULL])
 
 # Generate a DEM
 n <- 5
@@ -168,8 +172,8 @@ writeRaster(dem, paste0(dir,"/DEM.tif"),overwrite=TRUE)
 
 # Import raster, get the grid
 dem <- rast(paste0(dir,"/DEM.tif"))
-grid <- makeGrid(dem = dem, nx = n, ny = n)
+grid <- makeGrid(dem = dem, nx = n, ny = n, sources = TRUE)
 
-velocity <- getVelocity(data = data, z = grid, dir = dir)
+velocity <- getVelocity(data = data, z = grid, dir = dir, res = res(dem))
 
 }

@@ -13,7 +13,10 @@ to the workspace used as \code{dir} for the previous functions.
 Default is \code{tempdir()} but unless you are not following best
 practices you will have to change it to your output directory. If multilayer
 SpatRaster, it should be the output (or identical in form) to
-the \code{\link[lbmech]{getCosts}} function with \code{"object" \%in\% output}.}
+the \code{\link[lbmech]{getCosts}} function with \code{"object" \%in\% output}.
+Note that if files have been generated for two different \code{from} objects in
+the \code{\link[lbmech]{getCosts}} sharing an attribute with the same ID name
+the function may throw an error.}
 
 \item{order}{A character vector containing the desired path in
 order of visited nodes. For example, to visit "A" then "B" then "C" then "A"
@@ -21,14 +24,12 @@ the vector would be \code{c("A","B","C","A")}. Note that these MUST correspond
 to the ID names for the \code{from} features used in the \code{\link[lbmech]{getCosts}}
 function and must have previously been calculated}
 
-\item{costs}{A character vector containing any combination of the strings
-\code{c("time","work","energy")} if the input world data.table is the
-output of of the \code{\link[lbmech]{calculateCosts}} function. Otherwise
-a character string or vector containing the names of the columns where the 
-cost values are stored in the custom-produced data.table.
-This selects which types of costs will be calculated. 
-\code{costs = 'all'} is shorthand for \code{costs = c("time","work","energy")}
-while \code{costs = 'energetics'} is shorthand for \code{c("work","energy")}.
+\item{costs}{A character vector containing any combination of pre-calculated
+cost names (e.g. dt for time, dW_l for work using \code{\link[lbmech]{energyCosts}})
+if the input world data.table is the output of of the \code{\link[lbmech]{calculateCosts}}
+function. This selects which types of costs will be calculated. 
+\code{costs = 'all'} is shorthand for \code{costs = c("dt","dW_l","dE_l")}
+while \code{costs = 'energetics'} is shorthand for \code{c("dW_l","dE_l")}.
 Default is \code{'all'}. Note that these must have previously been calculated.}
 }
 \value{
@@ -62,36 +63,35 @@ writeRaster(dem, paste0(dir,"/DEM.tif"),overwrite=TRUE)
 
 # Import raster, get the grid
 dem <- rast(paste0(dir,"/DEM.tif"))
-grid <- makeGrid(dem = dem, nx = n, ny = n)
+grid <- makeGrid(dem = dem, nx = n, ny = n, sources = TRUE)
 
 # Import the data lying between x = (12000,16000) and y = (32000,36000)
 region <- ext(c(12000,16000,32000,36000))
 region <- as.polygons(region)
 crs(region) <- crs(grid)
 
-
-# Use the canonical parameters for a human in Tobler's Function
-world <- calculateCosts(world = grid, m = 60, v_max = 1.5,
-                        k = 3.5, alpha = -0.05, BMR = 93,
-                        l_s = 1.6, L = 0.8, region = region, 
-                        proj = crs(dem), res = res(dem),
-                        cut_slope = 0.5, dir = dir)
-                        
 # Generate five random points that fall within the region
 points <- data.table(ID = 1:5,
                      x = runif(5, ext(region)[1], ext(region)[2]),
                      y = runif(5, ext(region)[3], ext(region)[4]))
                      
+# Make a world but limit it to the DEM grid size
+defineWorld(source = grid, cut_slope = 0.5, 
+            res = res(dem), dir = dir, overwrite=TRUE)
+            
 # Calculate cost rasters
-costRasters <- getCosts(world = world, from = points, 
-                        destination = 'all', costs = 'all',
-                        output = c("object","file"), 
-                        proj = crs(dem), res = res(dem), dir = dir)
+costRasters  <- getCosts(region, from = points, dir = dir,
+                         destination = 'all',
+                         polygons = 'center',
+                         costs = 'all', costFUN = energyCosts,
+                         output = c('object','file'),
+                         m = 70, v_max = 1.5, BMR = 76, k = 3.5, alpha = 0.05, l_s = 1,
+                         L = 0.8)
                         
 #### Example 1:
 # Calculating the corridors from a list of RasterStacks,
 # with path 1 -> 2 -> 4 -> 1 -> 5
-corridors <- makeCorridor(rasters = costRasters, order = c(1,2,5,1,4))
+corridors <- makeCorridor(rasters = costRasters, order = c(1,2,5,1,4),)
 
 #### Example 2:
 # Calculating the corridors from a workspace directory

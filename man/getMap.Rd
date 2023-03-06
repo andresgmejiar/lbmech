@@ -11,6 +11,7 @@ getMap(
   vals = "location",
   z_min = 0,
   filt = 3,
+  verbose = FALSE,
   dir = tempdir()
 )
 }
@@ -42,6 +43,9 @@ but set to \code{-Inf} to disable.}
 \item{filt}{Should a lowpass filter be applied? Default is a moving window
 size \code{filt = 3}, but set to \code{NA} or 0 to disable.}
 
+\item{verbose}{Should the number of remaining sectors be printed? Default
+is \code{FALSE}}
+
 \item{dir}{A filepath to the directory being used as the workspace.
 Default is \code{tempdir()} but unless the analyses will only be performed a few
 times it is highly recommended to define a permanent workspace.}
@@ -72,7 +76,7 @@ writeRaster(dem, paste0(dir,"/DEM.tif"),overwrite=TRUE)
 
 # Import raster, get the grid
 dem <- rast(paste0(dir,"/DEM.tif"))
-grid <- makeGrid(dem = dem, nx = n, ny = n)
+grid <- makeGrid(dem = dem, nx = n, ny = n, sources = TRUE)
 
 
 # Generate five random points that fall within the grid

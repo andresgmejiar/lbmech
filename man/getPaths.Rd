@@ -5,40 +5,33 @@
 \title{Get least-cost paths}
 \usage{
 getPaths(
-  world,
+  region,
   nodes,
-  proj = NULL,
   id = "ID",
   order = NULL,
   x = "x",
   y = "y",
-  region = NULL,
   costs = "all",
-  precision = 2,
-  z_fix = NULL,
+  polygons = "centroid",
+  dir = tempdir(),
   ...
 )
 }
 \arguments{
-\item{world}{The data.table output of the \code{\link[lbmech]{calculateCosts}} function.}
+\item{region}{A SpatVector, Spatial* or Raster* representing the area of 
+maximum movement}
 
-\item{nodes}{An object of class data.frame, data.table, SpatialPointsDataFrame, or
-SpatialPolygonsDataFrame representing the locations.
-If object is of class SpatialPolygonsDataFrame, the location will be taken at the
-centroid.}
-
-\item{proj}{A crs object or character string representing the workspace 
-projection. Required, unless \code{z_fix} is provided in which case
-it's ignored.}
+\item{nodes}{One of data.frame, data.table, SpatVector, SpatialPointsDataFrame, or
+SpatialPolygonsDataFrame representing the node locations. 
+If it is a polygon, the location will be controlled by the \code{polygons} parameter.}
 
 \item{id}{A character string representing the column containing each \code{node}
 location's unique ID.}
 
 \item{order}{A character vector containing the desired path in
-order of visited nodes by ID. For example, to visit "A" then "B" then "C" then "A"
-the vector would be \code{c("A","B","C","A")}. If this is not provided,
-the function assumes that \code{nodes} is already sorted in the desired
-order.}
+order of visited nodes by ID. Required if  For example, to visit "A" then "B" then "C" then "A"
+the vector would be \code{c("A","B","C","A")}. If this is not provided, 
+the function assumes that \code{nodes} is  already sorted in the desired order.}
 
 \item{x}{A character vector representing the column containing the 'x' coordinates.
 Required if \code{data} is not Spatial*.}
@@ -46,40 +39,35 @@ Required if \code{data} is not Spatial*.}
 \item{y}{A character vector representing the column containing the 'y' coordinates.
 Required if \code{data} is not Spatial*.}
 
-\item{region}{An object of class Raster* or SpatialPolygons*
-representing the total area where movement is possible. Optional; used
-to constrain the \code{world} more than it may already have been.}
-
 \item{costs}{A character vector containing any combination of the strings
-\code{c("time","work","energy")} if the input world data.table is the
-output of of the \code{\link[lbmech]{calculateCosts}} function. Otherwise
-a character string or vector containing the names of the columns where the 
-cost values are stored in the custom-produced data.table.
-This selects which types of costs will be calculated.
-\code{costs = 'all'} is shorthand for \code{costs = c("time","work","energy")}
-while \code{costs = 'energetics'} is shorthand for \code{c("work","energy")}.
-Default is \code{'all'}.}
+of differential values present in the environment (see 
+\code{\link[lbmech]{calculateCosts}} function; default is 
+\code{costs = c("dt","dW_l","dE_l")} anticipating the use of 
+\code{\link[lbmech]{calculateCosts}(costFUN = \link[lbmech]{energyCosts})}.}
 
-\item{precision}{An integer representing the number of decimals to retain
-in the x and y directions. For grid sizes with nice, round numbers precisions
-can be low. This factor is controled by \code{\link[terra]{rast}} and
-must be the same as the one used to generate the 
-'world' with \code{\link[lbmech]{makeWorld}}. Default is 2.}
+\item{polygons}{One of \code{c('polygon','centroid','center')}. Ignored unless
+\code{nodes} are polygons. If \code{polygons = 'centroid'} (the default),
+the destinations are calculated to the centroid of the polygon whether or not
+it lies within the polygon itself. If \code{polygons = 'center'}, distances
+are calculated to the point within the polygon closest to the centroid. If 
+\code{polygons = 'polygons'}, distances are calculated to *any* point within the 
+polygon---in essence, the polygon acts as a giant node permitting costless
+movement within its bounds. This is generally not consistent with real-world
+scenarios and for that reason is not the default.}
 
-\item{z_fix}{A SpatRaster with the same origin and resolution as the
-\code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.
-Do not modify this parameter if you didn't modify it when you ran
-\code{\link[lbmech]{makeWorld}}.}
+\item{dir}{A filepath to the directory being used as the workspace.
+Default is \code{tempdir()} but unless the analyses will only be performed a few
+times it is highly recommended to define a permanent workspace.}
 
-\item{...}{Additional arguments to pass to \code{\link[lbmech]{fix_z}}.}
+\item{...}{Additional parameters to pass to \code{\link[lbmech]{importWorld}}.}
 }
 \value{
-SpatialLinesDataFrames representing least-cost paths. For each
+SpatialVector lines representing least-cost paths. For each
 cost, each entry within the SpatialLinesDataFrame object represents
 a single leg of the journey, sorted in the original path order.
-If \code{length(costs) == 1}, only a SpatialLinesDataFrame is returned.
+If \code{length(costs) == 1}, only a SpatVector is returned.
 If \code{length(costs) > 1}
-a list of SpatialLinesDataFrame with one slot for each \code{cost} is returned.
+a list of SpatVectors with one slot for each \code{cost} is returned.
 }
 \description{
 Get the shortest path for a given trip that requires travel through a
@@ -102,23 +90,23 @@ crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
 dir <- tempdir()
 writeRaster(dem, paste0(dir,"/DEM.tif"),overwrite=TRUE)
 
+
 # Import raster, get the grid
 dem <- rast(paste0(dir,"/DEM.tif"))
-grid <- makeGrid(dem = dem, nx = n, ny = n)
+grid <- makeGrid(dem = dem, nx = n, ny = n, sources = TRUE)
+region <- grid[8, ]
 
-# Import the data lying between x = (12000,16000) and y = (32000,36000)
-region <- ext(c(12000,16000,32000,36000))
-region <- as.polygons(region)
-crs(region) <- crs(grid)
+# Select all tiles that exist between x = (12000,16000) and y = (32000,36000)
+tiles <- ext(c(12000,16000,32000,36000))
+tiles <- as.polygons(tiles)
+crs(tiles) <- crs(grid)
+tiles <- whichTiles(region = tiles, polys = grid)
 
+# Make a world but limit it to the DEM grid size
+calculateCosts(tiles = tiles, dir = dir,
+m = 70, v_max = 1.5, BMR = 76, k = 3.5, alpha = 0.05, l_s = 1,
+L = 0.8)
 
-# Use the canonical parameters for a human in Tobler's Function
-world <- calculateCosts(world = grid, m = 60, v_max = 1.5,
-                        k = 3.5, alpha = -0.05, BMR = 93,
-                        l_s = 1.6, L = 0.8, region = region,
-                        proj = crs(dem), res = res(dem),
-                        cut_slope = 0.5, dir = dir)
-                        
 # Generate five random points that fall within the region
 points <- data.table(ID = 1:5,
                      x = runif(5, ext(region)[1], ext(region)[2]),
@@ -128,11 +116,17 @@ points <- data.table(ID = 1:5,
 # Calculate the path from 1 -> 2 -> 5 -> 1 -> 4 
 pathOrder <- c(1,2,5,1,4)
 
-paths <- getPaths(world = world, nodes = points, order = pathOrder,
-                          proj = crs(dem), res = res(dem),
-                          costs = c('time','work','energy'))
-                        
-#getCosts(world = world, from = points, proj = crs(dem), res = res(dem),
+# Make a world but limit it to the DEM grid size
+defineWorld(source = grid, cut_slope = 0.5, 
+            res = res(dem), dir = dir, overwrite=TRUE)
+            
+paths <- getPaths(region = region, nodes = points, order = pathOrder, 
+                  costs = 'all', costFUN = energyCosts,
+                       m = 70, v_max = 1.5, BMR = 76, k = 3.5, alpha = 0.05, l_s = 1,
+                       L = 0.8)
+                              
+## Plot against corridors (not run)                         
+#getCosts(region = region, from = points, proj = crs(dem), res = res(dem),
 #                        destination = 'all', costs = 'all',
 #                        output = 'file', dir = dir)                       
 #corridors <- makeCorridor(rasters = dir, order = pathOrder)

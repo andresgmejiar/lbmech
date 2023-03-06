@@ -50,7 +50,7 @@ writeRaster(dem, paste0(dir,"/DEM.tif"),overwrite=TRUE)
 
 # Import raster, get the grid
 dem <- rast(paste0(dir,"/DEM.tif"))
-grid <- makeGrid(dem = dem, nx = n, ny = n)
+grid <- makeGrid(dem = dem, nx = n, ny = n, sources = TRUE)
 
 # Select five random points that fall within the grid
 points <- data.table(x = runif(5, ext(dem)[1], ext(dem)[2]),

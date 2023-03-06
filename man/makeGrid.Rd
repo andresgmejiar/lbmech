@@ -9,22 +9,27 @@ makeGrid(
   nx,
   ny,
   path = NA,
+  sources = FALSE,
   proj = NULL,
   prefix = "SECTOR_",
   crop = TRUE,
   zoom = 13,
+  var = "z",
   overlap = 0.005
 )
 }
 \arguments{
-\item{dem}{One of either a SpatRaster, Raster, SpatVector (polygon),
-or SpatialPolygons*. 
+\item{dem}{One of either a single character string, SpatVector (polygon),
+SpatialPolygons*, SpatRaster, or Raster
 
-If SpatRaster or Raster, such an object containing the elevations for the 
-maximum possible extent imaginable for a study. Note that this only works for 
+
+If character, SpatRaster, Raster, such an object or (filepath to one) 
+containing the elevations for the maximum possible extent imaginable for a study. 
+Note that SpatRaster and Raster only work
 rasters that have been read in, not those that exist exclusively in the memory. 
 If you  have just generated the raster and it is in memory, export it first with
-\code{\link[terra]{writeRaster}} then re-import it with \code{\link[terra]{rast}}.
+\code{\link[terra]{writeRaster}} then use the filepath string as \code{dem} or
+re-import it with \code{\link[terra]{rast}} before using the SoatRaster object.
 
 If SpatVector or SpatialPolygons*, the extent of possible movement.}
 
@@ -37,6 +42,10 @@ If SpatVector or SpatialPolygons*, the extent of possible movement.}
 is provided but no path, \code{\link[lbmech]{getMap}} will use
 \code{\link[elevatr]{get_elev_raster}} to download topographic data.}
 
+\item{sources}{Logical. Should source information be saved as attributes
+to the grid for use in \code{\link[lbmech]{getMap}} and 
+\code{\link[lbmech]{defineWorld}}? Default is \code{sources = FALSE}.}
+
 \item{proj}{A \code{\link[terra]{crs}} or something coercible to it representing 
 the desired output projection. Default is the input raster's projection.}
 
@@ -47,9 +56,13 @@ Default is \code{prefix = "SECTOR_"}}
 by the original \code{dem} (if SpatVector or SpatialPolygons*), or by
 the area covered by non-NA cells (if raster or SpatRaster).}
 
-\item{zoom}{Considered only no data source is set. The zoom level to be downloaded. 
+\item{zoom}{Considered only if \code{var = 'z'} and no data source is set. 
+The zoom level to be downloaded. 
 Default is 13, but see documentation for the \code{z} parameter in 
 \code{\link[elevatr]{get_elev_raster}}.}
+
+\item{var}{If the polygons point to a data source, what will be the variable
+name in the internal GIS? Default is 'z' for elevation.}
 
 \item{overlap}{How much should adjacent polygons overlap to ensure there's
 contiguity between different tiles? Default is \code{overlap = 0.005}.}
@@ -86,6 +99,6 @@ writeRaster(dem, paste0(dir,"/DEM.tif"),overwrite=TRUE)
 
 # Import raster, get the grid
 dem <- rast(paste0(dir,"/DEM.tif"))
-grid <- makeGrid(dem = dem, nx = n, ny = n)
+grid <- makeGrid(dem = dem, nx = n, ny = n, sources = TRUE)
 
 }

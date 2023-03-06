@@ -30,6 +30,15 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
+**PLEASE NOTE THAT THE README GUIDE IS ONLY ACCURATE AS TO VERSION 0.2.0.**
+**VERSION 0.3.0 SWITCHED TO terra DEPENDENCIES FROM raster, AND I/O OPERATIONS
+TO fst, BUT OPERATIONS ARE STILL ANALOGOUS.**
+
+**VERSIONS >= 0.4.0 INTRODUCE A CONTAINED ENVIRONMENT FOR ALL OPERATIONS AS
+OPPOSED TO REFERENCING A CONSTANT Z_FIX. THEREFORE THEY ARE ARE NOT BACKWARDS 
+COMPATIBLE WITH THE PRESENT README, WHICH SHALL BE UPDATED SOON. HOWEVER,
+ESTENSIVE DOCUMENTATION IS PROVIDED IN THE FUNCTION EXAMPLES**
+
 `lbmech` is a geospatial package for least-cost path analysis in `R`.
 It contains additional tools to calculate time- and energy-based 
 costs-of-travel for humans and animals moving across the landscape. 

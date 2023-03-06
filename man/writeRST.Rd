@@ -7,7 +7,7 @@
 \usage{
 writeRST(x, filename, ...)
 
-importRST(filename, ...)
+importRST(filename, layers = NULL, ...)
 }
 \arguments{
 \item{x}{An object of class SpatRaster or Raster. It may not contain
@@ -17,6 +17,9 @@ layers named 'x' or 'y'}
 
 \item{...}{Additional parameters to pass on to \code{\link[fst]{read_fst}} or
 \code{\link[fst]{write_fst}}}
+
+\item{layers}{Character vector containing the names of the layers to import.
+Default is \code{layers = NULL} which imports all layers.}
 }
 \description{
 Read and write rasters using the fst library

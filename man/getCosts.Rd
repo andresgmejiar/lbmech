@@ -5,45 +5,42 @@
 \title{Get cost of travel}
 \usage{
 getCosts(
-  world,
+  region,
   from,
   to = NULL,
-  proj = NULL,
   id = "ID",
+  dir = tempdir(),
   x = "x",
   y = "y",
   destination = "pairs",
-  region = NULL,
-  costs = "all",
+  polygons = "centroid",
+  costs = c("dt", "dW_l", "dE_l"),
   direction = "both",
   output = "object",
-  precision = 2,
-  z_fix = NULL,
-  res = NULL,
-  dir = tempdir(),
+  outname = deparse(substitute(from)),
+  overwrite = FALSE,
   ...
 )
 }
 \arguments{
-\item{world}{The data.table output of the \code{\link[lbmech]{calculateCosts}} 
-function.}
+\item{region}{A SpatVector, Spatial* or Raster* representing the area of 
+maximum movement}
 
 \item{from}{One of data.frame, data.table, SpatVector, SpatialPointsDataFrame, or
 SpatialPolygonsDataFrame representing the origin locations. If \code{to = NULL}
 and \code{destination = 'pairs'}, this will also be used as the \code{to} parameter.
-If object is of class SpatialPolygonsDataFrame, the location will be taken at the
-centroid.}
+If it is a polygon, the location will be controlled by the \code{polygons} parameter.}
 
 \item{to}{One of data.frame, data.table, SpatVector SpatialPointsDataFrame, or
 SpatialPolygonsDataFrame representing the origin locations. Optional if
 \code{destination =  'pairs'}, ignored if \code{destination =  'all'}.}
 
-\item{proj}{A crs object or character string representing the workspace 
-projection. Required, unless \code{z_fix} is provided in which case
-it's ignored.}
-
 \item{id}{Character string representing the column containing the unique
 IDs for for each location in the \code{from} (and \code{to}) objects.}
+
+\item{dir}{A filepath to the directory being used as the workspace.
+Default is \code{tempdir()} but unless the analyses will only be performed a few
+times it is highly recommended to define a permanent workspace.}
 
 \item{x}{A character vector representing the column containing the 'x' coordinates.
 Required if \code{data} is not Spatial*.}
@@ -57,19 +54,21 @@ a distance matrix will be generated between every pair of locations in
 If \code{'all'}, rasters will be generated for each node representing the cost
 to travel to every cell in the given \code{world}.}
 
-\item{region}{An object of class SpatRaster, SpatVector, Raster* or SpatialPolygons*
-representing the total area where movement is possible. Optional; used
-to constrain the \code{world} more than it may already have been.}
+\item{polygons}{One of \code{c('polygon','centroid','center')}. Ignored unless
+\code{from} and/or \code{to} are polygons. If \code{polygons = 'centroid'} (the default),
+the destinations are calculated to the centroid of the polygon whether or not
+it lies within the polygon itself. If \code{polygons = 'center'}, distances
+are calculated to the point within the polygon closest to the centroid. If 
+\code{polygons = 'polygons'}, distances are calculated to any point within the 
+polygon---in essence, the polygon acts as a giant node permitting costless
+movement within its bounds. This is generally not consistent with real-world
+scenarios and for that reason is not the default.}
 
 \item{costs}{A character vector containing any combination of the strings
-\code{c("time","work","energy")} if the input world data.table is the
-output of of the \code{\link[lbmech]{calculateCosts}} function. Otherwise
-a character string or vector containing the names of the columns where the 
-cost values are stored in the custom-produced data.table.
-This selects which types of costs will be calculated.
-\code{costs = 'all'} is shorthand for \code{costs = c("time","work","energy")}
-while \code{costs = 'energetics'} is shorthand for \code{c("work","energy")}.
-Default is \code{'all'}.}
+of differential values present in the environment (see 
+\code{\link[lbmech]{calculateCosts}} function; default is 
+\code{costs = c("dt","dW_l","dE_l")} anticipating the use of 
+\code{\link[lbmech]{calculateCosts}(costFUN = \link[lbmech]{energyCosts})}.}
 
 \item{direction}{A character vector containing one or both of \code{c("in","out")}
 or the singular string 'both'. This determines whether costs to or from the nodes
@@ -80,25 +79,16 @@ If \code{"object"} is included, then a list of RasterStacks will be returned.
 If \code{"file"} is included, then the appropriate cost rasters will be saved
 to the workspace directory \code{dir}. Ignored if \code{destination = 'pairs'}.}
 
-\item{precision}{An integer representing the number of decimals to retain
-in the x and y directions. For grid sizes with nice, round numbers precisions
-can be low. This factor is controled by \code{\link[terra]{rast}} and
-must be the same as the one used to generate the 
-'world' with \code{\link[lbmech]{makeWorld}}. Default is 2.}
+\item{outname}{A character vector describing the name of the set of input
+nodes for raster analysis. Ignored unless \code{'file' \%in\% output}, in
+which case the files will be stored in a file named as such. Default is the
+name of the \code{from} input, which can lead to files being 
+overwritten if vector sources are arbitrarily changed.}
 
-\item{z_fix}{A SpatVector with the same origin and resolution as the
-\code{z_fix} used to generate the 'world' with \code{\link[lbmech]{makeWorld}}.
-Do not modify this parameter if you didn't modify it when you ran
-\code{\link[lbmech]{makeWorld}}.}
+\item{overwrite}{Should any output files with the same outname be overwritten?
+Default is \code{overwrite = FALSE}.}
 
-\item{res}{The res used to generate the world. Required if 
-\code{dist != 'proj'} and \code{z_fix == NULL}, otherwise ignored.}
-
-\item{dir}{A filepath to the directory being used as the workspace.
-Default is \code{tempdir()} but unless the analyses will only be performed a few
-times it is highly recommended to define a permanent workspace.}
-
-\item{...}{Additional arguments to pass to \code{\link[lbmech]{fix_z}}.}
+\item{...}{Additional arguments to pass to \code{\link[lbmech]{importWorld}}.}
 }
 \value{
 A list, with entries for each combination of selected \code{costs}
@@ -146,8 +136,6 @@ setting \code{output = 'file'} and \code{destination = 'all'}.
 }
 \examples{
 #### Example 1:
-# Calculate the 'time' and 'work' cost between a set of points
-# Generate a DEM
 n <- 5
 dem <- expand.grid(list(x = 1:(n * 100),
                         y = 1:(n * 100))) / 100
@@ -165,36 +153,36 @@ writeRaster(dem, paste0(dir,"/DEM.tif"),overwrite=TRUE)
 
 # Import raster, get the grid
 dem <- rast(paste0(dir,"/DEM.tif"))
-grid <- makeGrid(dem = dem, nx = n, ny = n)
+grid <- makeGrid(dem = dem, nx = n, ny = n, sources = TRUE)
 
-# Import the data lying between x = (12000,16000) and y = (32000,36000)
-region <- ext(c(12000,16000,32000,36000))
-region <- as.polygons(region)
-crs(region) <- crs(grid)
+# Select all tiles that exist between x = (12000,16000) and y = (32000,36000)
+tiles <- ext(c(12000,16000,32000,36000))
+tiles <- as.polygons(tiles)
+crs(tiles) <- crs(grid)
+tiles <- whichTiles(region = tiles, polys = grid)
 
-# Use the canonical parameters for a human in Tobler's Function
-world <- calculateCosts(world = grid, m = 60, v_max = 1.5,
-                        k = 3.5, alpha = -0.05, BMR = 93,
-                        l_s = 1.6, L = 0.8, region = region, 
-                        proj = crs(dem), res = res(dem),
-                        cut_slope = 0.5, dir = dir, dist = 'proj')
-                        
+region <- grid[8,]
 # Generate five random points that fall within the region
 points <- data.table(ID = 1:5,
                      x = runif(5, ext(region)[1], ext(region)[2]),
                      y = runif(5, ext(region)[3], ext(region)[4]))
                      
-# Get 'time' and 'work' costs
-costMatrix <- getCosts(world = world, from = points, 
-                       costs = c("time","work"),
-                       proj = crs(dem), res = res(dem), dir = dir)
-                     
+# Make a world but limit it to the DEM grid size
+defineWorld(source = grid, cut_slope = 0.5, 
+            res = res(dem), dir = dir, overwrite=TRUE)
+            
+# Get time and work costs between points
+costMatrix <- getCosts(grid[8,], from = points, dir = dir, 
+                       costs = c('dt','dW_l'), costFUN = energyCosts,
+                       m = 70, v_max = 1.5, BMR = 76, k = 3.5, alpha = 0.05, l_s = 1,
+                       L = 0.8)
+                   
 #### Example 2:
-# Calculate the cost rasters to travel to and from a set of points
-costRasters <- getCosts(world = world, from = points,
-                        destination = 'all', costs = c('time','work'),
-                        output = c("object","file"), 
-                        proj = crs(dem), res = res(dem),
-                        dir = dir)
+# Calculate the cost rasters to travel to ad from the center of a polygon
+costRasters <- getCosts(grid[8,], from = grid[8,], dir = dir, destination = 'all',
+                       polygons = 'center',
+                       costs = c('dt','dW_l'), costFUN = energyCosts,
+                       m = 70, v_max = 1.5, BMR = 76, k = 3.5, alpha = 0.05, l_s = 1,
+                       L = 0.8)
 
 }
