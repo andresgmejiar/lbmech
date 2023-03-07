@@ -701,8 +701,8 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
 importMap <- function(region, polys,
                       tile_id = 'TILEID', z_fix = NULL,
                       neighbor_distance = 5, FUN = NULL, mask = FALSE,
-                      vals = 'location',
-                      dir = tempdir(), filt = 0, ...){
+                      vals = 'location', filt = 0, 
+                      dir = tempdir(), ...){
   dir <- normalizePath(dir,mustWork=FALSE)
   
   # From the region we need the tiles that it covers, and it should be coerced
@@ -1518,6 +1518,9 @@ fix_z <- function(proj, res = 5, dx = 0, dy = 0){
 #' times it is highly recommended to define a permanent workspace.
 #' @param overwrite If a directory with a \code{World} subdirectory already exists,
 #' should the latter be overwritten? Default is \code{overwrite = FALSE}.
+#' @param filt Numeric. Size of moving window to apply a low-pass filter. Default 
+#' is \code{filt = 0}. Ignored unless the tiles need to be generated from
+#' the raw source files. 
 #' @param rivers A SpatialPolygon* or SpatVector polygon representing the
 #' area covered by rivers. Optional.
 #' @param river_speed A character representing the column name in 
@@ -1573,6 +1576,7 @@ defineWorld <- function(source, source_id = 'TILEID',
                         FUN = NULL, sampling = 'bilinear', 
                         rivers = FALSE, river_speed = 'speed',
                         overwrite = FALSE,
+                        filt = 0,
                         dir = tempdir(), ...){
   ..source_id=location=..vals=..grid_id=NULL
   # Source needs to be in the form of makeGrid-type object
@@ -1658,6 +1662,7 @@ defineWorld <- function(source, source_id = 'TILEID',
                          FUN = list(FUN),
                          sampling = sampling,
                          dist = dist,
+                         filt = filt,
                          r = r,
                          f = f,
                          b = b,
@@ -1779,7 +1784,7 @@ makeWorld <- function(tiles = NULL,
   # This bit is to silence the CRAN check warnings for literal column names
   from=to=..dem=z_f=z_i=x_f=x_i=y_f=y_i=dz=..cols=NULL
   cut_slope=source_id=grid_id=directions=neighbor_distance=keepz=unit=vals=NULL
-  precision=FUN=sampling=l_p=dist=dl=long_f=lat_f=long_i=lat_i=r=f=b=dr=NULL
+  precision=FUN=sampling=l_p=dist=dl=long_f=lat_f=long_i=lat_i=r=f=b=dr=filt=NULL
   rm(..cols)
   
   # Import the variable names from the saved files
@@ -1805,7 +1810,7 @@ makeWorld <- function(tiles = NULL,
       # Use importMap to build a projected DEM, then export it to loc_tiles
       i_poly <- grid[grid$id == i,]
       dem <- importMap(i_poly, polys = source, tile_id = 'source_id', vals = vals,
-                       z_fix = z_fix, mask = FALSE, 
+                       z_fix = z_fix, mask = FALSE, filt = filt,
                        dir = normalizePath(paste0(dir,"/Raw/")))
       names(dem) <- 'z'
       writeRST(dem, normalizePath(paste0(subdirs[2],"/",i),mustWork=FALSE))
@@ -2293,7 +2298,7 @@ calculateCosts <- function(tiles = NULL, costFUN = energyCosts, dir = tempdir(),
 #' cost functions. \code{energyCosts} calls \code{timeCosts} if columns
 #' named \code{'dt'} and \code{'dl_t'} are not present in the input data.table
 #' 
-#' @name energyCosts.Rd
+#' @name energyCosts
 #' @aliases timeCosts
 #' @title Calculate time and energy costs 
 #' @param DT A data.table containing at minimum columns 'dz' representing
@@ -2410,7 +2415,7 @@ timeCosts <- function(DT, v_max, k, s, row_speed = NULL, rivers = FALSE){
   }
 }
 
-#' @rdname energyCosts.Rd
+#' @rdname energyCosts
 #' @export
 energyCosts <- function(DT, method = 'kuo', m = NULL, BMR = NULL, g = 9.81, 
                         epsilon = 0.2, l_s = NULL, L = NULL, gamma = NULL,
@@ -2851,7 +2856,7 @@ getCosts <- function(region, from, to = NULL, id = 'ID', dir = tempdir(),
                      ...){
   # This bit is to silence the CRAN check warnings for literal column names
   ..id=..x=..y=dt=dW_l=dE_l=Var2=value=Var1=coord=Replace=Masked=x_n=y_n=NULL
-  Cell=From_ID=ID=..cost=..d=Value=x_i=y_i=Vector=proj=precision=V1=NULL
+  Cell=From_ID=ID=..cost=..d=Value=x_i=y_i=Vector=proj=precision=V1=filtNULL
   #
   if (all(costs == 'all')){
     costs <- c("dt","dW_l","dE_l")
@@ -3050,7 +3055,8 @@ getCosts <- function(region, from, to = NULL, id = 'ID', dir = tempdir(),
     world <- merge(region,
                    importWorld(region_shp,vars = cost, 
                                dir = normalizePath(stringr::str_remove(dir,'World$'),
-                                                   mustWork=FALSE)),
+                                                   mustWork=FALSE),
+                               filt = filt),
                    by = c("from","to"), all = FALSE)
     world <- stats::na.omit(world)
     world$dumval <- NULL
@@ -3468,7 +3474,7 @@ getPaths <- function(region, nodes, id = "ID", order = NULL, x = "x",
                      y = "y", costs = 'all', polygons = 'centroid',
                      dir = tempdir(),...){
   # This bit is to silence the CRAN check warnings for literal column names
-  from=to=..id=..x=..y=ID=Cell=V1=V2=TempID=dt=dW_l=dE_l=x_i=y_i=NULL
+  from=to=..id=..x=..y=ID=Cell=V1=V2=TempID=dt=dW_l=dE_l=x_i=y_i=filt=NULL
   coord=Replace=Masked=x_n=y_n=precision=..cost=NULL
   #
   
@@ -3587,7 +3593,8 @@ getPaths <- function(region, nodes, id = "ID", order = NULL, x = "x",
     world <- merge(region,
                    importWorld(region_shp,vars = cost, 
                                dir = normalizePath(stringr::str_remove(dir,'World$'),
-                                                   mustWork=FALSE)),
+                                                   mustWork=FALSE),
+                               filt = filt),
                    by = c("from","to"), all = FALSE)
     world <- stats::na.omit(world)
     world$dumval <- NULL

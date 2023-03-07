@@ -26,6 +26,7 @@ defineWorld(
   rivers = FALSE,
   river_speed = "speed",
   overwrite = FALSE,
+  filt = 0,
   dir = tempdir(),
   ...
 )
@@ -124,6 +125,10 @@ if \code{rivers} is provided.}
 
 \item{overwrite}{If a directory with a \code{World} subdirectory already exists,
 should the latter be overwritten? Default is \code{overwrite = FALSE}.}
+
+\item{filt}{Numeric. Size of moving window to apply a low-pass filter. Default 
+is \code{filt = 0}. Ignored unless the tiles need to be generated from
+the raw source files.}
 
 \item{dir}{A filepath to the directory being used as the workspace.
 Default is \code{tempdir()} but unless the analyses will only be performed a few

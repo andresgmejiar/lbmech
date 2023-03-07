@@ -13,8 +13,8 @@ importMap(
   FUN = NULL,
   mask = FALSE,
   vals = "location",
-  dir = tempdir(),
   filt = 0,
+  dir = tempdir(),
   ...
 )
 }
@@ -55,13 +55,13 @@ the character string \code{'location'}. If not, the \code{vals} parameter should
 set to the column name containing the URL or file path to the DEM for that
 sector.}
 
-\item{dir}{A filepath to the directory being used as the workspace. Default
-is \code{tempdir()}, but unless the analyses will only be performed a few times 
-it is highly recommended to define a permanent workspace.}
-
 \item{filt}{Numeric. Size of moving window to apply a low-pass filter. Default 
 is \code{filt = 0}. Ignored unless the tiles need to be generated from
 the raw source files.}
+
+\item{dir}{A filepath to the directory being used as the workspace. Default
+is \code{tempdir()}, but unless the analyses will only be performed a few times 
+it is highly recommended to define a permanent workspace.}
 
 \item{...}{Additional agruments to pass to \code{\link[lbmech]{fix_z}}}
 }
