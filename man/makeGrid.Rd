@@ -10,6 +10,7 @@ makeGrid(
   ny,
   path = NA,
   sources = FALSE,
+  extension = NULL,
   proj = NULL,
   prefix = "SECTOR_",
   crop = TRUE,
@@ -45,6 +46,10 @@ is provided but no path, \code{\link[lbmech]{getMap}} will use
 \item{sources}{Logical. Should source information be saved as attributes
 to the grid for use in \code{\link[lbmech]{getMap}} and 
 \code{\link[lbmech]{defineWorld}}? Default is \code{sources = FALSE}.}
+
+\item{extension}{A character vector representing the extension of the source
+path. Required only if \code{sources = TRUE} and the extension is not apparent
+from the URL stored in the \code{var} column.}
 
 \item{proj}{A \code{\link[terra]{crs}} or something coercible to it representing 
 the desired output projection. Default is the input raster's projection.}

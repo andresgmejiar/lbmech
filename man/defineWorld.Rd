@@ -23,6 +23,8 @@ defineWorld(
   b = 6356752.3142,
   FUN = NULL,
   sampling = "bilinear",
+  rivers = FALSE,
+  river_speed = "speed",
   overwrite = FALSE,
   dir = tempdir(),
   ...
@@ -112,6 +114,13 @@ To use \code{\link[terra]{mosaic}}, provide a compatible function.}
 
 \item{sampling}{How to resample rasters. Default is \code{'bilinear'} interpolation,
 although \code{'ngb'} nearest neighbor is available for categorical rasters.}
+
+\item{rivers}{A SpatialPolygon* or SpatVector polygon representing the
+area covered by rivers. Optional.}
+
+\item{river_speed}{A character representing the column name in 
+\code{rivers} that contains the average speed of the river in m/s. Required
+if \code{rivers} is provided.}
 
 \item{overwrite}{If a directory with a \code{World} subdirectory already exists,
 should the latter be overwritten? Default is \code{overwrite = FALSE}.}

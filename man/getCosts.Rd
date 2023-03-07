@@ -174,7 +174,7 @@ defineWorld(source = grid, cut_slope = 0.5,
 # Get time and work costs between points
 costMatrix <- getCosts(grid[8,], from = points, dir = dir, 
                        costs = c('dt','dW_l'), costFUN = energyCosts,
-                       m = 70, v_max = 1.5, BMR = 76, k = 3.5, alpha = 0.05, l_s = 1,
+                       m = 70, v_max = 1.5, BMR = 76, k = 3.5, s = 0.05, l_s = 1,
                        L = 0.8)
                    
 #### Example 2:
@@ -182,7 +182,7 @@ costMatrix <- getCosts(grid[8,], from = points, dir = dir,
 costRasters <- getCosts(grid[8,], from = grid[8,], dir = dir, destination = 'all',
                        polygons = 'center',
                        costs = c('dt','dW_l'), costFUN = energyCosts,
-                       m = 70, v_max = 1.5, BMR = 76, k = 3.5, alpha = 0.05, l_s = 1,
+                       m = 70, v_max = 1.5, BMR = 76, k = 3.5, s = 0.05, l_s = 1,
                        L = 0.8)
 
 }

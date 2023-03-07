@@ -85,7 +85,7 @@ costRasters  <- getCosts(region, from = points, dir = dir,
                          polygons = 'center',
                          costs = 'all', costFUN = energyCosts,
                          output = c('object','file'),
-                         m = 70, v_max = 1.5, BMR = 76, k = 3.5, alpha = 0.05, l_s = 1,
+                         m = 70, v_max = 1.5, BMR = 76, k = 3.5, s = 0.05, l_s = 1,
                          L = 0.8)
                         
 #### Example 1:

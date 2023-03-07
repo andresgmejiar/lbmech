@@ -19,8 +19,8 @@ segment. Otherwise, employ the same singular column name as in \code{by=}
 \value{
 A list with five entries: \code{$k}, the sample's
 topographic sensitivity factor and its associated
-p-value \code{$k_p}; \code{$alpha}, the sample's slope of fastest
-travel and its associated p-value \code{$alpha_p}; and the
+p-value \code{$k_p}; \code{$s}, the sample's slope of fastest
+travel and its associated p-value \code{$s_p}; and the
 estimated maximum walking speed \code{$v_max}.
 }
 \description{

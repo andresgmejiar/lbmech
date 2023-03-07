@@ -6,10 +6,10 @@
 \alias{energyCosts}
 \title{Calculate time and energy costs}
 \usage{
-timeCosts(dt, v_max, k, alpha)
+timeCosts(DT, v_max, k, s, row_speed = NULL, rivers = FALSE)
 
 energyCosts(
-  dt,
+  DT,
   method = "kuo",
   m = NULL,
   BMR = NULL,
@@ -19,11 +19,13 @@ energyCosts(
   L = NULL,
   gamma = NULL,
   time = timeCosts,
+  rivers = FALSE,
+  row_work = NULL,
   ...
 )
 }
 \arguments{
-\item{dt}{A data.table containing at minimum columns 'dz' representing
+\item{DT}{A data.table containing at minimum columns 'dz' representing
 the change in elevation and 'dl' representing planimetric distance}
 
 \item{v_max}{The maximum velocity of the animal moving across the landscape,
@@ -31,8 +33,15 @@ in meters per second; see \code{\link[lbmech]{getVelocity}}.}
 
 \item{k}{The topographic sensitivity factor; see \code{\link[lbmech]{getVelocity}}.}
 
-\item{alpha}{The dimensionless slope of maximum velocity;
+\item{s}{The dimensionless slope of maximum velocity;
 see \code{\link[lbmech]{getVelocity}}.}
+
+\item{row_speed}{How fast can a person row over water? Default is \code{row_speed = NULL},
+but required if \code{rivers} are provided.}
+
+\item{rivers}{Logical. If \code{FALSE} (the default), movement costs are calculated
+as if over land. If \code{rivers = TRUE}, movement costs are calculated considering a 
+moving river.}
 
 \item{method}{A character string for the method that energy costs per
 unit stride should be calculated. one of \code{method \%in\% c('kuo','heglund','oscillator')}.}
@@ -60,6 +69,9 @@ Required for \code{method = 'oscillator'}, ignored for \code{'kuo'} and \code{'h
 \item{time}{The method by which time costs should be calculated by \code{energyCosts}
 should \code{c('dt','dl_t')} not be column names in the input data.table. 
 Default is \code{time = timeCosts}.}
+
+\item{row_work}{How much work in joules per second can a person row over water?
+Default is \code{row_work = NULL}, but required if \code{rivers} are provided.}
 
 \item{...}{Additional parameters to pass to \code{timeCosts}}
 }
@@ -129,6 +141,6 @@ defineWorld(source = grid, cut_slope = 0.5,
 # Calculate the energetic and temporal costs
 calculateCosts(costFUN = energyCosts, 
 tiles = tiles, dir = dir,
-m = 70, v_max = 1.5, BMR = 76, k = 3.5, alpha = 0.05, l_s = 1,
+m = 70, v_max = 1.5, BMR = 76, k = 3.5, s = 0.05, l_s = 1,
 L = 0.8)
 }

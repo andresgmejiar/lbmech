@@ -97,6 +97,6 @@ defineWorld(source = grid, cut_slope = 0.5,
 
 # Calculate the costs within the world
 calculateCosts(tiles = tiles, dir = dir,
-m = 70, v_max = 1.5, BMR = 76, k = 3.5, alpha = 0.05, l_s = 1,
+m = 70, v_max = 1.5, BMR = 76, k = 3.5, s = 0.05, l_s = 1,
 L = 0.8)
 }

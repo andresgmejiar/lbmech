@@ -104,7 +104,7 @@ tiles <- whichTiles(region = tiles, polys = grid)
 
 # Make a world but limit it to the DEM grid size
 calculateCosts(tiles = tiles, dir = dir,
-m = 70, v_max = 1.5, BMR = 76, k = 3.5, alpha = 0.05, l_s = 1,
+m = 70, v_max = 1.5, BMR = 76, k = 3.5, s = 0.05, l_s = 1,
 L = 0.8)
 
 # Generate five random points that fall within the region
@@ -122,7 +122,7 @@ defineWorld(source = grid, cut_slope = 0.5,
             
 paths <- getPaths(region = region, nodes = points, order = pathOrder, 
                   costs = 'all', costFUN = energyCosts,
-                       m = 70, v_max = 1.5, BMR = 76, k = 3.5, alpha = 0.05, l_s = 1,
+                       m = 70, v_max = 1.5, BMR = 76, k = 3.5, s = 0.05, l_s = 1,
                        L = 0.8)
                               
 ## Plot against corridors (not run)                         

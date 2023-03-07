@@ -95,7 +95,7 @@ importRST <- function(filename, layers = NULL,...){
   if (!is.null(layers)){
     layers = c('x','y',layers)
   }
-  x <- fst::read_fst(paste0(filename,'.fst'),
+  x <- fst::read_fst(normalizePath(paste0(filename,'.fst')),
                      columns = layers,
                      as.data.table = TRUE)
   xres <- x[1]$x
@@ -141,7 +141,7 @@ importRST <- function(filename, layers = NULL,...){
 #' \code{\link[elevatr]{get_elev_raster}} to download topographic data.
 #' @param sources Logical. Should source information be saved as attributes
 #' to the grid for use in \code{\link[lbmech]{getMap}} and 
-#' \code{\link[lbmech]{defineWorld}}? Default is \code{sources = FALSE}. 
+#' \code{\link[lbmech]{defineWorld}}? Default is \code{sources = FALSE}.
 #' @param proj A \code{\link[terra]{crs}} or something coercible to it representing 
 #' the desired output projection. Default is the input raster's projection.
 #' @param prefix A character string containing the prefix to name individual sectors.
@@ -157,6 +157,9 @@ importRST <- function(filename, layers = NULL,...){
 #' \code{\link[elevatr]{get_elev_raster}}.
 #' @param var If the polygons point to a data source, what will be the variable
 #' name in the internal GIS? Default is 'z' for elevation. 
+#' @param extension A character vector representing the extension of the source
+#' path. Required only if \code{sources = TRUE} and the extension is not apparent
+#' from the URL stored in the \code{var} column.
 #' @return Polygons of class SpatVector representing the individual sectors ('tiles'),
 #' with a dataframe containing three columns: the "TILEID", the raster's filepath,
 #' and a dummy column indicating that the grid was made using the makeGrid function.
@@ -193,7 +196,7 @@ importRST <- function(filename, layers = NULL,...){
 #' grid <- makeGrid(dem = dem, nx = n, ny = n, sources = TRUE)
 #' 
 #' @export
-makeGrid <- function(dem, nx, ny, path = NA, sources = FALSE,
+makeGrid <- function(dem, nx, ny, path = NA, sources = FALSE, extension = NULL,
                      proj = NULL, prefix = "SECTOR_", crop = TRUE,
                      zoom = 13, var = 'z', overlap = 0.005){
   #Silences CRAN check warnings
@@ -275,6 +278,9 @@ makeGrid <- function(dem, nx, ny, path = NA, sources = FALSE,
       path <- zoom
     }
     polys$location <- path
+    if (!is.null(extension)){
+      polys$extension <- extension
+    }
   }
   # If the output vector is input into getMap, this tells getMap that the source
   # DEM is a single file and it should crop; not download.
@@ -390,10 +396,10 @@ whichTiles <- function(region, polys, tile_id = "TILEID", x = "x", y = "y"){
 #' set to the column name containing the URL or filepath to the DEM for that
 #' sector. 
 #' @param z_min The minimum allowable elevation. Useful if DEM source includes
-#' ocean bathymetry as does the SRTM data from AWS. Default is \code{z_min = 0},
-#' but set to \code{-Inf} to disable.
-#' @param filt Should a lowpass filter be applied? Default is a moving window
-#' size \code{filt = 3}, but set to \code{NA} or 0 to disable. 
+#' ocean bathymetry as does the SRTM data from AWS. Default is \code{z_min = NULL},
+#' but set to \code{0} for SRTM data.
+#' @param filt Numeric. Size of moving window to apply a low-pass filter.
+#'  Default is \code{filt = 0}.
 #' @param verbose Should the number of remaining sectors be printed? Default
 #' is \code{FALSE}
 #' @param dir A filepath to the directory being used as the workspace.
@@ -435,7 +441,7 @@ whichTiles <- function(region, polys, tile_id = "TILEID", x = "x", y = "y"){
 #' getMap(tiles = tile_list, polys = grid, dir = dir)
 #' @export
 getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location", 
-                   z_min = 0, filt = 3, verbose = FALSE,
+                   z_min = NULL, filt = 0, verbose = FALSE,
                    dir = tempdir()){
   # The function first checks to see if the needed "tiles" sector DEMs exist
   # If not, it downloads the correct sectors or crops them from the master
@@ -447,6 +453,7 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
   if(!dir.exists(rd)){
     dir.create(rd)
   }
+  
   
   # Check to see if the file exists; if not add to "down" vector
   down <- c()
@@ -472,8 +479,10 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
           print(paste0("Downloading Tile ",tile_name," (",
                        i," of ",length(down),")"))
         }
-        extension <- unlist(stringr::str_split(polys[down[i],][[vals]],"\\."))
-        extension <- extension[length(extension)]
+        if(!('extension' %in% names(polys))){
+          extension <- unlist(stringr::str_split(polys[down[i],][[vals]],"\\."))
+          extension <- extension[length(extension)]
+        }
         file_path <- normalizePath(paste0(rd,"/",tile_name),mustWork = FALSE)
         utils::download.file(url=unlist(polys[down[i],][[vals]]),
                              destfile=paste0(file_path,".",extension))
@@ -491,17 +500,20 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
                                      full.names = TRUE))
           if (length(files) > 1){
             files <- lapply(files,rast)
-            files <- do.call(merge,files) * 1.0
+            files <- do.call(merge,files) 
           } else {
-            files <- rast(files) * 1.0
+            files <- rast(files) 
           }
-          files[files < z_min] <- NA
-          if (!is.null(filt) | filt != 0){
+          if (!is.null(z_min)){
+            files[files < z_min] <- NA
+          }
+          if (filt != 0){
             files <- focal(files,w=filt,fun=mean,na.policy='omit')
           }
           names(files) <- 'z'
           
-          writeRST(rastToTable(files), normalizePath(file_path))
+          writeRST(files, normalizePath(file_path))
+          unlink(paste0(file_path),recursive=TRUE)
           unlink(paste0(file_path,".zip"),recursive=TRUE)
         } 
         
@@ -521,8 +533,10 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
           } else {
             files <- rast(files) * 1.0
           }
+          if (!is.null(z_min)){
           files[files < z_min] <- NA
-          if (!is.null(filt) | filt != 0){
+          }
+          if (filt != 0){
             files <- focal(files,w=filt,fun=mean,na.policy='omit')
           }
           writeRST(files, normalizePath(file_path))
@@ -533,9 +547,11 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
         # If downloaded file is an uncompressed file
         exts <- unlist(stringr::str_extract_all(exts,pattern="[a-z]+"))
         if (extension %in% exts){
-          files <- rast(paste0(file_path,".",extension)) * 1.0
+          files <- rast(paste0(file_path,".",extension)) 
+          if (!is.null(z_min)){
           files[files < z_min] <- NA
-          if (!is.null(filt) | filt != 0){
+          }
+          if (filt != 0){
             files <- focal(files,w=filt,fun=mean,na.policy='omit')
           }
           writeRST(files, normalizePath(file_path))
@@ -555,8 +571,10 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
           methods::as(polys[down[i],],'Spatial')),z = zoom,src = 'aws')))
         poly <- which(polys[[tile_id]] == tile_name)
         
+        if (!is.null(z_min)){
         clip[clip < z_min] <- NA
-        if (!is.null(filt) | filt != 0){
+        }
+        if (filt != 0){
           clip <- focal(clip,w=filt,fun=mean,na.policy='omit')
         }
         clip <- crop(clip,polys[poly,], snap = 'out')
@@ -577,8 +595,10 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
         }
       }
       
+      if (!is.null(z_min)){
       dem[dem < z_min] <- NA
-      if (!is.null(filt) | filt != 0){
+      }
+      if (filt != 0){
         dem <- focal(dem,w=filt,fun=mean,na.policy='omit')
       }
       # For every tile that needs to be acquired...
@@ -633,6 +653,9 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
 #' the character string \code{'location'}. If not, the \code{vals} parameter should be
 #' set to the column name containing the URL or file path to the DEM for that
 #' sector.
+#' @param filt Numeric. Size of moving window to apply a low-pass filter. Default 
+#' is \code{filt = 0}. Ignored unless the tiles need to be generated from
+#' the raw source files. 
 #' @param dir A filepath to the directory being used as the workspace. Default
 #' is \code{tempdir()}, but unless the analyses will only be performed a few times 
 #' it is highly recommended to define a permanent workspace.
@@ -679,7 +702,7 @@ importMap <- function(region, polys,
                       tile_id = 'TILEID', z_fix = NULL,
                       neighbor_distance = 5, FUN = NULL, mask = FALSE,
                       vals = 'location',
-                      dir = tempdir(), ...){
+                      dir = tempdir(), filt = 0, ...){
   dir <- normalizePath(dir,mustWork=FALSE)
   
   # From the region we need the tiles that it covers, and it should be coerced
@@ -700,7 +723,7 @@ importMap <- function(region, polys,
   # Deal with terra objects
   if (is.null(z_fix) & !methods::is(region,'SpatRaster')){
     if (!methods::is(region,'character')){
-    z_fix <- fix_z(crs(region), ...)
+      z_fix <- fix_z(crs(region), ...)
     } else {
       z_fix <- fix_z(crs(polys), ...)
     }
@@ -721,7 +744,7 @@ importMap <- function(region, polys,
   tiles <- buffer(region,width=neighbor_distance)
   tiles <- intersect(region[,NA],polys)[[tile_id]]
   tiles <- unlist(tiles)
-  getMap(tiles, polys, tile_id = tile_id, dir = dir)
+  getMap(tiles, polys, tile_id = tile_id, dir = dir, filt = filt)
   
   # Import all DEMs
   dem <- normalizePath(paste0(dir,'/',tiles),mustWork=FALSE)
@@ -1031,9 +1054,9 @@ downsample <- function(data, t_step, t_cut = t_step * 10,
 #' regression and 95\% below.
 #' @param k_init A number representing the value for the topographic sensitivity
 #' at which to initiate the nonlinear regression. Default is \code{k_init = 3.5}.
-#' @param alpha_init A number representing the value for dimensionless slope of
+#' @param s_init A number representing the value for dimensionless slope of
 #' maximum velocity at which to initiate the nonlinear regression. Default is
-#' \code{alpha_init = -0.05}.
+#' \code{s_init = -0.05}.
 #' @param v_lim The maximum velocity that will be considered. Any value above
 #' this will be excluded from the regression. Default is \code{v_lim = Inf},
 #' but it should be set to an animal's maximum possible velocity.
@@ -1060,7 +1083,7 @@ downsample <- function(data, t_step, t_cut = t_step * 10,
 #'
 #' (2) \code{$vmax}, containing the identified maximum velocity.
 #'
-#' (3) \code{$alpha}, containing the identified angle of maximum velocity.
+#' (3) \code{$s}, containing the identified angle of maximum velocity.
 #'
 #' (4) \code{$k}, containing the identified topographic sensitivity factor.
 #'
@@ -1125,7 +1148,7 @@ downsample <- function(data, t_step, t_cut = t_step * 10,
 #' @export
 getVelocity <- function(data, x = 'x', y ='y', degs = FALSE, dl = NULL, z = 'z', 
                         dt = 'dt', ID = 'ID', tau = NULL, tau_vmax = 0.995,
-                        tau_nlrq = 0.95, k_init = 3.5, alpha_init = -0.05,
+                        tau_nlrq = 0.95, k_init = 3.5, s_init = -0.05,
                         v_lim = Inf, slope_lim = 1,
                         tile_id = "TILEID", vals = "location",
                         dir = tempdir(), ...){
@@ -1283,11 +1306,11 @@ getVelocity <- function(data, x = 'x', y ='y', degs = FALSE, dl = NULL, z = 'z',
   
   # And obtain the other coefficients through an nlrq of the form proposed
   # by Tobler (exponential decay from an optimal angle)
-  velocity <- quantreg::nlrq(dl_dt ~ v_max * exp(-k * abs(dz_dl - alpha)),
+  velocity <- quantreg::nlrq(dl_dt ~ v_max * exp(-k * abs(dz_dl - s)),
                              data = data[(dl_dt <= v_lim) & 
                                            abs(dz_dl) <= slope_lim], 
                              tau = tau_nlrq, 
-                             start=list(k=k_init,alpha=alpha_init))
+                             start=list(k=k_init,s=s_init))
   data$v_max <- NULL
   
   
@@ -1302,7 +1325,7 @@ getVelocity <- function(data, x = 'x', y ='y', degs = FALSE, dl = NULL, z = 'z',
   out <- list(
     model = velocity,
     vmax = as.numeric(v_max),
-    alpha = as.numeric(stats::coefficients(velocity)[['alpha']]),
+    s = as.numeric(stats::coefficients(velocity)[['s']]),
     k = as.numeric(stats::coefficients(velocity)[['k']]),
     tau_vmax = tau_vmax,
     tau_nlrq = tau_nlrq,
@@ -1330,8 +1353,8 @@ getVelocity <- function(data, x = 'x', y ='y', degs = FALSE, dl = NULL, z = 'z',
 #' (data.table syntax).
 #' @return A list with five entries: \code{$k}, the sample's
 #' topographic sensitivity factor and its associated
-#' p-value \code{$k_p}; \code{$alpha}, the sample's slope of fastest
-#' travel and its associated p-value \code{$alpha_p}; and the
+#' p-value \code{$k_p}; \code{$s}, the sample's slope of fastest
+#' travel and its associated p-value \code{$s_p}; and the
 #' estimated maximum walking speed \code{$v_max}. 
 #' @examples 
 #' # Generate fake data with x,y coordinates, z elevation, and a t
@@ -1362,15 +1385,15 @@ dtVelocity <- function(data, ...){
       j[['v_max']] <- as.numeric(n$vmax)
       n <- summary(n$model)$coefficients
       j[['k_p']] <- as.numeric(n[,"Pr(>|t|)"][1])
-      j[['alpha_p']] <- as.numeric(n[,"Pr(>|t|)"][2])
+      j[['s_p']] <- as.numeric(n[,"Pr(>|t|)"][2])
       return(j)
     }, 
     error = function(e) {
       j[['k']] <- as.numeric(NA)
-      j[['alpha']] <- as.numeric(NA)
+      j[['s']] <- as.numeric(NA)
       j[['v_max']] <- as.numeric(NA)
       j[['k_p']] <- as.numeric(NA)
-      j[['alpha_p']] <- as.numeric(NA)
+      j[['s_p']] <- as.numeric(NA)
       return(j)
     })
 }
@@ -1495,6 +1518,11 @@ fix_z <- function(proj, res = 5, dx = 0, dy = 0){
 #' times it is highly recommended to define a permanent workspace.
 #' @param overwrite If a directory with a \code{World} subdirectory already exists,
 #' should the latter be overwritten? Default is \code{overwrite = FALSE}.
+#' @param rivers A SpatialPolygon* or SpatVector polygon representing the
+#' area covered by rivers. Optional.
+#' @param river_speed A character representing the column name in 
+#' \code{rivers} that contains the average speed of the river in m/s. Required
+#' if \code{rivers} is provided.
 #' @param ... Additional arguments to pass to \code{\link[lbmech]{fix_z}}.
 #' @return A \code{/World/} directory, containing \code{/Loc/}, \code{/Diff/},
 #' and \code{/Raw/}, directories where cropped and transformed files will be stored,
@@ -1542,7 +1570,9 @@ defineWorld <- function(source, source_id = 'TILEID',
                         directions = 16, neighbor_distance = 10, 
                         z_fix = NULL,unit = "m", vals = 'location', precision = 2, 
                         dist = 'proj', r = 6378137, f = 1/298.257223563, b = 6356752.3142,
-                        FUN = NULL, sampling = 'bilinear', overwrite = FALSE,
+                        FUN = NULL, sampling = 'bilinear', 
+                        rivers = FALSE, river_speed = 'speed',
+                        overwrite = FALSE,
                         dir = tempdir(), ...){
   ..source_id=location=..vals=..grid_id=NULL
   # Source needs to be in the form of makeGrid-type object
@@ -1630,8 +1660,20 @@ defineWorld <- function(source, source_id = 'TILEID',
                          dist = dist,
                          r = r,
                          f = f,
-                         b = b)
-  
+                         b = b,
+                         river_speed = river_speed)
+ 
+  if (methods::is(rivers,'Spatial')){
+    rivers <- vect(rivers)
+  }
+  if (methods::is(rivers,'SpatVector')){
+    
+    writeVector(project(rivers[,'speed'],crs(z_fix)),
+                normalizePath(paste0(dir,"/rivers.gpkg"),mustWork = FALSE))
+  } else if (rivers != FALSE) {
+    stop("Unknown source for rivers")
+  }
+    
   saveRDS(callVars,normalizePath(paste0(dir,"/callVars.gz"),mustWork = FALSE))
   
 }
@@ -1724,7 +1766,6 @@ defineWorld <- function(source, source_id = 'TILEID',
 #' crs(tiles) <- crs(grid)
 #' tiles <- whichTiles(region = tiles, polys = grid)
 #' 
-
 #' # Make a world but limit it to the DEM grid size
 #' defineWorld(source = grid, cut_slope = 0.5, 
 #'             res = res(dem), dir = dir, overwrite=TRUE)
@@ -2030,6 +2071,8 @@ regionMask <- function(region, proj = crs(region), id = NULL,
 #' @importFrom terra vect
 #' @importFrom data.table transpose
 #' @importFrom data.table :=
+#' @importFrom data.table melt
+#' @importFrom terra terrain
 #' @examples 
 #' # Generate a DEM
 #' n <- 5
@@ -2063,12 +2106,14 @@ regionMask <- function(region, proj = crs(region), id = NULL,
 #' 
 #' # Calculate the costs within the world
 #' calculateCosts(tiles = tiles, dir = dir,
-#' m = 70, v_max = 1.5, BMR = 76, k = 3.5, alpha = 0.05, l_s = 1,
+#' m = 70, v_max = 1.5, BMR = 76, k = 3.5, s = 0.05, l_s = 1,
 #' L = 0.8)
 #' @export
 calculateCosts <- function(tiles = NULL, costFUN = energyCosts, dir = tempdir(),
                            costname = deparse(substitute(costFUN)), ...){
   # This bit is to silence the CRAN check warnings for literal column names
+  R0=R45=..dirConvert=R90=R135=R180=R235=R270=R315=cell=flow_theta=RiverSpeed=NULL
+  y=x=..z_fix=river_speed=FlowSpeed=from=z_i=z_f=x_i=y_i=x_f=y_f=dz=dl=dr=NULL
   
   # Set up the local environment from directory
   dir <- normalizePath(paste0(dir,"/World"),mustWork=FALSE)
@@ -2081,6 +2126,12 @@ calculateCosts <- function(tiles = NULL, costFUN = energyCosts, dir = tempdir(),
   source <- vect(normalizePath(paste0(dir,"/z_sources.gpkg"),mustWork=FALSE))
   grid <- vect(normalizePath(paste0(dir,"/z_grid.gpkg"),mustWork=FALSE))
   z_fix <- importRST(normalizePath(paste0(dir,"/z_fix"),mustWork=FALSE))
+  
+  do_rivers <- FALSE
+  if (file.exists(normalizePath(paste0(dir,"/rivers.gpkg")))){
+    rivers <- vect(normalizePath(paste0(dir,"/rivers.gpkg")))
+    do_rivers <- TRUE
+  }
   
   # Save parameters as a file with the cost function name
   funName <- costname
@@ -2099,33 +2150,143 @@ calculateCosts <- function(tiles = NULL, costFUN = energyCosts, dir = tempdir(),
   for (i in tiles){
     tilePath <- normalizePath(paste0(subdirs[3],"/",i,".fst"),
                               mustWork = FALSE)
-    
+    doTile <- FALSE
     # Create sector differential if it doesn't exist and calculate
     # cost columns before exporting
     if (!file.exists(tilePath)){
-      dt <- makeWorld(tiles = i, 
+      DT <- makeWorld(tiles = i, 
                       dir = normalizePath(stringr::str_remove(dir,'World$'),
                                           mustWork=FALSE), 
                       output = 'object')
-      dt <- cbind(dt,
-                  do.call(costFUN,c(list(dt),params))
-      )
-      fst::write_fst(dt,tilePath)
+      
+      params$rivers <- FALSE
+      DT <- cbind(DT,
+                  do.call(costFUN,c(list(DT),params)))
+      doTile <- TRUE
+      
     } else if (sum(c("dt","dU_l","dK_l","dW_l","dE_l") %in% 
-                   fst::metadata_fst(tilePath)$columnNames) != 5){
+                 fst::metadata_fst(tilePath)$columnNames) != 5){
       # If they do exist, check to make sure that the relevant column names
       # are present. If not, import, calculate columns, and overwrite
       
-      dt <- fst::read_fst(tilePath,
+      DT <- fst::read_fst(tilePath,
                           as.data.table = TRUE)
-      
-      dt <- cbind(dt,
-                  do.call(costFUN,c(list(dt),params))
-      )
-      fst::write_fst(dt,tilePath)
+      DT <- cbind(DT,
+            do.call(costFUN,c(list(DT),params)))
+      doTile <- TRUE
+    }
+    
+    if (do_rivers & doTile){
+      if (length(intersect(grid[which(grid[['id']] == i), ], rivers)) > 0){
+        
+        # Import terrain, calculate direction of flow
+        flowdir <- importRST(normalizePath(paste0(subdirs[2],"/",i),mustWork = FALSE))
+        z_fix <- flowdir
+        flowdir <- terrain(flowdir,'flowdir')
+        
+        flowdir <- mask(flowdir,rivers)
+        
+        # Get adjacency list, convert list into the cell name of the 
+        # direction of flow
+        flowadj <- as.data.table(adjacent(flowdir,cells(flowdir),
+                                          pairs=FALSE,directions = 8),
+                                 keep.rownames = TRUE)
+        names(flowadj) <- c("cell",1:8)
+        flowadj$cell <- getCoords(xyFromCell(z_fix,as.numeric(flowadj$cell)),
+                                  z_fix=z_fix)
+        
+        # Lookup table for esri notation vs. different orientations
+        dirConvert <- data.table(esri = c(8,4,2,16,1,32,64,128),
+                                 R0 =   c(1,2,3,4,5,6,7,8),
+                                 R45=   c(2,3,4,5,6,7,8,1),
+                                 R90=   c(3,4,5,6,7,8,1,2),
+                                 R135=  c(4,5,6,7,8,1,2,3),
+                                 R180=  c(5,6,7,8,1,2,3,4),
+                                 R235=  c(6,7,8,1,2,3,4,5),
+                                 R270=  c(7,8,1,2,3,4,5,6),
+                                 R315=  c(8,1,2,3,4,5,6,7))
+        
+        # Convert from ESRI to matrix index
+        flowdir[cells(flowdir)] <- dirConvert$R0[match(
+          flowdir[cells(flowdir)]$flowdir,dirConvert$esri)]
+        dirConvert[,names(dirConvert) := lapply(.SD,as.character)]
+        
+        # Convert flow direction to data.table
+        flowdir <- data.table(cells = cells(flowdir),
+                              flowdir = unlist(flowdir[cells(flowdir)]))
+        names(flowdir) <- c('cell','flowdir')
+        flowdir$cell <- getCoords(xyFromCell(z_fix,
+                                             as.numeric(flowdir$cell)),
+                                  z_fix=z_fix)
+        
+        # Combine the adjacency and direction into one table
+        flowadj <- merge(flowadj,flowdir,by='cell')
+        rm(flowdir)
+        
+        # Assign cell names to adjacency list (finally)
+        flowadj[, R0 := .SD[[flowdir]],by='cell'
+        ][, R45 := .SD[[..dirConvert$R45[as.numeric(flowdir)]]],by='cell'
+        ][, R90 := .SD[[..dirConvert$R90[as.numeric(flowdir)]]],by='cell'
+        ][, R135 := .SD[[..dirConvert$R135[as.numeric(flowdir)]]],by='cell'
+        ][, R180 := .SD[[..dirConvert$R180[as.numeric(flowdir)]]],by='cell'
+        ][, R235 := .SD[[..dirConvert$R235[as.numeric(flowdir)]]],by='cell'
+        ][, R270 := .SD[[..dirConvert$R270[as.numeric(flowdir)]]],by='cell'
+        ][, R315 := .SD[[..dirConvert$R315[as.numeric(flowdir)]]],by='cell']
+        
+        # Melt the table from wide to long
+        flowadj <- flowadj[,.(from = cell,R0,R45,R90,R135,R180,R235,R270,R315)]
+        flow <- melt(flowadj,id.vars='from',variable.name='flow_theta',
+                     value.name ='to')
+        
+        # Assign geometric costs
+        flow[flow_theta == "R0",   RiverSpeed := 1
+        ][flow_theta == "R45",  RiverSpeed := sqrt(2)/2
+        ][flow_theta == "R90",  RiverSpeed := 0
+        ][flow_theta == "R135", RiverSpeed := -sqrt(2)/2
+        ][flow_theta == "R180", RiverSpeed := -1
+        ][flow_theta == "R235", RiverSpeed := -sqrt(2)/2
+        ][flow_theta == "R270", RiverSpeed := 0
+        ][flow_theta == "R315", RiverSpeed := sqrt(2)/2
+        ]
+        
+        # Convert cells to coordinate names
+        to <- as.data.table(xyFromCell(z_fix,as.numeric(flow$to)))
+        to[!is.na(y) & !is.na(x), to:= getCoords(.SD,z_fix=..z_fix)]
+        
+        flow$to <-   to$to
+        rm(to)
+        
+        flow[,`:=`(flow_theta=NULL)]
+        
+        rivers <- rasterize(rivers,z_fix,field=river_speed)
+        names(rivers) <- 'RiverSpeed'
+        
+        flow <- merge(flow,
+                      data.table(from=getCoords(xyFromCell(rivers,cells(rivers)),z_fix = z_fix),
+                                 FlowSpeed = unlist(rivers[cells(rivers)])), by = 'from')
+        flow[,`:=`(RiverSpeed = RiverSpeed * FlowSpeed, FlowSpeed = NULL)]
+        
+        flow <- merge(DT[,.(from,to,z_i,z_f,x_i,y_i,x_f,y_f,dz,dl,dr)],
+                      flow, by = c('from','to'))
+        
+        params$rivers <- TRUE
+        flow <- cbind(DT,
+                      do.call(costFUN,c(list(DT),params)))
+        
+        
+        DT <- rbind(DT[!(DT$from %in% flow$from) & !(DT$to %in% flow$to),
+                       .SD,.SDcols = names(flow)],
+                    flow)
+        
+      }
+    }
+    
+    if (doTile){
+    fst::write_fst(DT,tilePath) 
     }
   } 
-}
+} 
+
 
 #' A function that for a given world of possible movement calculates
 #' the transition cost for each in terms of a pre-defined time, work, and energy 
@@ -2135,12 +2296,12 @@ calculateCosts <- function(tiles = NULL, costFUN = energyCosts, dir = tempdir(),
 #' @name energyCosts.Rd
 #' @aliases timeCosts
 #' @title Calculate time and energy costs 
-#' @param dt A data.table containing at minimum columns 'dz' representing
+#' @param DT A data.table containing at minimum columns 'dz' representing
 #' the change in elevation and 'dl' representing planimetric distance
 #' @param v_max The maximum velocity of the animal moving across the landscape,
 #' in meters per second; see \code{\link[lbmech]{getVelocity}}.
 #' @param k The topographic sensitivity factor; see \code{\link[lbmech]{getVelocity}}.
-#' @param alpha The dimensionless slope of maximum velocity;
+#' @param s The dimensionless slope of maximum velocity;
 #' see \code{\link[lbmech]{getVelocity}}.
 #' @param v_max The maximum velocity of the animal moving across the landscape,
 #' in meters per second; see \code{\link[lbmech]{getVelocity}}.
@@ -2162,6 +2323,13 @@ calculateCosts <- function(tiles = NULL, costFUN = energyCosts, dir = tempdir(),
 #' ignored for \code{'heglund'} and \code{'oscillator'}.
 #' @param gamma The fractional maximal deviation from average velocity per stride.
 #' Required for \code{method = 'oscillator'}, ignored for \code{'kuo'} and \code{'heglund'}.
+#' @param rivers Logical. If \code{FALSE} (the default), movement costs are calculated
+#' as if over land. If \code{rivers = TRUE}, movement costs are calculated considering a 
+#' moving river. 
+#' @param row_speed How fast can a person row over water? Default is \code{row_speed = NULL},
+#' but required if \code{rivers} are provided. 
+#' @param row_work How much work in joules per second can a person row over water?
+#' Default is \code{row_work = NULL}, but required if \code{rivers} are provided. 
 #' @param ... Additional parameters to pass to \code{timeCosts}
 #' @return For \code{timeCosts}, A data.table object with two columns:
 #'
@@ -2223,51 +2391,68 @@ calculateCosts <- function(tiles = NULL, costFUN = energyCosts, dir = tempdir(),
 #' # Calculate the energetic and temporal costs
 #' calculateCosts(costFUN = energyCosts, 
 #' tiles = tiles, dir = dir,
-#' m = 70, v_max = 1.5, BMR = 76, k = 3.5, alpha = 0.05, l_s = 1,
+#' m = 70, v_max = 1.5, BMR = 76, k = 3.5, s = 0.05, l_s = 1,
 #' L = 0.8)
 #' @export
-timeCosts <- function(dt, v_max, k, alpha){
+timeCosts <- function(DT, v_max, k, s, row_speed = NULL, rivers = FALSE){
   # This bit to silence CRAN warnings
-  dl_t=..v_max=..k=dz=dl=..alpha=NULL
-  
-  dt[, dl_t := ..v_max * exp(-(..k) * abs(dz/dl - ..alpha))
-  ][, dt := dl_t ^ -1 * dl] #* ..l_p / ..l_s
-  return(dt[,.(dl_t, dt)])
+  dl_t=..v_max=..k=dz=dl=..s=dt=..RiverSpeed=..row_speed=RiverSpeed=NULL
+    if (rivers == FALSE){
+    DT[, dl_t := ..v_max * exp(-(..k) * abs(dz/dl - ..s))
+    ][, dt := dl_t ^ -1 * dl] #* ..l_p / ..l_s
+    return(DT[,.(dl_t, dt)])
+  } else {
+    DT[, dl_t := RiverSpeed + ..row_speed
+       ][, dt := dl * dl_t ^ -1]
+    DT <- dt[dl > 0]
+    DT[dl_t <= 0, `:=`(dt = Inf)]
+    return(DT[,.(dl_t,dt)])
+  }
 }
 
 #' @rdname energyCosts.Rd
 #' @export
-energyCosts <- function(dt, method = 'kuo', m = NULL, BMR = NULL, g = 9.81, 
+energyCosts <- function(DT, method = 'kuo', m = NULL, BMR = NULL, g = 9.81, 
                         epsilon = 0.2, l_s = NULL, L = NULL, gamma = NULL,
-                        time = timeCosts, ...){
+                        time = timeCosts, rivers = FALSE, row_work = NULL, ...){
   #This bit to silence the CRAN warnings
   dU_l=..m=..g=dz=dK_l=dl_t=..l_s=dl=..L=..gamma=dW_l=..epsilon=dE_l=..BMR=NULL
+  dt=..row_work=NULL
   
-  if ((sum(c("dl_t","dt") %in% names(dt)) != 2)){
-    dt <- cbind(dt, timeCosts(dt,...))
+  if ((sum(c("dl_t","dt") %in% names(DT)) != 2)){
+    DT <- cbind(DT, timeCosts(DT, rivers = rivers, ...))
   }
   
-  dt[, dU_l := ..m * ..g * dz
+  if (rivers == FALSE){
+    DT[, dU_l := ..m * ..g * dz
   ][dU_l < 0, dU_l := 0]
   
   ## (2) Calculate the work based on a user-selected function
   if (method == 'kuo'){
     # Kuo's function for human movement
-    dt[, dK_l := 1 / 4 * ..m * dl_t^2 * ..l_s * dl / ..L^2]
+    DT[, dK_l := 1 / 4 * ..m * dl_t^2 * ..l_s * dl / ..L^2]
   } else if (method == 'heglund'){
     # Heglund et al.'s function for arbitrary quadripeds
-    dt[, dK_l := (0.478 * dl_t ^ 1.53 + 0.685 * dl_t + 0.072) * dl_t ^ -1 * dl * ..m]
+    DT[, dK_l := (0.478 * dl_t ^ 1.53 + 0.685 * dl_t + 0.072) * dl_t ^ -1 * dl * ..m]
   } else if (method == 'oscillator'){
-    dt[, dK_l := 2 * ..m * dl_t ^2 * ..gamma * dl / ..l_s]
+    DT[, dK_l := 2 * ..m * dl_t ^2 * ..gamma * dl / ..l_s]
   }
   
   ## (3) Finally, calculate the total work and energy
-  dt[, dW_l := (dU_l + dK_l) / ..epsilon
+    DT[, dW_l := (dU_l + dK_l) / ..epsilon
   ][, dE_l := dW_l + ..BMR * dt][]
   
-  return(dt[,.(dt,dU_l, dK_l, dW_l, dE_l)])
+   return(DT[,.(dt,dU_l, dK_l, dW_l, dE_l)])
+  } else {
+    DT[, dW_l := ..row_work * dt
+    ][, dE_l := dW_l/..epsilon + ..BMR * dt]
+    
+    DT[dl_t <= 0, `:=`(dt = Inf, dU_l = 0, dK_l = Inf,
+                        dW_l = Inf, dE_l = Inf)]
+    return(DT[,.(dt, dU_l = 0, dK_l = dW_l, dW_l, dE_l)])
+  }
+  
 }
-
 
 
 #' Function to get the coordinates in "x,y" format for a given set of points
@@ -2430,7 +2615,7 @@ getCoords <- function(data, proj = NULL, x = "x", y = "y",
 #' 
 #' # Make a world but limit it to the DEM grid size
 #' world <- importWorld(grid[8,], dir = dir, vars = 'dE_l', costFUN = energyCosts,
-#' m = 70, v_max = 1.5, BMR = 76, k = 3.5, alpha = 0.05, l_s = 1,
+#' m = 70, v_max = 1.5, BMR = 76, k = 3.5, s = 0.05, l_s = 1,
 #' L = 0.8)
 #' @export
 importWorld <- function(region, banned = NULL, dir = tempdir(), 
@@ -2647,7 +2832,7 @@ importWorld <- function(region, banned = NULL, dir = tempdir(),
 #' # Get time and work costs between points
 #' costMatrix <- getCosts(grid[8,], from = points, dir = dir, 
 #'                        costs = c('dt','dW_l'), costFUN = energyCosts,
-#'                        m = 70, v_max = 1.5, BMR = 76, k = 3.5, alpha = 0.05, l_s = 1,
+#'                        m = 70, v_max = 1.5, BMR = 76, k = 3.5, s = 0.05, l_s = 1,
 #'                        L = 0.8)
 #'                    
 #' #### Example 2:
@@ -2655,7 +2840,7 @@ importWorld <- function(region, banned = NULL, dir = tempdir(),
 #' costRasters <- getCosts(grid[8,], from = grid[8,], dir = dir, destination = 'all',
 #'                        polygons = 'center',
 #'                        costs = c('dt','dW_l'), costFUN = energyCosts,
-#'                        m = 70, v_max = 1.5, BMR = 76, k = 3.5, alpha = 0.05, l_s = 1,
+#'                        m = 70, v_max = 1.5, BMR = 76, k = 3.5, s = 0.05, l_s = 1,
 #'                        L = 0.8)
 #' 
 #' @export
@@ -3085,7 +3270,7 @@ getCosts <- function(region, from, to = NULL, id = 'ID', dir = tempdir(),
 #'                          polygons = 'center',
 #'                          costs = 'all', costFUN = energyCosts,
 #'                          output = c('object','file'),
-#'                          m = 70, v_max = 1.5, BMR = 76, k = 3.5, alpha = 0.05, l_s = 1,
+#'                          m = 70, v_max = 1.5, BMR = 76, k = 3.5, s = 0.05, l_s = 1,
 #'                          L = 0.8)
 #'                         
 #' #### Example 1:
@@ -3136,7 +3321,7 @@ makeCorridor <- function(rasters = tempdir(), order, costs = "all"){
                                 as.data.table = TRUE)
       ord <- order
       vectPath <- unique(siteList[as.character(FID) %in% as.character(ord), 
-                                         Vector])
+                                  Vector])
       if (length(vectPath) != 1){
         stop("Conflicting ID Names. Please check original 'from' node inputs")
       }
@@ -3250,7 +3435,7 @@ makeCorridor <- function(rasters = tempdir(), order, costs = "all"){
 #' 
 #' # Make a world but limit it to the DEM grid size
 #' calculateCosts(tiles = tiles, dir = dir,
-#' m = 70, v_max = 1.5, BMR = 76, k = 3.5, alpha = 0.05, l_s = 1,
+#' m = 70, v_max = 1.5, BMR = 76, k = 3.5, s = 0.05, l_s = 1,
 #' L = 0.8)
 #' 
 #' # Generate five random points that fall within the region
@@ -3268,7 +3453,7 @@ makeCorridor <- function(rasters = tempdir(), order, costs = "all"){
 #'             
 #' paths <- getPaths(region = region, nodes = points, order = pathOrder, 
 #'                   costs = 'all', costFUN = energyCosts,
-#'                        m = 70, v_max = 1.5, BMR = 76, k = 3.5, alpha = 0.05, l_s = 1,
+#'                        m = 70, v_max = 1.5, BMR = 76, k = 3.5, s = 0.05, l_s = 1,
 #'                        L = 0.8)
 #'                               
 #' ## Plot against corridors (not run)                         

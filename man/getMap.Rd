@@ -9,8 +9,8 @@ getMap(
   polys,
   tile_id = "TILEID",
   vals = "location",
-  z_min = 0,
-  filt = 3,
+  z_min = NULL,
+  filt = 0,
   verbose = FALSE,
   dir = tempdir()
 )
@@ -37,11 +37,11 @@ set to the column name containing the URL or filepath to the DEM for that
 sector.}
 
 \item{z_min}{The minimum allowable elevation. Useful if DEM source includes
-ocean bathymetry as does the SRTM data from AWS. Default is \code{z_min = 0},
-but set to \code{-Inf} to disable.}
+ocean bathymetry as does the SRTM data from AWS. Default is \code{z_min = NULL},
+but set to \code{0} for SRTM data.}
 
-\item{filt}{Should a lowpass filter be applied? Default is a moving window
-size \code{filt = 3}, but set to \code{NA} or 0 to disable.}
+\item{filt}{Numeric. Size of moving window to apply a low-pass filter.
+Default is \code{filt = 0}.}
 
 \item{verbose}{Should the number of remaining sectors be printed? Default
 is \code{FALSE}}

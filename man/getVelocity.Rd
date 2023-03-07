@@ -17,7 +17,7 @@ getVelocity(
   tau_vmax = 0.995,
   tau_nlrq = 0.95,
   k_init = 3.5,
-  alpha_init = -0.05,
+  s_init = -0.05,
   v_lim = Inf,
   slope_lim = 1,
   tile_id = "TILEID",
@@ -79,9 +79,9 @@ regression and 95\% below.}
 \item{k_init}{A number representing the value for the topographic sensitivity
 at which to initiate the nonlinear regression. Default is \code{k_init = 3.5}.}
 
-\item{alpha_init}{A number representing the value for dimensionless slope of
+\item{s_init}{A number representing the value for dimensionless slope of
 maximum velocity at which to initiate the nonlinear regression. Default is
-\code{alpha_init = -0.05}.}
+\code{s_init = -0.05}.}
 
 \item{v_lim}{The maximum velocity that will be considered. Any value above
 this will be excluded from the regression. Default is \code{v_lim = Inf},
@@ -116,7 +116,7 @@ model from the nonlinear quantitative regression.
 
 (2) \code{$vmax}, containing the identified maximum velocity.
 
-(3) \code{$alpha}, containing the identified angle of maximum velocity.
+(3) \code{$s}, containing the identified angle of maximum velocity.
 
 (4) \code{$k}, containing the identified topographic sensitivity factor.
 
