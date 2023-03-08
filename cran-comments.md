@@ -1,5 +1,5 @@
 ## R CMD check results
-There were no ERRORs, WARNINGs or NOTEs. 
+There were no ERRORs, WARNINGs. 
 
 There was one NOTE that is found only on Windows Server 2022, R-devel 64 bit:
 
