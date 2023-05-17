@@ -37,6 +37,7 @@
 #' 
 #' # Calculate weighted Inoua index
 #' inoua(x, w = n)
+#' @export
 dispersionIndex <- function(x, index = 'gini', w = rep(1,length(x)),
                             weight.mean = TRUE, inverse = FALSE,
                             max.cross = .Machine$integer.max,
