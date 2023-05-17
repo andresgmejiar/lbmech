@@ -106,6 +106,7 @@
 #' @export
 timeCosts <- function(DT, v_max, k, s, row_speed = NULL, water = FALSE){
   # This bit to silence CRAN warnings
+  DT <- copy(DT)
   dl_t=..v_max=..k=dz=dl=..s=dt=..WaterSpeed=..row_speed=WaterSpeed=NULL
   if (water == FALSE){
     DT[, dl_t := ..v_max * exp(-(..k) * abs(dz/dl - ..s))
@@ -114,7 +115,7 @@ timeCosts <- function(DT, v_max, k, s, row_speed = NULL, water = FALSE){
   } else {
     DT[, dl_t := WaterSpeed + ..row_speed
     ][, dt := dl * dl_t ^ -1]
-    DT <- dt[dl > 0]
+    DT <- DT[dl > 0]
     DT[dl_t <= 0, `:=`(dt = Inf)]
     return(DT[,.(dl_t,dt)])
   }
@@ -125,6 +126,7 @@ timeCosts <- function(DT, v_max, k, s, row_speed = NULL, water = FALSE){
 energyCosts <- function(DT, method = 'kuo', m = NULL, BMR = NULL, g = 9.81, 
                         epsilon = 0.2, l_s = NULL, L = NULL, gamma = NULL,
                         time = timeCosts, water = FALSE, row_work = NULL, ...){
+  DT = copy(DT)
   #This bit to silence the CRAN warnings
   dU_l=..m=..g=dz=dK_l=dl_t=..l_s=dl=..L=..gamma=dW_l=..epsilon=dE_l=..BMR=NULL
   dt=..row_work=NULL

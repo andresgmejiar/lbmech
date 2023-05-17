@@ -61,6 +61,10 @@ getCoords <- function(data, proj = NULL, x = "x", y = "y",
   
   data <- as.data.table(data)
   
+  if (nrow(data) == 0){
+    return("NA")
+  }
+  
   z_temp <- as.data.table(expand.grid(x = seq(from = min(data[,..x]) - 2 * res(z_fix)[1],
                                               to = max(data[,..x]) + 2 * res(z_fix)[1],
                                               by = res(z_fix)[1]),
@@ -70,16 +74,14 @@ getCoords <- function(data, proj = NULL, x = "x", y = "y",
   z_temp <- rast(z_temp[,.(x,y,z=1)])
   crs(z_temp) <- crs(z_fix)
   z_fix <- suppressWarnings(project(z_temp,z_fix, align= TRUE))
-  
-  for (i in seq(1,nrow(data))){
-    centroid <- data[i, .(x = get(..x),y = get(..y))]
-    poi <- cellFromXY(z_fix, centroid[,.(x,y)])
-    poi <- paste(format(round(xyFromCell(z_fix, poi),precision), 
-                        scientific=FALSE), 
-                 collapse = ",")
-    data[i, Cell := stringr::str_remove_all(..poi," ")]
-  }
+  data <- data[,.(x = get(..x), y = get(..y))]
+  data <- cellFromXY(z_fix, data)
+  data <- as.data.table(format(round(as.data.table(xyFromCell(z_fix, data)),precision), 
+                              scientific=FALSE))
+  data[,Cell := paste(x,y,sep=',')
+      ][, Cell := stringr::str_remove(Cell," ")]
   
   
-  return(data$Cell)
+  
+  return(as.character(data$Cell))
 }

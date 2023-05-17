@@ -4,7 +4,7 @@
 \alias{makeCorridor}
 \title{Calculate cost corridors for a path}
 \usage{
-makeCorridor(rasters = tempdir(), order, costs = "all")
+makeCorridor(rasters = tempdir(), order, costs = "all", name = NULL)
 }
 \arguments{
 \item{rasters}{One of either a character string or multilayer SpatRaster. 
@@ -31,11 +31,15 @@ function. This selects which types of costs will be calculated.
 \code{costs = 'all'} is shorthand for \code{costs = c("dt","dW_l","dE_l")}
 while \code{costs = 'energetics'} is shorthand for \code{c("dW_l","dE_l")}.
 Default is \code{'all'}. Note that these must have previously been calculated.}
+
+\item{name}{A character vector representing the \code{outname} in
+\code{\link[lbmech]{getCosts}}. If none is provided, it will be the name of the
+variable passed to the function in the \code{from} slot.
+If \code{length(costs) == 1}, a Raster* If \code{length(costs) > 1}
+a list of Raster* with one slot for each \code{cost}.}
 }
 \value{
 Rasters representing cost corridors.
-If \code{length(costs) == 1}, a Raster* If \code{length(costs) > 1}
-a list of Raster* with one slot for each \code{cost}.
 }
 \description{
 A function to automatically perform the raster arithmetic
@@ -88,7 +92,6 @@ costRasters  <- getCosts(region, from = points, dir = dir,
                          m = 70, v_max = 1.5, BMR = 76, k = 3.5, s = 0.05, l_s = 1,
                          L = 0.8)
                         
-#### Example 1:
 # Calculating the corridors from a list of RasterStacks,
 # with path 1 -> 2 -> 4 -> 1 -> 5
 corridors <- makeCorridor(rasters = costRasters, order = c(1,2,5,1,4),)
@@ -96,5 +99,6 @@ corridors <- makeCorridor(rasters = costRasters, order = c(1,2,5,1,4),)
 #### Example 2:
 # Calculating the corridors from a workspace directory
 # with path 1 -> 2 -> 4 -> 1 -> 5
-corridors <- makeCorridor(rasters = dir, order = c(1,2,5,1,4))
+corridors <- makeCorridor(rasters = dir, name = 'points', 
+                          order = c(1,2,5,1,4))
 }

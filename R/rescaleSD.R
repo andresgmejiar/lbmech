@@ -16,15 +16,15 @@
 #' y <- rescaleSD(x, stdev = 1)
 #' @export
 rescaleSD <- function(x,stdev=2) {
-  if (length(na.omit(x)) == 1){
+  if (length(stats::na.omit(x)) == 1){
     return(0.5)
   } else {
     x <- unlist(x)
-    out <- (x - mean(r,na.rm=TRUE))/(sd(x,na.rm=TRUE))
+    out <- (x - mean(x,na.rm=TRUE))/(stats::sd(x,na.rm=TRUE))
     out[out < -1 * stdev] <- -1 * stdev
     out[out > stdev] <- stdev
     out <- (out + stdev) / (2 * stdev)
-    if (stats::is.na(out)){
+    if (all(is.na(out))){
       return(0.5)
     } else {
       return(out)

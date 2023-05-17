@@ -166,7 +166,7 @@ getCosts <- function(region, from, to = NULL, id = 'ID', dir = tempdir(),
                      ...){
   # This bit is to silence the CRAN check warnings for literal column names
   ..id=..x=..y=dt=dW_l=dE_l=Var2=value=Var1=coord=Replace=Masked=x_n=y_n=NULL
-  Cell=From_ID=ID=..cost=..d=Value=x_i=y_i=Vector=proj=precision=V1=filtNULL
+  Cell=From_ID=ID=..cost=..d=Value=x_i=y_i=Vector=proj=precision=V1=filt=NULL
   #
   if (all(costs == 'all')){
     costs <- c("dt","dW_l","dE_l")
@@ -192,15 +192,7 @@ getCosts <- function(region, from, to = NULL, id = 'ID', dir = tempdir(),
     stop(paste(outname,"already exists. To overwrite, use 'overwrite=TRUE'. 
              Alternatively, set output = 'object' to ignore file creation.
              Carefuly ensure that this is the desired behavior."))
-  } else if (file.exists(normalizePath(paste0(dir,"/CostRasters/",
-                                              outname,'.gpkg'),
-                                       mustWork=FALSE)) & overwrite){
-    siteList <- fst::read_fst(normalizePath(paste0(dir,"/CostRasters/Node_IDs.fst")),
-                              as.data.table = TRUE)
-    siteList <- siteList[Vector != outname]
-    fst::write_fst(siteList, normalizePath(paste0(dir,"/CostRasters/Node_IDs.fst")))
-  }
-  
+  } 
   
   id2 <- 1
   # If no Unique ID column is given, make one
@@ -209,11 +201,7 @@ getCosts <- function(region, from, to = NULL, id = 'ID', dir = tempdir(),
     id <- "Node_ID"
     id2 <- NULL
   }
-  
-  if (is.null(z_fix)){
-    z_fix <- fix_z(proj = proj, res = res, ...)
-  }
-  
+
   region_shp <- region
   region <- importWorld(region,vars = c("x_i","y_i"), 
                         dir = normalizePath(stringr::str_remove(dir,'World$'),
@@ -253,7 +241,7 @@ getCosts <- function(region, from, to = NULL, id = 'ID', dir = tempdir(),
     from[[y]] <- as.data.table(geom(from))[,y]
   }
   
-  # Coerce to data.table
+  # Coerce to data,.table
   from <- as.data.table(from)[,.(ID = get(..id), x = get(..x), y = get(..y))]
   from$Cell <- getCoords(from, z_fix = z_fix, precision = precision)
   if ('file' %in% output){
@@ -367,7 +355,7 @@ getCosts <- function(region, from, to = NULL, id = 'ID', dir = tempdir(),
                                dir = normalizePath(stringr::str_remove(dir,'World$'),
                                                    mustWork=FALSE),
                                filt = filt),
-                   by = c("from","to"), all = FALSE)
+                   by = c("from","to"), all = FALSE, allow.cartesian=TRUE)
     world <- stats::na.omit(world)
     world$dumval <- NULL
     world <- world[, min(get(..cost),na.rm=TRUE), by=c('from','to')]
@@ -393,12 +381,12 @@ getCosts <- function(region, from, to = NULL, id = 'ID', dir = tempdir(),
         
         # Append the appropriate names/ID
         Distances <- merge(Distances[,.(Var2,value,Cell = Var1)],
-                           from[,.(Cell,From_ID = get(..id))],
-                           on="Cell")[, Cell := NULL][]
+                           from[,.(Cell,From_ID = ID)],
+                           on="Cell",allow.cartesian=TRUE)[, Cell := NULL][]
         
         Distances <- merge(Distances[,.(From_ID,value,Cell = Var2)],
-                           to[,.(Cell,To_ID = get(..id))],
-                           on="Cell")[, Cell := NULL][]
+                           to[,.(Cell,To_ID = ID)],
+                           on="Cell",allow.cartesian=TRUE)[, Cell := NULL][]
         
         # Convert to distance matrix with xtabs,
         # Add to the output list
@@ -420,8 +408,8 @@ getCosts <- function(region, from, to = NULL, id = 'ID', dir = tempdir(),
         # Append the appropriate IDs to each origin/destination node
         # then get the x,y coordinates from the cell name
         Distances <- merge(Distances[,.(Var2,value,Cell = Var1)],
-                           from[,.(Cell,ID = get(..id))],
-                           on="Cell")[, Cell := NULL
+                           from[,.(Cell,ID = ID)],
+                           on="Cell", allow.cartesian=TRUE)[, Cell := NULL
                            ][,.(ID,Cell = Var2, Cost = ..cost,
                                 Direction = ..d,Value = value)]
         Distances[, c("x","y") := tstrsplit(Cell,",")
@@ -486,25 +474,17 @@ getCosts <- function(region, from, to = NULL, id = 'ID', dir = tempdir(),
     outPath <- normalizePath(paste0(dir,"/CostRasters/"),mustWork=FALSE)
     if (!dir.exists(outPath)){
       dir.create(outPath)
-      siteList <- data.table(FID = NA, Vector = NA)
-      siteList <- stats::na.omit(siteList)
-      fst::write_fst(siteList, normalizePath(paste0(outPath,"/","Node_IDs.fst")))
     }
-    writeRST(outList,
+    writeRaster(outList,
              filename=normalizePath(paste0(outPath,"/",
-                                           outname),
+                                           outname,'.tif'),
                                     mustWork=FALSE))
+    
     writeVector(fromVect, normalizePath(paste0(outPath,"/",
                                                outname,'.gpkg'),
                                         mustWork=FALSE), overwrite = TRUE)
-    siteList <- fst::read_fst(normalizePath(paste0(outPath,"/","Node_IDs.fst")))
-    names(siteList) <- c("Vector","FID")
-    siteList <- rbind(siteList,data.table(
-      Vector = outname, FID = from[[id]]
-    ))
-    fst::write_fst(siteList, normalizePath(paste0(outPath,"/","Node_IDs.fst")))
-  }
   
+  }
   if ("object" %in% output){
     return(outList)
   }

@@ -20,8 +20,9 @@
 #' \code{c('file','object')}, representing whether a file should be written and/or
 #' whether an object should be returned. Default is \code{output = file}. 
 #' @param cols A character vector containing the name of the important 
-#' spatial variables to be retained. Default is \code{cols = c("x_i","y_i","dz","dl","dr")},
-#' but \code{c("x_f","y_f","z_i","z_f")} are also available. 
+#' spatial variables to be retained. Default is 
+#' \code{cols = c("x_i","y_i","z_i","z_f","dz","dl","dr")},
+#' but \code{c("x_f","y_f")} are also available. 
 #' @return An \code{.fst} file for each sector named after its sector id
 #' stored in the \code{/World/Diff} directory, and/or a data.table object (depending
 #' on the output parameter) containing a data.table with five columns
@@ -96,10 +97,13 @@ makeWorld <- function(tiles = NULL,
                       dir = tempdir(),
                       cols = c("x_i","y_i","dz","dl","dr"),
                       output = 'file'){
+  if (length(tiles) == 0){
+    tiles <- NULL
+  }
   # This bit is to silence the CRAN check warnings for literal column names
   from=to=..dem=z_f=z_i=x_f=x_i=y_f=y_i=dz=..cols=NULL
   cut_slope=source_id=grid_id=directions=neighbor_distance=keepz=unit=vals=NULL
-  precision=FUN=sampling=l_p=dist=dl=long_f=lat_f=long_i=lat_i=r=f=b=dr=filt=NULL
+  precision=FUN=sampling=l_p=dist=dl=long_f=lat_f=long_i=lat_i=r=f=b=dr=filt=z_min=NULL
   rm(..cols)
   
   # Import the variable names from the saved files
@@ -112,7 +116,7 @@ makeWorld <- function(tiles = NULL,
   
   source <- vect(normalizePath(paste0(dir,"/z_sources.gpkg"),mustWork=FALSE))
   grid <- vect(normalizePath(paste0(dir,"/z_grid.gpkg"),mustWork=FALSE))
-  z_fix <- importRST(normalizePath(paste0(dir,"/z_fix"),mustWork=FALSE))
+  z_fix <- suppressWarnings(importRST(normalizePath(paste0(dir,"/z_fix"),mustWork=FALSE)))
   
   loc_tiles <- which(unlist(grid$id) %in% tiles)
   loc_tiles <- grid[loc_tiles,]
@@ -125,9 +129,11 @@ makeWorld <- function(tiles = NULL,
       # Use importMap to build a projected DEM, then export it to loc_tiles
       i_poly <- grid[grid$id == i,]
       dem <- importMap(i_poly, polys = source, tile_id = 'source_id', vals = vals,
-                       z_fix = z_fix, mask = FALSE, filt = filt,
+                       z_fix = z_fix, z_min = z_min, mask = FALSE, filt = filt,
                        dir = normalizePath(paste0(dir,"/Raw/")))
+      if (methods::is(dem,'SpatRaster')){
       names(dem) <- 'z'
+      }
       writeRST(dem, normalizePath(paste0(subdirs[2],"/",i),mustWork=FALSE))
       
       # Fix the units if they weren't provided in meters
@@ -150,12 +156,12 @@ makeWorld <- function(tiles = NULL,
       poly <- grid[poly,]
       
       # import RST
-      dem <- importRST(normalizePath(paste0(subdirs[2],"/",i),mustWork=FALSE))
+      dem <- suppressWarnings(importRST(normalizePath(paste0(subdirs[2],"/",i),mustWork=FALSE)))
       
       name <- i
       
       nas <- cells(dem)
-      
+      tryCatch({
       # Get pairs of adjacent all adjacent cells; drop those that
       # correspond to NA
       adj <- adjacent(dem,nas,directions=directions,pairs=TRUE)
@@ -164,9 +170,9 @@ makeWorld <- function(tiles = NULL,
       # Calculate the change in elevation between every accessible cell pairs,
       # then drop all values that would require movement over the
       # cut slope.
-      adj[, `:=`(z_i = unlist(..dem[from]), z_f = unlist(..dem[to]),
-                 x_i = xFromCell(dem,from), y_i = yFromCell(dem,from),
-                 x_f = xFromCell(dem,to), y_f = yFromCell(dem,to))
+      adj[, `:=`(z_i = unlist(..dem[from]), z_f = unlist(..dem[to]))
+          ][, (c('x_i','y_i')) := as.data.table(xyFromCell(..dem,from))
+            ][, (c('x_f','y_f')) := as.data.table(xyFromCell(..dem,to))
       ][, (c("x_i","y_i","x_f","y_f")) :=
           lapply(.SD,round,precision),
         .SDcols = c("x_i","y_i","x_f","y_f")
@@ -217,13 +223,43 @@ makeWorld <- function(tiles = NULL,
       # This exports the cost tensor so that it can be called later by
       # the lbm.distance tool to calculate paths and catchments
       cols <- c("from","to",cols)
+      cols <- unique(cols)
       if ('file' %in% output){
-        fst::write_fst(adj[,..cols],
+        fst::write_fst(adj[,.SD,.SDcols=cols],
                        path = normalizePath(paste0(subdirs[3],"/",i,".fst"),mustWork=FALSE))
       }
       if ('object' %in% output){
+        adj <- adj[,.SD,.SDcols=cols]
+        if (length(adj) * nrow(adj) == 0){
+          rbind(adj, t(rep(NA,length(adj))),use.names=FALSE)
+        }
+        if (is.null(adj)){
+          cols <- c("from","to",cols)
+          cols <- unique(cols)
+          adj <- 1:length(cols)
+          names(adj) <- cols
+          adj <- as.data.table(t(adj))
+          adj[, (cols) := NA]
+        }
         return(adj)
       }
+      }, error = function(x){
+        cols <- c("from","to",cols)
+        cols <- unique(cols)
+        adj <- 1:length(cols)
+        names(adj) <- cols
+        adj <- as.data.table(t(adj))
+        adj[, (cols) := NA]
+        
+        if ('file' %in% output){
+          fst::write_fst(adj,
+                         path = normalizePath(paste0(subdirs[3],"/",i,".fst"),mustWork=FALSE))
+        }
+        if ('object' %in% output){
+          return(adj)
+        }
+        
+      })
     }
   }
 }

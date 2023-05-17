@@ -13,11 +13,13 @@
 #' @param data A data.frame or something coercible to a data.table containing
 #' all observations
 #' @param x A character string representing the data column containing the 'x'
-#' coordinates in meters or degrees. Ignored for distance calculations if \code{dl} is,
+#' coordinates in meters or degrees. Ignored if data is of class SpatVector
+#' or Spatial, and ignored for distance calculations if \code{dl} is
 #' provided but required to extract elevations if \code{z} is of class
 #' Raster* or SpatialPolygonsDataFrame.
 #' @param y A character string representing the data column containing the 'y'
-#' coordinates in meters or degrees. Ignored for distance calculations if \code{dl} is,
+#' coordinates in meters or degrees. Ignored if data is of class SpatVector
+#' or Spatial, and ignored for distance calculations if \code{dl} is
 #' provided but required to extract elevations if \code{z} is of class SpatRaster,
 #' Raster*, or SpatVector, SpatialPolygonsDataFrame.
 #' @param degs Logical. If FALSE, the \code{getVelocity} proceeds as if the
@@ -42,10 +44,10 @@
 #' @param tau A number between 0 and 1, representing a global cutoff
 #' value for \code{tau_vmax} and \code{tau_nlrq}. Ignored if the latter two are provided.
 #' @param tau_vmax A number between 0 and 1, representing the percentile at which
-#' the maximum velocity is calculated. In other words, if \code{tau_vmax = 0.995} (the default),
+#' the maximum velocity is calculated. In other words, if \code{tau_vmax = 0.95} (the default),
 #' the maximum velocity will be at the 99.5th percentile of all observations.
 #' @param tau_nlrq A number between 0 and 1, representing the percentile at which
-#' the nonlinear regression is calculated. In other words, if \code{tau_nlrq = 0.95} (the default),
+#' the nonlinear regression is calculated. In other words, if \code{tau_nlrq = 0.50} (the default),
 #' the total curve will attempt to have at each interval 5\% of the observations above the
 #' regression and 95\% below.
 #' @param k_init A number representing the value for the topographic sensitivity
@@ -56,6 +58,8 @@
 #' @param v_lim The maximum velocity that will be considered. Any value above
 #' this will be excluded from the regression. Default is \code{v_lim = Inf},
 #' but it should be set to an animal's maximum possible velocity.
+#' @param v_min The maximum velocity that will be considered. Any value equal to or
+#' below this will be excluded from the regression. Default is \code{v_lim = 0}.
 #' @param slope_lim the maximum angle that will be considered. Any value
 #' above this will be excluded from the regression. Default is \code{slope_lim = 1}.
 #' @param tile_id a character string representing the name of the column
@@ -164,9 +168,9 @@
 #' v3 <- data[, dtVelocity(.SD), by = 'ID', .SDcols = names(data)]
 #' @export
 getVelocity <- function(data, x = 'x', y ='y', degs = FALSE, dl = NULL, z = 'z', 
-                        dt = 'dt', ID = 'ID', tau = NULL, tau_vmax = 0.995,
-                        tau_nlrq = 0.95, k_init = 3.5, s_init = -0.05,
-                        v_lim = Inf, slope_lim = 1,
+                        dt = 'dt', ID = 'ID', tau = NULL, tau_vmax = 0.95,
+                        tau_nlrq = 0.50, k_init = 3.5, s_init = -0.05,
+                        v_min = 0, v_lim = Inf, slope_lim = 1,
                         tile_id = "TILEID", vals = "location",
                         dir = tempdir(), ...){
   # This bit is to silence the CRAN check warnings for literal column names
@@ -179,6 +183,13 @@ getVelocity <- function(data, x = 'x', y ='y', degs = FALSE, dl = NULL, z = 'z',
   #rd <- normalizePath(paste0(dir),mustWork = FALSE)
   if (!dir.exists(rd)){
     dir.create(rd)
+  }
+  
+  if (methods::is(data,"Spatial")){
+    data <- vect(data)
+  }
+  if (methods::is(data,"SpatVector")){
+    data[,c('x','y')] <- geom(data)[,c('x','y')]
   }
   
   data <- as.data.table(data)
@@ -315,7 +326,7 @@ getVelocity <- function(data, x = 'x', y ='y', degs = FALSE, dl = NULL, z = 'z',
   }
   
   # Get the maximum velocity as the tauth_vmax quantile
-  v_max <- as.numeric(stats::quantile(data[(dl_dt <= v_lim) &
+  v_max <- as.numeric(stats::quantile(data[(dl_dt <= v_lim) & (dl_dt > v_min) &
                                              abs(dz_dl) <= slope_lim,dl_dt],
                                       tau_vmax,na.rm=TRUE))
   data$v_max <- v_max
@@ -324,7 +335,7 @@ getVelocity <- function(data, x = 'x', y ='y', degs = FALSE, dl = NULL, z = 'z',
   # And obtain the other coefficients through an nlrq of the form proposed
   # by Tobler (exponential decay from an optimal angle)
   velocity <- quantreg::nlrq(dl_dt ~ v_max * exp(-k * abs(dz_dl - s)),
-                             data = data[(dl_dt <= v_lim) & 
+                             data = data[(dl_dt <= v_lim) & (dl_dt > v_min) &
                                            abs(dz_dl) <= slope_lim], 
                              tau = tau_nlrq, 
                              start=list(k=k_init,s=s_init))

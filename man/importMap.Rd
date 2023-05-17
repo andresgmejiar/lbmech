@@ -14,6 +14,7 @@ importMap(
   mask = FALSE,
   vals = "location",
   filt = 0,
+  z_min = NULL,
   dir = tempdir(),
   ...
 )
@@ -57,6 +58,11 @@ sector.}
 
 \item{filt}{Numeric. Size of moving window to apply a low-pass filter. Default 
 is \code{filt = 0}. Ignored unless the tiles need to be generated from
+the raw source files.}
+
+\item{z_min}{The minimum allowable elevation. Useful if DEM source includes
+ocean bathymetry as does the SRTM data from AWS. Default is \code{z_min = NULL},
+but set to \code{0} for SRTM data. Ignored unless the tiles need to be generated from
 the raw source files.}
 
 \item{dir}{A filepath to the directory being used as the workspace. Default

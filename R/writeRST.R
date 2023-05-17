@@ -39,9 +39,11 @@ writeRST <- function(x, filename, ...){
     xres - as.numeric(xFromCell(x,1))
   yoff <- round(as.numeric(yFromCell(x,1))/yres) * 
     yres - as.numeric(yFromCell(x,1))
+  xcorner <- xFromCell(x,1)
+  ycorner <- yFromCell(x,1)
   
-  fst::write_fst(rbind(data.table(x = c(xres,xoff),
-                                  y = c(yres,yoff)),
+  fst::write_fst(rbind(data.table(x = c(xres,xoff,xcorner),
+                                  y = c(yres,yoff,ycorner)),
                        rastToTable(x), fill = TRUE), 
                  paste0(filename,'.fst'), compress = 0, ...)
   write(crs(x), paste0(filename,'.fstproj'))
@@ -62,13 +64,24 @@ importRST <- function(filename, layers = NULL,...){
   yres <- x[1]$y
   xoff <- x[2]$x
   yoff <- x[2]$y
+  xcorner <- x[3]$x
+  ycorner <- x[3]$y
   x[, `:=`(x = round(x/..xres)*..xres + xoff,
            y = round(y/..yres)*..yres + yoff)]
-  x <- rast(x[!c(1,2)],
-            crs = as.character(
-              noquote(
-                paste(
-                  readLines(
-                    paste0(filename,'.fstproj')),collapse='\n')))
+  x <- tryCatch(rast(x[!c(1,2,3)],
+                     crs = as.character(
+                       noquote(
+                         paste(
+                           readLines(
+                             paste0(filename,'.fstproj')),collapse='\n'))),
+  ), error = function(e) rast(xmin = xcorner, xmax = xcorner + xres,
+                              ymin = ycorner, ymax = ycorner + yres,
+                              res = c(xres,yres), names = 'z', vals = NA,
+    crs = as.character(
+    noquote(
+      paste(
+        readLines(
+           paste0(filename,'.fstproj')),collapse='\n'))))
   )
+  return(x)
 }

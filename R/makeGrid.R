@@ -37,7 +37,8 @@
 #' @param overlap How much should adjacent polygons overlap to ensure there's
 #' contiguity between different tiles? Default is \code{overlap = 0.005}.
 #' @param zoom Considered only if \code{var = 'z'} and no data source is set. 
-#' The zoom level to be downloaded. 
+#' The zoom level to be downloaded. See documentation for the \code{z} parameter
+#' in \code{\link[elevatr]{get_elev_raster}} for further information.
 #' Default is 13, but see documentation for the \code{z} parameter in 
 #' \code{\link[elevatr]{get_elev_raster}}.
 #' @param var If the polygons point to a data source, what will be the variable

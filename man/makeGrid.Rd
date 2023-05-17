@@ -62,7 +62,8 @@ by the original \code{dem} (if SpatVector or SpatialPolygons*), or by
 the area covered by non-NA cells (if raster or SpatRaster).}
 
 \item{zoom}{Considered only if \code{var = 'z'} and no data source is set. 
-The zoom level to be downloaded. 
+The zoom level to be downloaded. See documentation for the \code{z} parameter
+in \code{\link[elevatr]{get_elev_raster}} for further information.
 Default is 13, but see documentation for the \code{z} parameter in 
 \code{\link[elevatr]{get_elev_raster}}.}
 

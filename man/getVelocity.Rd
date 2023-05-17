@@ -15,10 +15,11 @@ getVelocity(
   dt = "dt",
   ID = "ID",
   tau = NULL,
-  tau_vmax = 0.995,
-  tau_nlrq = 0.95,
+  tau_vmax = 0.95,
+  tau_nlrq = 0.5,
   k_init = 3.5,
   s_init = -0.05,
+  v_min = 0,
   v_lim = Inf,
   slope_lim = 1,
   tile_id = "TILEID",
@@ -34,12 +35,14 @@ dtVelocity(data, ...)
 all observations}
 
 \item{x}{A character string representing the data column containing the 'x'
-coordinates in meters or degrees. Ignored for distance calculations if \code{dl} is,
+coordinates in meters or degrees. Ignored if data is of class SpatVector
+or Spatial, and ignored for distance calculations if \code{dl} is
 provided but required to extract elevations if \code{z} is of class
 Raster* or SpatialPolygonsDataFrame.}
 
 \item{y}{A character string representing the data column containing the 'y'
-coordinates in meters or degrees. Ignored for distance calculations if \code{dl} is,
+coordinates in meters or degrees. Ignored if data is of class SpatVector
+or Spatial, and ignored for distance calculations if \code{dl} is
 provided but required to extract elevations if \code{z} is of class SpatRaster,
 Raster*, or SpatVector, SpatialPolygonsDataFrame.}
 
@@ -71,11 +74,11 @@ unique id.}
 value for \code{tau_vmax} and \code{tau_nlrq}. Ignored if the latter two are provided.}
 
 \item{tau_vmax}{A number between 0 and 1, representing the percentile at which
-the maximum velocity is calculated. In other words, if \code{tau_vmax = 0.995} (the default),
+the maximum velocity is calculated. In other words, if \code{tau_vmax = 0.95} (the default),
 the maximum velocity will be at the 99.5th percentile of all observations.}
 
 \item{tau_nlrq}{A number between 0 and 1, representing the percentile at which
-the nonlinear regression is calculated. In other words, if \code{tau_nlrq = 0.95} (the default),
+the nonlinear regression is calculated. In other words, if \code{tau_nlrq = 0.50} (the default),
 the total curve will attempt to have at each interval 5\% of the observations above the
 regression and 95\% below.}
 
@@ -85,6 +88,9 @@ at which to initiate the nonlinear regression. Default is \code{k_init = 3.5}.}
 \item{s_init}{A number representing the value for dimensionless slope of
 maximum velocity at which to initiate the nonlinear regression. Default is
 \code{s_init = -0.05}.}
+
+\item{v_min}{The maximum velocity that will be considered. Any value equal to or
+below this will be excluded from the regression. Default is \code{v_lim = 0}.}
 
 \item{v_lim}{The maximum velocity that will be considered. Any value above
 this will be excluded from the regression. Default is \code{v_lim = Inf},

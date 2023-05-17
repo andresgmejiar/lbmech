@@ -35,5 +35,10 @@ rastToTable <- function(z){
   } else {
     z$y <- init(z,'y')
   }
-  return(stats::na.omit(as.data.table(z)))
+  noms <- names(z)
+  stats::na.omit(as.data.table(z))
+  if (nrow(z) == 0){
+  z <- rbind(z, t(rep(NA,length(z))),use.names=FALSE)
+  }
+  return(z)
 }

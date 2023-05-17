@@ -9,7 +9,7 @@ importWorld(
   banned = NULL,
   dir = tempdir(),
   vars = NULL,
-  costFUN = NULL,
+  costFUN = energyCosts,
   ...
 )
 }

@@ -22,8 +22,9 @@ Default is \code{tempdir()} but unless the analyses will only be performed a few
 times it is highly recommended to define a permanent workspace.}
 
 \item{cols}{A character vector containing the name of the important 
-spatial variables to be retained. Default is \code{cols = c("x_i","y_i","dz","dl","dr")},
-but \code{c("x_f","y_f","z_i","z_f")} are also available.}
+spatial variables to be retained. Default is 
+\code{cols = c("x_i","y_i","z_i","z_f","dz","dl","dr")},
+but \code{c("x_f","y_f")} are also available.}
 
 \item{output}{A character string or vector, consisting of one or both of 
 \code{c('file','object')}, representing whether a file should be written and/or

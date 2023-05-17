@@ -112,7 +112,7 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
         
         
         # If downloaded file is a compressed file
-        exts <- c(".(grd)|(asc)|(sdat)|(rst)|(nc)|(tif)|(envi)|(bil)|(img)|(adf)$")
+        exts <- c(".(grd)|(asc)|(sdat)|(rst)|(nc)|(tif)|(envi)|(bil)|(img)|(adf)|(nc)$")
         if (extension == 'zip'){
           utils::unzip(paste0(file_path,".zip"), 
                        exdir = normalizePath(paste0(rd,"/",tile_name),

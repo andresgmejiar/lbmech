@@ -33,6 +33,10 @@
 #' @param filt Numeric. Size of moving window to apply a low-pass filter. Default 
 #' is \code{filt = 0}. Ignored unless the tiles need to be generated from
 #' the raw source files. 
+#' @param z_min The minimum allowable elevation. Useful if DEM source includes
+#' ocean bathymetry as does the SRTM data from AWS. Default is \code{z_min = NULL},
+#' but set to \code{0} for SRTM data. Ignored unless the tiles need to be generated from
+#' the raw source files. 
 #' @param dir A filepath to the directory being used as the workspace. Default
 #' is \code{tempdir()}, but unless the analyses will only be performed a few times 
 #' it is highly recommended to define a permanent workspace.
@@ -78,7 +82,7 @@
 importMap <- function(region, polys,
                       tile_id = 'TILEID', z_fix = NULL,
                       neighbor_distance = 5, FUN = NULL, mask = FALSE,
-                      vals = 'location', filt = 0, 
+                      vals = 'location', filt = 0, z_min = NULL,
                       dir = tempdir(), ...){
   dir <- normalizePath(dir,mustWork=FALSE)
   
@@ -121,11 +125,11 @@ importMap <- function(region, polys,
   tiles <- buffer(region,width=neighbor_distance)
   tiles <- intersect(region[,NA],polys)[[tile_id]]
   tiles <- unlist(tiles)
-  getMap(tiles, polys, tile_id = tile_id, dir = dir, filt = filt)
+  getMap(tiles, polys, tile_id = tile_id, dir = dir, filt = filt, z_min = z_min)
   
   # Import all DEMs
   dem <- normalizePath(paste0(dir,'/',tiles),mustWork=FALSE)
-  dem <- lapply(dem,importRST)
+  dem <- suppressWarnings(lapply(dem,importRST))
   dem <- suppressWarnings(lapply(dem,
                                  project,
                                  y = dem[[1]],
@@ -168,7 +172,7 @@ importMap <- function(region, polys,
   crs(poly) <- crs(dem)
   
   # Crop the mosaiced raster by the cropping polygon, project it
-  dem <- crop(dem,poly)
+  dem <- tryCatch(crop(dem,poly), error = function(e) dem)
   dem <- suppressWarnings(project(dem,z_fix,align = TRUE))
   
   # Should the output raster have the same extent, or the same coverage?
@@ -176,8 +180,5 @@ importMap <- function(region, polys,
     dem <- mask(dem,region)
   }
   
-  if (crs(z_fix) != crs(region)){
-    warning("Different projections provided for 'z_fix' and 'region'. Output is the same as 'z_fix'")
-  }
   return(dem)
 }

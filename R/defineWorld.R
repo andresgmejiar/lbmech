@@ -47,6 +47,9 @@
 #' Default projection is \code{proj = crs(polys)} unless a `z_fix` or `proj` is 
 #' provided, in which case the latter is ignored. Great care should be 
 #' employed to ensure that the projection is conformal and in meters. 
+#' @param z_min The minimum allowable elevation. Useful if DEM source includes
+#' ocean bathymetry as does the SRTM data from AWS. Default is \code{z_min = NULL},
+#' but set to \code{0} for SRTM data.
 #' @param unit One of \code{c("m", "km", "ft", "mi")}, representing the unit of the DEM.
 #' All will be converted to meters, which is the default.
 #' @param vals A character string or a SpatRaster or Raster* object. Ignored unless the
@@ -85,11 +88,26 @@
 #' @param filt Numeric. Size of moving window to apply a low-pass filter. Default 
 #' is \code{filt = 0}. Ignored unless the tiles need to be generated from
 #' the raw source files. 
-#' @param rivers A SpatialPolygon* or SpatVector polygon representing the
-#' area covered by rivers. Optional.
-#' @param river_speed A character representing the column name in 
-#' \code{rivers} that contains the average speed of the river in m/s. Required
-#' if \code{rivers} is provided.
+#' @param water Optional. One of (1) SpatialPolygon* or SpatVector polygon representing 
+#' the area covered by water, in which case \code{water_speed} must also be provided;
+#' (2) A RasterLayer or single-layer SpatRaster representing the speed of water at a
+#' given location. Flow direction will be calculated from the world's DEM; or (3) A 
+#' two layer SpatRaster or Raster* object, representing either the horizontal/vertical
+#' components of water velocity (in m/s) or the absolute water speed and flow direction
+#' (in that order; see \code{uv}).
+#' @param water_speed A character representing the column name in 
+#' \code{water} that contains the average speed of the water in m/s. Required
+#' if \code{water} is a polygon.
+#' @param uv Logical. If \code{TRUE} (the default), a two-layer raster input for
+#' \code{water} is taken to be the horizontal and vertical components of water velocity. 
+#' If false, a two-layer raster input for \code{water} is taken to be the water speed
+#' and flow direction.
+#' @param priority One of \code{'water'} (the default), or \code{'land'}, indicating
+#' whether land values or water values should take precedence when values for a given
+#' location exist in both datasets.  
+#' @param cols A character vector. Default is c("x_i","y_i","dz","dl","dr"), and
+#' dictates which columns are returned but final values for x and y and final/initial
+#' z values are also available
 #' @param ... Additional arguments to pass to \code{\link[lbmech]{fix_z}}.
 #' @return A \code{/World/} directory, containing \code{/Loc/}, \code{/Diff/},
 #' and \code{/Raw/}, directories where cropped and transformed files will be stored,
@@ -100,6 +118,7 @@
 #' @importFrom terra intersect
 #' @importFrom terra values<-
 #' @importFrom terra writeVector
+#' @importFrom terra nlyr
 #' @importFrom data.table as.data.table
 #' @examples 
 #' # Generate a DEM
@@ -132,16 +151,18 @@
 #' defineWorld(source = grid, cut_slope = 0.5, 
 #'             res = res(dem), dir = dir, overwrite=TRUE)
 #' @export 
-defineWorld <- function(source, source_id = 'TILEID',
+defineWorld <- function(source, source_id = 'TILEID', z_min = NULL,
                         grid = NULL, proj = NULL, grid_id = 'TILEID', cut_slope = Inf,
                         directions = 16, neighbor_distance = 10, 
                         z_fix = NULL,unit = "m", vals = 'location', precision = 2, 
                         dist = 'proj', r = 6378137, f = 1/298.257223563, b = 6356752.3142,
                         FUN = NULL, sampling = 'bilinear', 
-                        rivers = FALSE, river_speed = 'speed',
+                        water = FALSE, water_speed = 'speed', uv = TRUE,
+                        priority = 'water',
                         overwrite = FALSE,
                         filt = 0,
-                        dir = tempdir(), ...){
+                        dir = tempdir(),
+                        cols = c("x_i","y_i","dz","dl","dr"), ...){
   ..source_id=location=..vals=..grid_id=NULL
   # Source needs to be in the form of makeGrid-type object
   if (is.null(source_id)){
@@ -203,8 +224,7 @@ defineWorld <- function(source, source_id = 'TILEID',
   } else{
     contiguity <- base::ceiling(max(nrow(directions),ncol(directions)))
   }
-  
-  
+
   # If no z_fix is provided, make one
   if (is.null(z_fix)){
     z_fix <- fix_z(proj = proj, ...)
@@ -216,6 +236,7 @@ defineWorld <- function(source, source_id = 'TILEID',
   
   callVars <- data.table(cut_slope = cut_slope,
                          source_id = source_id,
+                         z_min = z_min,
                          grid_id =  grid_id,
                          directions = list(directions),
                          neighbor_distance = neighbor_distance,
@@ -230,19 +251,33 @@ defineWorld <- function(source, source_id = 'TILEID',
                          r = r,
                          f = f,
                          b = b,
-                         river_speed = river_speed)
+                         water_speed = water_speed,
+                         priority = priority,
+                         uv = uv)
   
-  if (methods::is(rivers,'Spatial')){
-    rivers <- vect(rivers)
+  if (!methods::is(water,'logical')){
+  if (methods::is(water,'Spatial')){
+    water <- vect(water)
+  } else if (methods::is(water,"Raster")){
+    water <- rast(water)
   }
-  if (methods::is(rivers,'SpatVector')){
-    
-    writeVector(project(rivers[,'speed'],crs(z_fix)),
-                normalizePath(paste0(dir,"/rivers.gpkg"),mustWork = FALSE))
-  } else if (rivers != FALSE) {
-    stop("Unknown source for rivers")
+  if (methods::is(water,'SpatVector')){
+    if (methods::is(water,'numeric')){
+      water <- water[,NA]
+      water$speed <- water_speed
+    } else if (methods::is(water,'character')){
+      water$speed <- water[,water_speed]
+      water <- water[,'speed']
+    }
+    writeVector(project(water[,'speed'],crs(z_fix)),
+                normalizePath(paste0(dir,"/water.gpkg"),mustWork = FALSE))
+  } else if (methods::is(water,'SpatRaster')){
+    if (nlyr(water) > 2){
+      stop("Water may not have more than two layers.")
+    }
+    writeRaster(project(water, crs(z_fix)),
+                normalizePath(paste0(dir,"/water.tif"),mustWork = FALSE))
   }
-  
+  }
   saveRDS(callVars,normalizePath(paste0(dir,"/callVars.gz"),mustWork = FALSE))
-  
 }

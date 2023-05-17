@@ -28,6 +28,9 @@
 #' while \code{costs = 'energetics'} is shorthand for \code{c("dW_l","dE_l")}.
 #' Default is \code{'all'}. Note that these must have previously been calculated.
 #' @return Rasters representing cost corridors.
+#' @param name A character vector representing the \code{outname} in
+#' \code{\link[lbmech]{getCosts}}. If none is provided, it will be the name of the
+#' variable passed to the function in the \code{from} slot.
 #' If \code{length(costs) == 1}, a Raster* If \code{length(costs) > 1}
 #' a list of Raster* with one slot for each \code{cost}.
 #' @importFrom terra rast
@@ -76,7 +79,6 @@
 #'                          m = 70, v_max = 1.5, BMR = 76, k = 3.5, s = 0.05, l_s = 1,
 #'                          L = 0.8)
 #'                         
-#' #### Example 1:
 #' # Calculating the corridors from a list of RasterStacks,
 #' # with path 1 -> 2 -> 4 -> 1 -> 5
 #' corridors <- makeCorridor(rasters = costRasters, order = c(1,2,5,1,4),)
@@ -84,9 +86,11 @@
 #' #### Example 2:
 #' # Calculating the corridors from a workspace directory
 #' # with path 1 -> 2 -> 4 -> 1 -> 5
-#' corridors <- makeCorridor(rasters = dir, order = c(1,2,5,1,4))
+#' corridors <- makeCorridor(rasters = dir, name = 'points', 
+#'                           order = c(1,2,5,1,4))
 #' @export
-makeCorridor <- function(rasters = tempdir(), order, costs = "all"){
+makeCorridor <- function(rasters = tempdir(), order, costs = "all",
+                         name = NULL){
   # Silence CRAN
   FID=Vector=NULL
   
@@ -120,19 +124,12 @@ makeCorridor <- function(rasters = tempdir(), order, costs = "all"){
       # If the input is a directory with rasters, then we need to import
       # each individual raster and stack them
       rd <- normalizePath(paste0(rasters,"/World/CostRasters"),mustWork=FALSE)
-      siteList <- fst::read_fst(normalizePath(paste0(rd,"/Node_IDs.fst")),
-                                as.data.table = TRUE)
-      ord <- order
-      vectPath <- unique(siteList[as.character(FID) %in% as.character(ord), 
-                                  Vector])
-      if (length(vectPath) != 1){
-        stop("Conflicting ID Names. Please check original 'from' node inputs")
-      }
-      from <- importRST(normalizePath(paste0(rd,"/",vectPath),mustWork=FALSE),
-                        layers = paste0(cost,starts))
       
-      to <- importRST(normalizePath(paste0(rd,"/",vectPath),mustWork=FALSE),
-                      layers = paste0(cost,stops))
+      from <- rast(normalizePath(paste0(rd,"/",name,'.tif'),mustWork=FALSE),
+                        lyrs = paste0(cost,starts))
+      
+      to <- rast(normalizePath(paste0(rd,"/",name,'.tif'),mustWork=FALSE),
+                      lyrs = paste0(cost,stops))
     }
     
     # The cost for each leg is From Origin + To Destination

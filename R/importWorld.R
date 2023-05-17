@@ -37,6 +37,7 @@
 #' (3+) a numeric representing the imported costs(s)
 #' 
 #' @importFrom terra vect
+#' @importFrom data.table rbindlist
 #' @examples 
 #' # Generate a DEM
 #' n <- 5
@@ -74,7 +75,7 @@
 #' L = 0.8)
 #' @export
 importWorld <- function(region, banned = NULL, dir = tempdir(), 
-                        vars = NULL,  costFUN = NULL, ...){
+                        vars = NULL,  costFUN = energyCosts, ...){
   # This bit is to silence the CRAN check warnings for literal column names
   from=to=dz=x_f=x_i=y_f=y_i=z_f=z_i=x=y=long_f=lat_f=long_i=lat_i=NULL
   
@@ -116,24 +117,14 @@ importWorld <- function(region, banned = NULL, dir = tempdir(),
     banned <- c("NULL")
   }
   
-  # Create an empty data.table to which to add the imported tensors
-  Edges <- data.table()
+  Edges <- normalizePath(paste0(subdirs[3],'/',tiles,'.fst'))
+  Edges <- lapply(Edges,fst::read_fst,columns = vars, as.data.table = TRUE)
+  Edges <- rbindlist(Edges)
+  Edges <- Edges[(!(from %in% banned) | !(to %in% banned)) &
+                     ((from %in% region) | (to %in% region)),]
   
-  pb <- utils::txtProgressBar(max = length(tiles), style = 3)
-  
-  # Import tensors one-by-one, keeping only the allowable cells
-  
-  for (i in seq(1,length(tiles))) {
-    import <- fst::read_fst(normalizePath(paste0(subdirs[3],'/',tiles[i],'.fst')),
-                            columns = vars,
-                            as.data.table = TRUE)
-    import <- import[(!(from %in% banned) | !(to %in% banned)) &
-                       ((from %in% region) | (to %in% region)),]
-    Edges <- rbind(Edges, import)
-    utils::setTxtProgressBar(pb,i)
-  } 
-  rm(import)
   Edges <- unique(Edges)
+  message(paste("Imported ",length(tiles)," Sectors"))
   
   return(Edges[])
 }

@@ -7,6 +7,7 @@
 defineWorld(
   source,
   source_id = "TILEID",
+  z_min = NULL,
   grid = NULL,
   proj = NULL,
   grid_id = "TILEID",
@@ -23,11 +24,14 @@ defineWorld(
   b = 6356752.3142,
   FUN = NULL,
   sampling = "bilinear",
-  rivers = FALSE,
-  river_speed = "speed",
+  water = FALSE,
+  water_speed = "speed",
+  uv = TRUE,
+  priority = "water",
   overwrite = FALSE,
   filt = 0,
   dir = tempdir(),
+  cols = c("x_i", "y_i", "dz", "dl", "dr"),
   ...
 )
 }
@@ -42,6 +46,10 @@ parameter}
 
 \item{source_id}{A character string representing the name of the column in the
 \code{source} polygon containing the unique Tile IDs. Default is \code{source_id = 'TILEID'}}
+
+\item{z_min}{The minimum allowable elevation. Useful if DEM source includes
+ocean bathymetry as does the SRTM data from AWS. Default is \code{z_min = NULL},
+but set to \code{0} for SRTM data.}
 
 \item{grid}{An object of class SpatVector representing
 the partitioning grid for the maximum possible travel area. Smaller grids increase 
@@ -116,12 +124,26 @@ To use \code{\link[terra]{mosaic}}, provide a compatible function.}
 \item{sampling}{How to resample rasters. Default is \code{'bilinear'} interpolation,
 although \code{'ngb'} nearest neighbor is available for categorical rasters.}
 
-\item{rivers}{A SpatialPolygon* or SpatVector polygon representing the
-area covered by rivers. Optional.}
+\item{water}{Optional. One of (1) SpatialPolygon* or SpatVector polygon representing 
+the area covered by water, in which case \code{water_speed} must also be provided;
+(2) A RasterLayer or single-layer SpatRaster representing the speed of water at a
+given location. Flow direction will be calculated from the world's DEM; or (3) A 
+two layer SpatRaster or Raster* object, representing either the horizontal/vertical
+components of water velocity (in m/s) or the absolute water speed and flow direction
+(in that order; see \code{uv}).}
 
-\item{river_speed}{A character representing the column name in 
-\code{rivers} that contains the average speed of the river in m/s. Required
-if \code{rivers} is provided.}
+\item{water_speed}{A character representing the column name in 
+\code{water} that contains the average speed of the water in m/s. Required
+if \code{water} is a polygon.}
+
+\item{uv}{Logical. If \code{TRUE} (the default), a two-layer raster input for
+\code{water} is taken to be the horizontal and vertical components of water velocity. 
+If false, a two-layer raster input for \code{water} is taken to be the water speed
+and flow direction.}
+
+\item{priority}{One of \code{'water'} (the default), or \code{'land'}, indicating
+whether land values or water values should take precedence when values for a given
+location exist in both datasets.}
 
 \item{overwrite}{If a directory with a \code{World} subdirectory already exists,
 should the latter be overwritten? Default is \code{overwrite = FALSE}.}
@@ -133,6 +155,10 @@ the raw source files.}
 \item{dir}{A filepath to the directory being used as the workspace.
 Default is \code{tempdir()} but unless the analyses will only be performed a few
 times it is highly recommended to define a permanent workspace.}
+
+\item{cols}{A character vector. Default is c("x_i","y_i","dz","dl","dr"), and
+dictates which columns are returned but final values for x and y and final/initial
+z values are also available}
 
 \item{...}{Additional arguments to pass to \code{\link[lbmech]{fix_z}}.}
 }

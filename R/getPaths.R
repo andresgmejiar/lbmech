@@ -259,19 +259,22 @@ getPaths <- function(region, nodes, id = "ID", order = NULL, x = "x",
     # a numeric data.table containing XY coordinates for each traversed cell
     legList <- lapply(legList, igraph::as_ids)
     legList <- lapply(legList, tstrsplit, ",")
-    legList <- rbindlist(legList,idcol="TempID")
+    names(legList) <- nameList
+    legList <- rbindlist(legList,idcol="Leg")
     legList[,`:=`(x = as.numeric(V1), y = as.numeric(V2), V1 = NULL, V2 = NULL)]
     
     # Convert the XY list to points, then polylines
     lineList <- list()
-    for (i in unique(legList$TempID)){
-      lineList[[i]] <- as.lines(vect(legList,geom=c(x,y),crs=crs(z_fix)))
+    for (i in unique(legList$Leg)){
+      lineList[[i]] <- as.lines(vect(legList[legList$Leg == i,]
+                                     ,geom=c(x,y),crs=crs(z_fix)))
+      lineList[[i]]$segment <- i
     }
-    lineList <- vect(lineList)
+    
+    lineList <- vect(lineList,crs=crs(z_fix))
     
     
     # Add the information about what segment each leg represents
-    lineList$segment <- nameList
     lineList$cost <- cost
     
     # And place it in the originally-requested order
