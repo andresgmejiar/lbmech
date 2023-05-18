@@ -15,7 +15,8 @@ inferLID(
   var.exp = FALSE,
   ng.invert = TRUE,
   max.cross = .Machine$integer.max,
-  pb = TRUE
+  pb = TRUE,
+  clear.mem = FALSE
 )
 }
 \arguments{
@@ -54,6 +55,9 @@ thus allowing larger data.sets to be calculated.}
 \item{pb}{Logical. Should a progress bar be displayed? Default is \code{FALSE}, although
 if a large dataset is processed that requires adjusting \code{max.cross} this can
 be useful}
+
+\item{clear.mem}{Logical. Should \code{\link[base]{gc}} be run in the middle of the 
+calculation? Default is \code{clear.mem} but set as \code{TRUE} if memory limits are a concern.}
 }
 \value{
 A list with the following entries:

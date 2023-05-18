@@ -32,6 +32,8 @@
 #' @param pb Logical. Should a progress bar be displayed? Default is \code{FALSE}, although
 #' if a large dataset is processed that requires adjusting \code{max.cross} this can
 #' be useful
+#' @param clear.mem Logical. Should \code{\link[base]{gc}} be run in the middle of the 
+#' calculation? Default is \code{clear.mem} but set as \code{TRUE} if memory limits are a concern. 
 #' @importFrom data.table fifelse
 #' @importFrom data.table data.table
 #' @importFrom data.table as.data.table
@@ -74,7 +76,8 @@
 inferLID <- function(lid, w, ntrials = 999, alpha = 0.05,
                      standard = NULL, expect = NULL, 
                      var.stand = FALSE, var.exp = FALSE, ng.invert = TRUE,
-                     max.cross =.Machine$integer.max, pb = TRUE){
+                     max.cross =.Machine$integer.max, pb = TRUE,
+                     clear.mem = FALSE){
   # This bit to silence CRAN warnings
   Trial=..xrand=id=G_Gi=G_NGi=G_i=n=GroupClass=dGini_MC=dGini=NULL
   NonGroupClass=dNonGroup_MC=dNonGroup=.N=p=N=IndexClass=Class=NULL
@@ -126,8 +129,12 @@ inferLID <- function(lid, w, ntrials = 999, alpha = 0.05,
     
     # Append results to permutation table
     ptable[Trial == i, names(xrand) := ..xrand]
+    if (clear.mem){
+      rm(xrand)
+      gc()
+    }
   }
-  rm(xrand)
+  
   # Significance for within-group inequality is defined based on the 
   # delta-G_Gi statistic, which is simply the group component minus the non-group
   # component

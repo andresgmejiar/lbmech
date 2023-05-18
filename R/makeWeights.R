@@ -25,7 +25,7 @@
 #' that they sum to one. If \code{'fuzzy'}, rows are standardized as a proportion of the 
 #' largest value. 
 #' @param clear.mem Logical. Should \code{\link[base]{gc}} be run in the middle of the 
-#' calculation? Set as \code{TRUE} if memory limits are a concern. 
+#' calculation? Default is \code{clear.mem} but set as \code{TRUE} if memory limits are a concern. 
 #' @importFrom data.table as.data.table
 #' @importFrom data.table set
 #' @return A matrix of dimensions \code{length(x) x length(x)}.

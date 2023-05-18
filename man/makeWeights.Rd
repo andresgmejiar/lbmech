@@ -48,7 +48,7 @@ that they sum to one. If \code{'fuzzy'}, rows are standardized as a proportion o
 largest value.}
 
 \item{clear.mem}{Logical. Should \code{\link[base]{gc}} be run in the middle of the 
-calculation? Set as \code{TRUE} if memory limits are a concern.}
+calculation? Default is \code{clear.mem} but set as \code{TRUE} if memory limits are a concern.}
 }
 \value{
 A matrix of dimensions \code{length(x) x length(x)}.
