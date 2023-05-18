@@ -115,19 +115,19 @@ inferLID <- function(lid, w, ntrials = 999, alpha = 0.05,
     # Shuffling your neighbors but keeping the locations as the only
     # possible places is effectively shuffling the matrix row-wise while
     # keeping the diagonal constant
-    w_samp <- row(w) != col(w)
-    w_samp[w_samp] <- stats::ave(w[w_samp], row(w)[w_samp], FUN = sample)
+    w <- row(w) != col(w)
+    w[w] <- stats::ave(w[w], row(w)[w], FUN = sample)
     
     # Perform the LID analysis on the randomized weights
     xrand <- data.table(id = x$id,
-                        LID(x$var, w = w_samp, n = x$n, index = index,
+                        LID(x$var, w = w, n = x$n, index = index,
                             standard = standard,
                             expect = expect)$local, max.cross = max.cross)
     
     # Append results to permutation table
     ptable[Trial == i, names(xrand) := ..xrand]
   }
-  rm(xrand,w_samp)
+  rm(xrand)
   # Significance for within-group inequality is defined based on the 
   # delta-G_Gi statistic, which is simply the group component minus the non-group
   # component

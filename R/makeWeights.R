@@ -120,5 +120,6 @@ makeWeights <- function(x, bw, mode = 'adaptive', weighting = 'membership',
     weights <- t(apply(weights,1,scales::rescale,to=c(0,1)))
   }
   weights[is.na(weights)] <- 0
+  gc()
   return(weights)
 }
