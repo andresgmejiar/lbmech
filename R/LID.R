@@ -156,16 +156,13 @@ LID <- function(x, w, index = 'gini', expect = 'self', standard = 'global',
     if(pb) setTxtProgressBar(pb1,k)
     
     # Get the needed values for this subset
-    subset_x <- x[((k-1)*subset_size+1):min(k*subset_size, length(x))]
-    subset_n <- n[((k-1)*subset_size+1):min(k*subset_size, length(n))]
-    subset_w <- w[((k-1)*subset_size+1):min(k*subset_size, ncol(w)),]
-    subset_nw <- nw[((k-1)*subset_size+1):min(k*subset_size, ncol(nw)),]
+    sub_range <- ((k-1)*subset_size+1):min(k*subset_size, length(x))
     
     # Value is calculated from a cross-join
-    dt <- CJ(J = x, I = subset_x, sorted = FALSE)
-    dt <- data.table(I=(1:length(subset_x))[row(subset_w)],
-                     J=(1:length(x))[col(subset_w)],w=c(subset_w), 
-                     nw = c(subset_nw),
+    dt <- CJ(J = x, I = x[sub_range], sorted = FALSE)
+    dt <- data.table(I=(1:length(sub_range))[row(w[sub_range,])],
+                     J=(1:length(x))[col(w[sub_range,])],w=c(w[sub_range,]), 
+                     nw = c(nw[sub_range,]),
                      val_i = dt$I, val_j = dt$J)
     
     # Number of neighbors is the sum of group (and nongroup) weights
@@ -379,12 +376,12 @@ LID <- function(x, w, index = 'gini', expect = 'self', standard = 'global',
     dt[,G_i := (G_Gi * n_g/sum(..n) + G_NGi * n_ng/sum(..n))]
     gini <- dt[,lapply(.SD,sum),.SDcols = c("G_Gi","G_NGi","G_i"),by='I'
     ][,.SD,.SDcols = c("G_Gi","G_NGi","G_i")]
-    gini[, var := ..subset_x][, n := ..subset_n]
+    gini[, var := ..x[..sub_range]][, n := ..n[..sub_range]]
     
     # Append values to the table
     gini_list <- rbind(gini_list, gini)
     if (clear.mem){
-      rm(subset_x,subset_n,subset_w,subset_nw,dt)
+      rm(dt)
       gc()
     }
   }
