@@ -85,12 +85,14 @@ makeWeights <- function(x, bw, mode = 'adaptive', weighting = 'membership',
     # Binary membership, equal weights
     weights <- as.matrix(x)
     weights[!is.na(weights)] <- 1
+    rm(x)
   } else if (weighting == 'distance'){
     # Calculate distances based on raw distances
     if (is.null(FUN)){
       FUN <- function(x) 1/x
     }
     weights <- as.matrix(FUN(x))
+    rm(x)
     if (is.null(inf.val)){
       # Replace infinites
       inf.val <-  FUN(min(unlist(x)[unlist(x) > minval],na.rm=TRUE))
@@ -103,6 +105,7 @@ makeWeights <- function(x, bw, mode = 'adaptive', weighting = 'membership',
     }
     
     weights <- as.matrix(FUN(y))
+    rm(y)
   }
   
   if (row.stand == TRUE){
