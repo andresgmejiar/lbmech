@@ -92,12 +92,12 @@ makeWeights <- function(x, bw, mode = 'adaptive', weighting = 'membership',
       FUN <- function(x) 1/x
     }
     weights <- as.matrix(FUN(x))
-    rm(x)
     if (is.null(inf.val)){
       # Replace infinites
       inf.val <-  FUN(min(unlist(x)[unlist(x) > minval],na.rm=TRUE))
     }
     weights[is.infinite(weights)] <- inf.val
+    rm(x)
   } else if (weighting == 'rank'){
     # Calculate distances based on rank-distance
     if (is.null(FUN)){
@@ -107,7 +107,7 @@ makeWeights <- function(x, bw, mode = 'adaptive', weighting = 'membership',
     weights <- as.matrix(FUN(y))
     rm(y)
   }
-  
+  if (clear.mem) gc()
   if (row.stand == TRUE){
     # Traditional Row standardization, where all rows sum to one
     weights <- weights/rowSums(weights,na.rm=TRUE)

@@ -127,7 +127,7 @@ inferLID <- function(lid, w, ntrials = 999, alpha = 0.05,
     # Append results to permutation table
     ptable[Trial == i, names(xrand) := ..xrand]
   }
-  
+  rm(xrand,w_samp)
   # Significance for within-group inequality is defined based on the 
   # delta-G_Gi statistic, which is simply the group component minus the non-group
   # component
@@ -174,7 +174,7 @@ inferLID <- function(lid, w, ntrials = 999, alpha = 0.05,
   ][, NonGroupClass := fifelse(agg$G_NG > G_NGi,'High','Low')
   ][, IndexClass := fifelse(agg$G < G_i,'High','Low')
   ]
-  
+  rm(ptable)
   # Calculate p values
   groupp <- globalp[, .N, by = c('GroupClass')
   ][,p  := 1 - (1+N)/(1+sum(N))][]
