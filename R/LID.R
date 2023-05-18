@@ -376,12 +376,16 @@ LID <- function(x, w, index = 'gini', expect = 'self', standard = 'global',
     dt[,G_i := (G_Gi * n_g/sum(..n) + G_NGi * n_ng/sum(..n))]
     gini <- dt[,lapply(.SD,sum),.SDcols = c("G_Gi","G_NGi","G_i"),by='I'
     ][,.SD,.SDcols = c("G_Gi","G_NGi","G_i")]
+    if (clear.mem){
+      rm(dt)
+      gc()
+    }
     gini[, var := ..x[..sub_range]][, n := ..n[..sub_range]]
     
     # Append values to the table
     gini_list <- rbind(gini_list, gini)
     if (clear.mem){
-      rm(dt)
+      rm(gini)
       gc()
     }
   }
