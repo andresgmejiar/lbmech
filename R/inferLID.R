@@ -127,7 +127,7 @@ inferLID <- function(lid, w, ntrials = 999, alpha = 0.05,
                             standard = standard,
                             expect = expect)$local, max.cross = max.cross,
                         clear.mem = clear.mem)
-    
+    if (clear.mem) gc()
     # Append results to permutation table
     ptable[Trial == i, names(xrand) := ..xrand]
     if (clear.mem){
