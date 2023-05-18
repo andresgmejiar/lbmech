@@ -12,7 +12,8 @@ makeWeights(
   FUN = NULL,
   inf.val = NULL,
   minval = 50,
-  row.stand = FALSE
+  row.stand = FALSE,
+  clear.mem = FALSE
 )
 }
 \arguments{
@@ -45,6 +46,9 @@ Default is 50.}
 \item{row.stand}{Logical or \code{'fuzzy'}. If \code{TRUE} (the default), rows are standardized such 
 that they sum to one. If \code{'fuzzy'}, rows are standardized as a proportion of the 
 largest value.}
+
+\item{clear.mem}{Logical. Should \code{\link[base]{gc}} be run in the middle of the 
+calculation? Set as \code{TRUE} if memory limits are a concern.}
 }
 \value{
 A matrix of dimensions \code{length(x) x length(x)}.

@@ -24,6 +24,8 @@
 #' @param row.stand Logical or \code{'fuzzy'}. If \code{TRUE} (the default), rows are standardized such 
 #' that they sum to one. If \code{'fuzzy'}, rows are standardized as a proportion of the 
 #' largest value. 
+#' @param clear.mem Logical. Should \code{\link[base]{gc}} be run in the middle of the 
+#' calculation? Set as \code{TRUE} if memory limits are a concern. 
 #' @importFrom data.table as.data.table
 #' @importFrom data.table set
 #' @return A matrix of dimensions \code{length(x) x length(x)}.
@@ -44,7 +46,7 @@
 #' @export                      
 makeWeights <- function(x, bw, mode = 'adaptive', weighting = 'membership', 
                         FUN = NULL, inf.val = NULL, minval = 50, 
-                        row.stand = FALSE) {
+                        row.stand = FALSE, clear.mem = FALSE) {
   # Coerce inputs to matrix
   x <- as.matrix(x)
   x <- as.data.table(x)
@@ -59,8 +61,10 @@ makeWeights <- function(x, bw, mode = 'adaptive', weighting = 'membership',
     # Remove observations with rank lower than bw; keep only obs within bw
     if (weighting == 'rank'){
       for(col in names(y)) set(y, i=which(y[[col]]>= bw+1), j=col, value=NA)
+      rm(x)
     } else {
       for(col in names(x)) set(x, i=which(y[[col]]>= bw+1), j=col, value=NA)
+      rm(y)
     }
   } else if (mode == 'fixed'){
     if (weighting == 'rank'){
@@ -69,11 +73,13 @@ makeWeights <- function(x, bw, mode = 'adaptive', weighting = 'membership',
       y <- as.data.table(t(y))
       names(y) <- names(x)
       for(col in names(y)) set(y, i=which(x[[col]]>= bw), j=col, value=NA)
+      rm(x)
     } else {
       for(col in names(x)) set(x, i=which(x[[col]]>= bw), j=col, value=NA)
+      rm(y)
     }
   }
-  
+  if (clear.mem) gc()
   # Deal with distance weighting
   if (weighting == 'membership'){
     # Binary membership, equal weights
