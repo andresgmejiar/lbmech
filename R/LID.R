@@ -44,6 +44,8 @@
 #' @param pb Logical. Should a progress bar be displayed? Default is \code{FALSE}, although
 #' if a large dataset is processed that requires adjusting \code{max.cross} this can
 #' be useful
+#' @param clear.mem Logical. Should \code{\link[base]{gc}} be run in the middle of the 
+#' calculation? Default is \code{clear.mem} but set as \code{TRUE} if memory limits are a concern. 
 #' @importFrom data.table CJ
 #' @importFrom data.table data.table
 #' @return A list with the following entries:
@@ -84,7 +86,7 @@ LID <- function(x, w, index = 'gini', expect = 'self', standard = 'global',
                 n = rep(1, length(x)), 
                 fun.name = paste0(index,'q') ,type = 'spatial', 
                 max.cross = .Machine$integer.max, canonical = FALSE,
-                pb = FALSE){
+                pb = FALSE, clear.mem = gc()){
   # This bit to silence CRAN warnings
   Error=val_j=val_i=n_g=Denom=n_ng=G_Denom=NG_Denom=stand=G_Error=NG_Error=NULL
   G_i=G_Gi=..n=G_NGi=var=..subset_x=..subset_n=NULL
@@ -381,9 +383,14 @@ LID <- function(x, w, index = 'gini', expect = 'self', standard = 'global',
     
     # Append values to the table
     gini_list <- rbind(gini_list, gini)
+    if (clear.mem){
+      rm(subset_x,subset_n,subset_w,subset_nw,dt)
+      gc()
+    }
   }
   gini <- gini_list
   rm(gini_list)
+  if (clear.mem) gc()
   
   # If a matrix was provided, define the variable that will be added as an 
   # attribute to the output local data.table
@@ -420,6 +427,7 @@ LID <- function(x, w, index = 'gini', expect = 'self', standard = 'global',
                                                 max.cross = max.cross))
   }
   if(pb) setTxtProgressBar(pb1,k+1)
+  if (clear.mem) gc()
   return(out)
   
 }
