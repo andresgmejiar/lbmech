@@ -87,6 +87,7 @@ inferLID <- function(lid, w, ntrials = 999, alpha = 0.05,
   x$id <- 1:nrow(x)
   agg <- lid$global 
   index <- attributes(lid$local)$`function`
+  mle <- attributes(lid$local)$`mle`
   
   # Make sure the user provided the right matrices
   if (attributes(lid$local)$`standard` == 'matrix'){
@@ -123,7 +124,7 @@ inferLID <- function(lid, w, ntrials = 999, alpha = 0.05,
     
     # Perform the LID analysis on the randomized weights
     xrand <- data.table(id = x$id,
-                        LID(x$var, w = w, n = x$n, index = index,
+                        LID(x$var, w = w, n = x$n, index = index, mle = mle,
                             standard = standard,
                             expect = expect,
                             max.cross = max.cross,

@@ -4,7 +4,7 @@
 \alias{average}
 \title{Compute weighted means and medians.}
 \usage{
-average(x, w, type = "mean", na.rm = FALSE)
+average(x, w = rep(1, length(x)), type = "mean", na.rm = FALSE)
 }
 \arguments{
 \item{x}{A numeric vector with the values to be averaged.}

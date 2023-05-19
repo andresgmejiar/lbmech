@@ -11,6 +11,7 @@ LID(
   expect = "self",
   standard = "global",
   n = rep(1, length(x)),
+  mle = "mean",
   fun.name = paste0(index, "q"),
   type = "spatial",
   max.cross = .Machine$integer.max,
@@ -52,6 +53,11 @@ be provided by using an appropriate matrix.}
 \item{n}{A vector representing population weights. How much of an impact does a given 
 observation have on any other observation regardless of its influence as provided
 for in \code{w}. Default is \code{1} for all.}
+
+\item{mle}{Character string identifying the maximum likelihood estimator to be used. 
+Default is \code{mle = 'mean'} for the traditional Gini, although since it uses mean absolute error
+and implies Laplace distribution, \code{mle = 'median'} is recommended. Alternatively,
+\code{index = 'inoua'} and \code{mle = 'mean'} for Gaussian processes.}
 
 \item{fun.name}{If \code{index != c('gini','inoua',1,2)}, how should the function
 be named? Default is \code{fun.name = paste0(index,'q')}.}

@@ -26,7 +26,8 @@ Imports:
         raster,
         geodata,
         rworldmap,
-        scales
+        scales,
+        DescTools
 Depends:
         terra,
         data.table

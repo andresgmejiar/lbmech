@@ -151,7 +151,7 @@ LID <- function(x, w, index = 'gini', expect = 'self', standard = 'global',
   gini_list <- data.table()
   
   # Progress bar is optionsl
-  if (pb) pb1 <- txtProgressBar(min=1,max=n_subsets+1)
+  if (pb) pb1 <- txtProgressBar(min=1,max=n_subsets+1,style=3)
   
   for (k in seq(n_subsets)){
     # Iterate over every subset, using as large a number of 'i's as we can, calculating
@@ -411,7 +411,7 @@ LID <- function(x, w, index = 'gini', expect = 'self', standard = 'global',
   names(index_name) <- paste(type,stringr::str_to_sentence(fun.name))
   
   # Assign the names, expectations, and standards to the output table
-  attributes(gini)[c("function","expectation","standard")] <- c(fun.name,expect,standard)
+  attributes(gini)[c("function","expectation","standard","mle")] <- c(fun.name,expect,standard,mle)
   
   # Output list contains the name, the local table, and the global values
   # (which themselves are just weighted means)
