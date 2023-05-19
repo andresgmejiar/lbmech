@@ -11,7 +11,7 @@ makeWeights(
   weighting = "membership",
   FUN = NULL,
   inf.val = NULL,
-  minval = 50,
+  minval = -Inf,
   row.stand = FALSE,
   clear.mem = FALSE
 )

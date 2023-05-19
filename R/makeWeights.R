@@ -45,81 +45,73 @@
 #'                        row.stand = 'fuzzy')
 #' @export                      
 makeWeights <- function(x, bw, mode = 'adaptive', weighting = 'membership', 
-                        FUN = NULL, inf.val = NULL, minval = 50, 
+                        FUN = NULL, inf.val = NULL, minval = -Inf, 
                         row.stand = FALSE, clear.mem = FALSE) {
+  if (is.null(FUN)){
+    FUN <- function(x) 1/x
+  }
+  
   # Coerce inputs to matrix
   x <- as.matrix(x)
-  x <- as.data.table(x)
-  names(x) <- as.character(1:nrow(x))
+  if (minval != -Inf) x[x <= minval] <- minval
+  
+  # x <- as.data.table(x)
+  # names(x) <- as.character(1:nrow(x))
   
   # Deal with group membership
   if (mode == 'adaptive'){
     # Convert distances to ranks of distances; need for both
-    y <- x[, lapply(.SD,rank)] 
-    y <- as.data.table(t(y))
-    names(y) <- names(x)
+    y <- matrixStats::colRanks(x)
     # Remove observations with rank lower than bw; keep only obs within bw
     if (weighting == 'rank'){
-      for(col in names(y)) set(y, i=which(y[[col]]>= bw+1), j=col, value=NA)
-      rm(x)
+      x <- y
+      rm(y)
+      x[x >= bw+1] <- NA 
     } else {
-      for(col in names(x)) set(x, i=which(y[[col]]>= bw+1), j=col, value=NA)
+      y[y >= bw+1] <- NA 
+      x <- x * y/y
       rm(y)
     }
   } else if (mode == 'fixed'){
     if (weighting == 'rank'){
       # Convert distances to ranks of distances; only need for rank
-      y <- x[, lapply(.SD,rank)] 
-      y <- as.data.table(t(y))
-      names(y) <- names(x)
-      for(col in names(y)) set(y, i=which(x[[col]]>= bw), j=col, value=NA)
-      rm(x)
-    } else {
-      for(col in names(x)) set(x, i=which(x[[col]]>= bw), j=col, value=NA)
+      y <- matrixStats::colRanks(x)
+      x[x >= bw] <- NA
+      x <- y * x/x
       rm(y)
+    } else {
+      x[x >= bw] <- NA
     }
   }
   if (clear.mem) gc()
   # Deal with distance weighting
   if (weighting == 'membership'){
     # Binary membership, equal weights
-    weights <- as.matrix(x)
-    weights[!is.na(weights)] <- 1
-    rm(x)
-  } else if (weighting == 'distance'){
+    x[!is.na(x)] <- 1
+
+  } else if (weighting %in% c('distance','rank')){
     # Calculate distances based on raw distances
-    if (is.null(FUN)){
-      FUN <- function(x) 1/x
-    }
-    weights <- as.matrix(FUN(x))
+    x <- FUN(x)
     if (is.null(inf.val)){
       # Replace infinites
-      inf.val <-  FUN(min(unlist(x)[unlist(x) > minval],na.rm=TRUE))
+      inf.val <-  FUN(min(x[x > minval],na.rm=TRUE))
     }
-    weights[is.infinite(weights)] <- inf.val
-    rm(x)
-  } else if (weighting == 'rank'){
-    # Calculate distances based on rank-distance
-    if (is.null(FUN)){
-      FUN <- function(x) 1/x
-    }
-    
-    weights <- as.matrix(FUN(y))
-    rm(y)
-  }
+    x[is.infinite(x)] <- inf.val
+
+  } 
   if (clear.mem) gc()
   if (row.stand == TRUE){
     # Traditional Row standardization, where all rows sum to one
-    weights <- weights/rowSums(weights,na.rm=TRUE)
+    x <- x/rowSums(weights,na.rm=TRUE)
   }
   
   if (row.stand == 'fuzzy'){
     # Each row has at least one neighbor, with the remainder being a fraction
     # of the maximum
-    weights[is.na(weights)] <- 0
-    weights <- t(apply(weights,1,scales::rescale,to=c(0,1)))
+    x[is.na(x)] <- 0
+    x <- t(apply(x,1,scales::rescale,to=c(0,1)))
   }
-  weights[is.na(weights)] <- 0
+  x[is.na(x)] <- 0
   gc()
-  return(weights)
+  return(x)
 }
