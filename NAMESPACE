@@ -2,6 +2,7 @@
 
 export(LID)
 export(approxMap)
+export(average)
 export(calculateCosts)
 export(defineWorld)
 export(dispersionIndex)

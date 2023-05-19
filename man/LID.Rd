@@ -16,7 +16,7 @@ LID(
   max.cross = .Machine$integer.max,
   canonical = FALSE,
   pb = FALSE,
-  clear.mem = gc()
+  clear.mem = TRUE
 )
 }
 \arguments{

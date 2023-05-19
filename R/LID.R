@@ -30,6 +30,10 @@
 #' @param n A vector representing population weights. How much of an impact does a given 
 #' observation have on any other observation regardless of its influence as provided
 #' for in \code{w}. Default is \code{1} for all. 
+#' @param mle Character string identifying the maximum likelihood estimator to be used. 
+#' Default is \code{mle = 'mean'} for the traditional Gini, although since it uses mean absolute error
+#' and implies Laplace distribution, \code{mle = 'median'} is recommended. Alternatively,
+#' \code{index = 'inoua'} and \code{mle = 'mean'} for Gaussian processes. 
 #' @param fun.name If \code{index != c('gini','inoua',1,2)}, how should the function
 #' be named? Default is \code{fun.name = paste0(index,'q')}.
 #' @param type A character string, either the name or corresponding code of 
@@ -83,10 +87,10 @@
 #' lid <- LID(x, w = weights, index = 'gini', type = 'local')
 #' @export      
 LID <- function(x, w, index = 'gini', expect = 'self', standard = 'global',
-                n = rep(1, length(x)), 
+                n = rep(1, length(x)), mle = 'mean',
                 fun.name = paste0(index,'q') ,type = 'spatial', 
                 max.cross = .Machine$integer.max, canonical = FALSE,
-                pb = FALSE, clear.mem = gc()){
+                pb = FALSE, clear.mem = TRUE){
   # This bit to silence CRAN warnings
   Error=val_j=val_i=n_g=Denom=n_ng=G_Denom=NG_Denom=stand=G_Error=NG_Error=NULL
   G_i=G_Gi=..n=G_NGi=var=..subset_x=..subset_n=NULL
@@ -186,15 +190,15 @@ LID <- function(x, w, index = 'gini', expect = 'self', standard = 'global',
       type <- 'Spatial'
       code <- 'S'
       dt[, Error := index(val_j - val_i)
-      ][, `:=`(Denom = 2 * mean(stand.trans(val_j)))
+      ][, `:=`(Denom = 2 * average(stand.trans(val_j), type = mle))
       ][, `:=`(G_Gi = w/n_g * Error/Denom,
                G_NGi = nw/n_ng * Error/Denom)]
     } else if (expect == 'self' & standard == 'local'){
       type <- 'Relative'
       code <- 'R'
       dt[, Error := index(val_j - val_i)
-      ][, `:=`(G_Denom = 2 * sum(w/n_g * stand.trans(val_j)),
-               NG_Denom = 2 * sum(nw/n_ng * stand.trans(val_j))), by = 'I'
+      ][, `:=`(G_Denom = 2 * average(stand.trans(val_j), w = w, type = mle),
+               NG_Denom = 2 * average(stand.trans(val_j)), w = nw, type = mle), by = 'I'
       ][, `:=`(G_Gi = w/n_g * Error/G_Denom,
                G_NGi = nw/n_ng * Error/NG_Denom)]
     } else if (expect == 'self' & standard == 'other'){
@@ -226,33 +230,33 @@ LID <- function(x, w, index = 'gini', expect = 'self', standard = 'global',
     } else if ((expect == 'local') & (standard == 'global')){
       type <- 'Upscaled'
       code <- 'U'
-      dt[, `:=`(G_Error = index(val_j - sum(w/n_g * val_j)),
-                NG_Error = index(val_j - sum(nw/n_ng * val_j))), by = 'I'
-      ][, `:=`(Denom = 2 * mean(stand.trans(val_j)))
+      dt[, `:=`(G_Error = index(val_j - average(stand.trans(val_j), w = w, type = mle)),
+                NG_Error = index(val_j - average(stand.trans(val_j), w = nw, type = mle))), by = 'I'
+      ][, `:=`(Denom = 2 * average(stand.trans(val_j), type = mle))
       ][, `:=`(G_Gi = w/n_g * G_Error/Denom,
                G_NGi = nw/n_ng * NG_Error/Denom)]
     } else if (expect == 'local' & standard == 'local'){
       type <- 'Local'
       code <- 'L'
-      dt[, `:=`(G_Error = index(val_j - sum(w/n_g * val_j)),
-                NG_Error = index(val_j - sum(nw/n_ng * val_j))), by = 'I'
-      ][, `:=`(G_Denom = 2 * sum(w/n_g * stand.trans(val_j)),
-               NG_Denom = 2 * sum(nw/n_ng * stand.trans(val_j))), by = 'I'
+      dt[, `:=`(G_Error = index(val_j - average(stand.trans(val_j), w = w, type = mle)),
+                NG_Error = index(val_j - average(stand.trans(val_j), w = nw, type = mle))), by = 'I'
+      ][, `:=`(G_Denom = 2 * average(stand.trans(val_j), w = w, type = mle),
+               NG_Denom = 2 * average(stand.trans(val_j), w = nw, type = mle)), by = 'I'
       ][, `:=`(G_Gi = w/n_g * G_Error/G_Denom,
                G_NGi = nw/n_ng * NG_Error/NG_Denom)]
     } else if (expect == 'local' & standard == 'other'){
       type <- 'Local-Radical'
       code <- 'Y'
-      dt[, `:=`(G_Error = index(val_j - sum(w/n_g * val_j)),
-                NG_Error = index(val_j - sum(nw/n_ng * val_j))), by = 'I'
+      dt[, `:=`(G_Error = index(val_j - average(stand.trans(val_j), w = w, type = mle)),
+                NG_Error = index(val_j - average(stand.trans(val_j), w = nw, type = mle))), by = 'I'
       ][, `:=`(Denom = 2 * stand.trans(val_j)),
       ][, `:=`(G_Gi = w/n_g * G_Error/Denom,
                G_NGi = nw/n_ng * NG_Error/Denom)]
     } else if (expect == 'local' & standard == 'self'){
       type <- 'Local-Critical'
       code <- 'D'
-      dt[, `:=`(G_Error = index(val_j - sum(w/n_g * val_j)),
-                NG_Error = index(val_j - sum(nw/n_ng * val_j))), by = 'I'
+      dt[, `:=`(G_Error = index(val_j - average(stand.trans(val_j), w = w, type = mle)),
+                NG_Error = index(val_j - average(stand.trans(val_j), w = nw, type = mle))), by = 'I'
       ][, `:=`(Denom = 2 * stand.trans(val_i)),
       ][, `:=`(G_Gi = w/n_g * G_Error/Denom,
                G_NGi = nw/n_ng * NG_Error/Denom)]
@@ -263,37 +267,37 @@ LID <- function(x, w, index = 'gini', expect = 'self', standard = 'global',
                              I=(1:length(x))[col(standard)],
                              stand=c(standard))
       dt <- merge(dt,standard,by=c('I','J'))
-      dt[, `:=`(G_Error = index(val_j - sum(w/n_g * val_j)),
-                NG_Error = index(val_j - sum(nw/n_ng * val_j))), by = 'I'
+      dt[, `:=`(G_Error = index(val_j - average(stand.trans(val_j), w = w, type = mle)),
+                NG_Error = index(val_j - average(stand.trans(val_j), w = nw, type = mle))), by = 'I'
       ][, `:=`(Denom = 2 * stand)
       ][, `:=`(G_Gi = w/n_g * G_Error/Denom,
                G_NGi = nw/n_ng * NG_Error/Denom)]
     } else if (expect == 'global' & standard == 'global'){
       type <- 'Absolute'
       code <- 'A'
-      dt[, Error := index(val_j - mean(val_j))
-      ][, `:=`(Denom = 2 * mean(stand.trans(val_j)))
+      dt[, Error := index(val_j - average(val_j,type = mle))
+      ][, `:=`(Denom = 2 * average(stand.trans(val_j), type = mle))
       ][, `:=`(G_Gi = w/n_g * Error/Denom,
                G_NGi = nw/n_ng * Error/Denom)]
     } else if (expect == 'global' & standard == 'local'){
       type <- 'Downscaled'
       code <- 'W'
-      dt[, Error := index(val_j - mean(val_j))
-      ][, `:=`(G_Denom = 2 * sum(w/n_g * stand.trans(val_j)),
-               NG_Denom = 2 * sum(nw/n_ng * stand.trans(val_j))), by = 'I'
+      dt[, Error := index(val_j - average(val_j, type = mle))
+      ][, `:=`(G_Denom = 2 * average(stand.trans(val_j), w = w, type = mle),
+               NG_Denom = 2 * average(stand.trans(val_j), w = nw, type = mle)), by = 'I'
       ][, `:=`(G_Gi = w/n_g * Error/G_Denom,
                G_NGi = nw/n_ng * Error/NG_Denom)]
     } else if (expect == 'global' & standard == 'other'){
       type <- 'Global-Radical'
       code <- 'X'
-      dt[, Error := index(val_j - mean(val_j))
+      dt[, Error := index(val_j - average(val_j, type = mle))
       ][, `:=`(Denom = 2 * stand.trans(val_j)),
       ][, `:=`(G_Gi = w/n_g * Error/Denom,
                G_NGi = nw/n_ng * Error/Denom)]
     } else if (expect == 'global' & standard == 'self'){
       type <- 'Global-Critical'
       code <- 'C'
-      dt[, Error := index(val_j - mean(val_j))
+      dt[, Error := index(val_j - average(val_j, type = mle))
       ][, `:=`(Denom = 2 * stand.trans(val_i)),
       ][, `:=`(G_Gi = w/n_g * Error/Denom,
                G_NGi = nw/n_ng * Error/Denom)]
@@ -304,7 +308,7 @@ LID <- function(x, w, index = 'gini', expect = 'self', standard = 'global',
                              I=(1:length(x))[col(standard)],
                              stand=c(standard))
       dt <- merge(dt,standard,by=c('I','J'))
-      dt[, Error := index(val_j - mean(val_j))
+      dt[, Error := index(val_j - average(val_j, type = mle))
       ][, `:=`(Denom = 2 * stand)
       ][, `:=`(G_Gi = w/n_g * Error/Denom,
                G_NGi = nw/n_ng * Error/Denom)]
@@ -316,7 +320,7 @@ LID <- function(x, w, index = 'gini', expect = 'self', standard = 'global',
                            stand=c(expect))
       dt <- merge(dt,expect,by=c('I','J'))
       dt[, Error := index(val_j - expect)
-      ][, `:=`(Denom = 2 * mean(stand.trans(val_j)))
+      ][, `:=`(Denom = 2 * average(stand.trans(val_j), type = mle))
       ][, `:=`(G_Gi = w/n_g * Error/Denom,
                G_NGi = nw/n_ng * Error/Denom)]
     } else if (methods::is(expect,'matrix') & standard == 'local'){
@@ -327,8 +331,8 @@ LID <- function(x, w, index = 'gini', expect = 'self', standard = 'global',
                            stand=c(expect))
       dt <- merge(dt,expect,by=c('I','J'))
       dt[, Error := index(val_j - expect)
-      ][, `:=`(G_Denom = 2 * sum(w/n_g * stand.trans(val_j)),
-               NG_Denom = 2 * sum(nw/n_ng * stand.trans(val_j))), by = 'I'
+      ][, `:=`(G_Denom = 2 * average(stand.trans(val_j), w = w, type = mle),
+               NG_Denom = 2 * average(stand.trans(val_j), w = nw, type = mle)), by = 'I'
       ][, `:=`(G_Gi = w/n_g * Error/G_Denom,
                G_NGi = nw/n_ng * Error/NG_Denom)]
     } else if (methods::is(expect,'matrix') & standard == 'other'){
@@ -414,9 +418,9 @@ LID <- function(x, w, index = 'gini', expect = 'self', standard = 'global',
   out <- list(index = index_name,
               local = gini,
               global = list(
-                G_G = sum(gini$G_Gi * gini$n/sum(gini$n)),
-                G_NG = sum(gini$G_NGi * gini$n/sum(gini$n)),
-                G = sum(gini$G_i * gini$n/sum(gini$n))))
+                G_G = average(gini$G_Gi, gini$n),
+                G_NG = average(gini$G_NGi, gini$n),
+                G = average(gini$G_i, gini$n)))
   
   # Calculate the canonical value if appropriate, add to list
   if (canonical){
