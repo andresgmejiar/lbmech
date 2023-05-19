@@ -24,6 +24,6 @@ average <- function(x, w = rep(1,length(x)), type = 'mean',na.rm = FALSE){
   if (type == 'mean' | type == 'L2'){
     return(sum(x * w/sum(w,na.rm=na.rm), na.rm=na.rm))
   } else if (type == 'median' | type == 'L1'){
-  return(DescTools::Median(x, weights = w, na.rm = na.rm))
+  return(matrixStats::weightedMedian(x, w = w, na.rm = na.rm))
   }
 }

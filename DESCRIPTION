@@ -27,7 +27,7 @@ Imports:
         geodata,
         rworldmap,
         scales,
-        DescTools
+        matrixStats
 Depends:
         terra,
         data.table
