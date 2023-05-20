@@ -265,18 +265,18 @@ use this function in the <code>j</code> slot, passing it along <code>.SD</code>.
 <span class="r-in"><span><span class="co">#### Example 2:</span></span></span>
 <span class="r-in"><span><span class="co"># If the data do not contain elevation, and 'z' is a raster</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings</a></span><span class="op">(</span> <span class="va">data</span><span class="op">[</span>, <span class="va">z</span> <span class="op">:=</span> <span class="cn">NULL</span><span class="op">]</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>               x        y  elevation  dt ID</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     1: 19197.95 31660.38   5.360886 120  1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     2: 13874.84 30819.55  15.969853 120  1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     3: 13259.93 30059.33  40.255143 120  1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     4: 13926.57 35945.80 191.091049 120  1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     5: 13583.44 37005.09  47.189854 120  1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    ---                                    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  9996: 14462.01 31778.87  46.747152 120 10</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  9997: 12468.17 37831.73 100.501198 120 10</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  9998: 12850.95 31249.34  96.181285 120 10</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  9999: 11615.92 30343.52  29.586331 120 10</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10000: 10287.85 33540.86 146.470682 120 10</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>               x        y elevation  dt ID</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     1: 15536.86 35485.19  56.51897 120  1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     2: 17208.75 34479.07  34.48440 120  1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     3: 12457.75 32188.56 102.14077 120  1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     4: 15058.50 38168.71 110.26906 120  1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     5: 16637.49 33120.22  53.88280 120  1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    ---                                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  9996: 13233.01 35161.81 159.24494 120 10</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  9997: 15475.97 36179.05 110.33695 120 10</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  9998: 12043.49 36628.67 130.08440 120 10</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  9999: 17183.38 36687.27  12.23455 120 10</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10000: 13892.52 32139.00 126.10975 120 10</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Generate a DEM</span></span></span>
 <span class="r-in"><span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">5</span></span></span>
@@ -317,26 +317,28 @@ use this function in the <code>j</code> slot, passing it along <code>.SD</code>.
 <span class="r-in"><span><span class="va">grid</span> <span class="op">&lt;-</span> <span class="fu"><a href="makeGrid.html">makeGrid</a></span><span class="op">(</span>dem <span class="op">=</span> <span class="va">dem</span>, nx <span class="op">=</span> <span class="va">n</span>, ny <span class="op">=</span> <span class="va">n</span>, sources <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">velocity</span> <span class="op">&lt;-</span> <span class="fu">getVelocity</span><span class="op">(</span>data <span class="op">=</span> <span class="va">data</span>, z <span class="op">=</span> <span class="va">grid</span>, dir <span class="op">=</span> <span class="va">dir</span>, res <span class="op">=</span> <span class="fu">res</span><span class="op">(</span><span class="va">dem</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_04 (1 of 4)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_05 (2 of 4)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_09 (3 of 4)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_10 (4 of 4)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_01 (1 of 5)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_02 (2 of 5)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_06 (3 of 5)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_07 (4 of 5)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_03 (5 of 5)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_13 (1 of 3)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_16 (2 of 3)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_17 (3 of 3)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_21 (1 of 3)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_22 (2 of 3)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_23 (3 of 3)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_15 (1 of 5)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_19 (2 of 5)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_20 (3 of 5)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_24 (4 of 5)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_25 (5 of 5)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_07 (1 of 9)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_12 (2 of 9)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_13 (3 of 9)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_17 (4 of 9)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_18 (5 of 9)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_08 (6 of 9)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_09 (7 of 9)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_14 (8 of 9)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_19 (9 of 9)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_10 (1 of 2)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_15 (2 of 2)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_01 (1 of 4)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_06 (2 of 4)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_11 (3 of 4)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_03 (4 of 4)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_22 (1 of 2)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_23 (2 of 2)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_04 (1 of 2)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_05 (2 of 2)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_25 (1 of 1)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_16 (1 of 1)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_21 (1 of 1)"</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">#' # Example 4:</span></span></span>
 <span class="r-in"><span><span class="co"># If you want to get the values by group within a data.table</span></span></span>

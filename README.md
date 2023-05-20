@@ -20,9 +20,11 @@ minimum working example needed to generate usable data for every entry.
 The chapters under the ‘Articles’ section provide extensive theoretical
 grounding behind the functions in each relevant part, before
 demonstrating their use in a non-trivial case usually involving some
-form of large data analysis. They can be considered as ‘living’ working
-papers; use of the code or functions discussed in each part should use
-the appropriate citation.
+form of large data analysis. They can be considered as a series ‘living’
+working papers; the aim is to eventually publish each of them
+independently, yet retain them together as part of an ever-growing
+corpus of analytical approaches. Use of the code or functions discussed
+in each part should use the appropriate citation.
 
 Backwards-compatibility with previous versions cannot be guaranteed
 until the release of version 1.0 unless explicitly stated; once
@@ -33,9 +35,11 @@ guaranteed to continue to behave as intended for future versions.
 # Part 1: Movement
 
 [Part 1 is a set of highly-efficient functions for GIS-style
-cost-distance analysis.](/articles/movement.html) It is currently in
-`beta`, and therefore backwards compatibility cannot yet be guaranteed,
-although the functions are robust and significantly more efficient than
+cost-distance
+analysis.](https://andresgmejiar.github.io/lbmech/articles/movement.html)
+It is currently in `beta`, and therefore backwards compatibility cannot
+yet be guaranteed, although the functions are robust and significantly
+more efficient than
 [`gdistance`](https://agrdatasci.github.io/gdistance/).
 
 It was originally designed to allow for the calculation of time and
@@ -49,16 +53,17 @@ coming release).
 # Part 2: Inequality
 
 [Part 2 is a set of inferential tools to detect spatial inequality in
-vector datasets.](/articles/inequality.html). It is currently in `beta`,
-and therefore backwards compatibility cannot yet be guaranteed, although
-the functions are quite efficient. Moreover, they are the only robust
-method for inference regarding various types of within-and between group
-inequality in spatial contexts.
+vector
+datasets.](https://andresgmejiar.github.io/lbmech/articles/inequality.html).
+It is currently in `beta`, and therefore backwards compatibility cannot
+yet be guaranteed, although the functions are quite efficient. Moreover,
+they are the only robust method for inference regarding various types of
+within-and between group inequality in spatial contexts.
 
 Its current implementation is limited to the set of error-based
-inequality metrics (such as the Gini and @Inoua2021 indexes), however
-the approach is applicable to a number of other spatial statistics
-including for autocorrelation.
+inequality metrics (such as the Gini and (**Inoua2021?**) indexes),
+however the approach is applicable to a number of other spatial
+statistics including for autocorrelation.
 
 # Part 3: Productivity
 
