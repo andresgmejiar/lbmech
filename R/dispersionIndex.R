@@ -165,7 +165,6 @@ gini <- function(...){
 
 #' @rdname dispersionIndex
 #' @param ... Parameters to pass on to \code{\link[lbmech]{dispersionIndex}}.
-
 #' @export
 inoua <- function(...){
   dispersionIndex(index = 'inoua', ...)
