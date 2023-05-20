@@ -6,8 +6,7 @@ md_document:
 github_document:
     toc: true
     pandoc_args: --webtex https://latex.codecogs.com/svg.latex?
-pdf_document:
-    keep_tex: true
+    keep_md: true
 
 ---
 
