@@ -19,11 +19,10 @@
 #' @param inf.val When singularities arise, (i.e. whenever the value is 1/0), by what value are
 #' they replaced? Default is the \code{FUN} of the lowest non-\code{minval} value.
 #' @param offset What value is added to the denominator to prevent singularities from arising
-#' (e.g. whenever the value is 1/0)? Larger values imply smaller distance-decay
-#' \code{Inf}, what is the value by which they are replaced? Default \code{NULL} uses the
-#' value of the smallest neighbor pair from the entire dataset. 
+#' (e.g. whenever the value is 1/0)? Larger values imply smaller distance-decay. 
+#' Default is \code{offset = 0}.
 #' @param minval When distances are raw, what is the minimum allowable distance?
-#' Default is 50. 
+#' Default is \code{-Inf}. 
 #' @param row.stand Logical or \code{'fuzzy'}. If \code{TRUE} (the default), rows are standardized such 
 #' that they sum to one. If \code{'fuzzy'}, rows are standardized as a proportion of the 
 #' largest value. 
@@ -93,7 +92,7 @@ makeWeights <- function(x, bw, mode = 'adaptive', weighting = 'membership',
     x[!is.na(x)] <- 1
 
   } else if (weighting %in% c('distance','rank')){
-    # Calculate distances based on raw distances
+    # Calculate transformed distances
     x <- FUN(x)
     if (is.null(inf.val)){
       # Replace infinites

@@ -38,15 +38,14 @@ distance; or \code{'rank'} which uses the rank-distance (i.e. 1 for nearest neig
 \code{function(x) 1/(offset + x)} otherwise.}
 
 \item{offset}{What value is added to the denominator to prevent singularities from arising
-(e.g. whenever the value is 1/0)? Larger values imply smaller distance-decay
-\code{Inf}, what is the value by which they are replaced? Default \code{NULL} uses the
-value of the smallest neighbor pair from the entire dataset.}
+(e.g. whenever the value is 1/0)? Larger values imply smaller distance-decay. 
+Default is \code{offset = 0}.}
 
 \item{inf.val}{When singularities arise, (i.e. whenever the value is 1/0), by what value are
 they replaced? Default is the \code{FUN} of the lowest non-\code{minval} value.}
 
 \item{minval}{When distances are raw, what is the minimum allowable distance?
-Default is 50.}
+Default is \code{-Inf}.}
 
 \item{row.stand}{Logical or \code{'fuzzy'}. If \code{TRUE} (the default), rows are standardized such 
 that they sum to one. If \code{'fuzzy'}, rows are standardized as a proportion of the 

@@ -27,9 +27,13 @@ Imports:
         geodata,
         rworldmap,
         scales,
-        matrixStats
+        matrixStats,
+        ggplot2,
+        cowplot,
+        leaflet
 Depends:
-        terra,
-        data.table
+    terra,
+    data.table,
+    R (>= 2.10)
 Suggests:
         R.utils
