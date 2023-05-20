@@ -10,7 +10,8 @@ makeWeights(
   mode = "adaptive",
   weighting = "membership",
   FUN = NULL,
-  inf.val = NULL,
+  offset = 0,
+  inf.val = NA,
   minval = -Inf,
   row.stand = FALSE,
   clear.mem = FALSE
@@ -34,11 +35,15 @@ distance; or \code{'rank'} which uses the rank-distance (i.e. 1 for nearest neig
 2 for second nearest...) as the distance variable.}
 
 \item{FUN}{The distance function. Default is \code{NULL} for \code{'membership'}, and
-\code{function(x) 1/x} otherwise.}
+\code{function(x) 1/(offset + x)} otherwise.}
 
-\item{inf.val}{When singularities arise (e.g. whenever the value is 1/0 or 
+\item{offset}{What value is added to the denominator to prevent singularities from arising
+(e.g. whenever the value is 1/0)? Larger values imply smaller distance-decay
 \code{Inf}, what is the value by which they are replaced? Default \code{NULL} uses the
 value of the smallest neighbor pair from the entire dataset.}
+
+\item{inf.val}{When singularities arise, (i.e. whenever the value is 1/0), by what value are
+they replaced? Default is the \code{FUN} of the lowest non-\code{minval} value.}
 
 \item{minval}{When distances are raw, what is the minimum allowable distance?
 Default is 50.}
