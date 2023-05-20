@@ -26,10 +26,17 @@
 #' @importFrom data.table CJ
 #' @return A numeric of length 1 (if \code{inverse = FALSE}) or 2 (if \code{inverse = TRUE})
 #' representing the requested index.
+#' @references {
+#' 
+#' Inoua, Sabiou (2021). "Beware the Gini Index! A New Inequality Measure." 
+#' \emph{ESI Working Paper} 21-18, 
+#' \url{https://digitalcommons.chapman.edu/esi_working_papers/355/}.
+#' 
+#' }
 #' @examples 
 #' 
 #' # Generate dummy observations
-#' x <- runif(10, 0, 100)
+#' x <- runif(10, 1, 100)
 #' n <- runif(10, 0, 10)
 #' 
 #' # Calculate Gini index

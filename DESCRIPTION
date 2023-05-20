@@ -36,4 +36,6 @@ Depends:
     data.table,
     R (>= 2.10)
 Suggests:
-        R.utils
+    R.utils,
+    rmarkdown
+RdMacros: Rdpack

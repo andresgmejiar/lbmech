@@ -7,7 +7,7 @@
 #' @examples 
 #' 
 #' # Generate dummy observations
-#' x <- runif(10, 0, 100)
+#' x <- runif(10, 1, 100)
 #' 
 #' # Get distance matrix
 #' dists <- dist(x)
@@ -33,7 +33,7 @@ incrementalPlot<- function(inc){
     ggplot2::scale_color_manual(values = c(Significant = "red",
                                   `Not Significant` = 'blue')) + 
     ggplot2::geom_line(ggplot2::aes(color = 'black')) +
-    ggplot2::scale_y_continuous(expression(paste(delta, G[NG]))) + 
+    ggplot2::scale_y_continuous(expression(paste(delta, J[NG]))) + 
     ggplot2::scale_x_continuous("Bandwidth") + 
     ggplot2::ggtitle(paste0("Between-Group ",
                    stringr::str_extract(names(inc$index),

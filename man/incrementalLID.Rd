@@ -115,7 +115,7 @@ Determine the bandwidth that maximizes the non-group component of inequality.
 \examples{
 
 # Generate dummy observations
-x <- runif(10, 0, 100)
+x <- runif(10, 1, 100)
 
 # Get distance matrix
 dists <- dist(x)

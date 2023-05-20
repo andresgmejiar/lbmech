@@ -40,14 +40,14 @@ Plot the local group and non-group components of a local indicator of dispersion
 colored by their inference-based class.
 }
 \details{
-colorLID() acts as a function converting class names to the hex codes corresponding
+\code{colorLID()} acts as a function converting class names to the hex codes corresponding
 to the colors used by scatterLID when \code{table = FALSE} (the default), and
 returns the color table itself when \code{table = FALSE}.
 }
 \examples{
 
 # Generate dummy observations
-x <- runif(10, 0, 100)
+x <- runif(10, 1, 100)
 
 # Get distance matrix
 dists <- dist(x)

@@ -60,7 +60,7 @@ method.
 \examples{
 
 # Generate dummy observations
-x <- runif(10, 0, 100)
+x <- runif(10, 1, 100)
 n <- runif(10, 0, 10)
 
 # Calculate Gini index
@@ -68,4 +68,13 @@ gini(x)
 
 # Calculate weighted Inoua index
 inoua(x, w = n)
+}
+\references{
+{
+
+Inoua, Sabiou (2021). "Beware the Gini Index! A New Inequality Measure." 
+\emph{ESI Working Paper} 21-18, 
+\url{https://digitalcommons.chapman.edu/esi_working_papers/355/}.
+
+}
 }

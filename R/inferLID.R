@@ -6,6 +6,10 @@
 #' if global values are significantly above or below what is expected given an 
 #' otherwise random distribution.
 #' 
+#' The output list can be passed to \code{\link[lbmech]{scatterLID}} to plot
+#' the group and non-group components of local inequality based on the significance
+#' classes.
+#' 
 #' @title Infer if dispersion is significant
 #' @param lid The list output from the \code{\link[lbmech]{LID}} function.
 #' @param w The same spatial weights matrix used in calculating the \code{lid} input.
@@ -54,7 +58,7 @@
 #' @examples 
 #' 
 #' # Generate dummy observations
-#' x <- runif(10, 0, 100)
+#' x <- runif(10, 1, 100)
 #' 
 #' # Get distance matrix
 #' dists <- dist(x)

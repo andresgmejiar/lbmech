@@ -43,7 +43,8 @@ as if over land. If \code{water = TRUE}, movement costs are calculated consideri
 moving water.}
 
 \item{method}{A character string for the method that energy costs per
-unit stride should be calculated. one of \code{method \%in\% c('kuo','heglund','oscillator')}.}
+unit stride should be calculated. One of \code{method \%in\% c('kuo','heglund','oscillator')}; 
+see references.}
 
 \item{m}{The mass of the animal moving across the landscape, in kilograms.}
 
@@ -142,4 +143,18 @@ calculateCosts(costFUN = energyCosts,
 tiles = tiles, dir = dir,
 m = 70, v_max = 1.5, BMR = 76, k = 3.5, s = 0.05, l_s = 1,
 L = 0.8)
+}
+\references{
+{
+ Heglund, N. C., Cavagna, G. A., and Taylor, C. R. (1982). "Energetics and 
+ mechanics of terrestrial locomotion. III. Energy changes of the centre of
+ mass as a function of speed and body size in birds and mammals." 
+ \emph{Journal of Experimental Biology} 97(1):41-56. 
+ \url{https://doi.org/10.1242/jeb.97.1.41}.
+ 
+ Kuo, Arthur D. (2007). "The six determinants of gait and the inverted 
+ pendulum analogy: A dynamic walking perspective." \emph{Human Movement Science}
+ 26(4):617-656. 
+ \url{https://doi.org/10.1016/j.humov.2007.04.003}.
+ }
 }

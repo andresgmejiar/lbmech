@@ -2,6 +2,10 @@
 #' and expectations (Mejia Ramon and Munson 2023), obtaining group, non-group, 
 #' and total values for local observations and the global dataset.
 #' 
+#' The output list can be passed to \code{\link[lbmech]{inferLID}} to determine
+#' whether the values are locally and globally higher or lower than would be 
+#' expected if other values were randomly distributed among remaining observations.
+#' 
 #' @title Local Indicators of Dispersion
 #' @param x A vector values
 #' @param w A weights matrix of dimensions \code{length(x) x length(x)}
@@ -71,7 +75,7 @@
 #' @examples 
 #' 
 #' # Generate dummy observations
-#' x <- runif(10, 0, 100)
+#' x <- runif(10, 1, 100)
 #' 
 #' # Get distance matrix
 #' dists <- dist(x)

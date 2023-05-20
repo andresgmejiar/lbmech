@@ -83,10 +83,15 @@ are significantly above or below what is expected given the global dataset, and
 if global values are significantly above or below what is expected given an 
 otherwise random distribution.
 }
+\details{
+The output list can be passed to \code{\link[lbmech]{scatterLID}} to plot
+the group and non-group components of local inequality based on the significance
+classes.
+}
 \examples{
 
 # Generate dummy observations
-x <- runif(10, 0, 100)
+x <- runif(10, 1, 100)
 
 # Get distance matrix
 dists <- dist(x)

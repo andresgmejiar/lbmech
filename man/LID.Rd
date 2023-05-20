@@ -104,10 +104,15 @@ Calculate dispersion indexes according to a given set of standards
 and expectations (Mejia Ramon and Munson 2023), obtaining group, non-group, 
 and total values for local observations and the global dataset.
 }
+\details{
+The output list can be passed to \code{\link[lbmech]{inferLID}} to determine
+whether the values are locally and globally higher or lower than would be 
+expected if other values were randomly distributed among remaining observations.
+}
 \examples{
 
 # Generate dummy observations
-x <- runif(10, 0, 100)
+x <- runif(10, 1, 100)
 
 # Get distance matrix
 dists <- dist(x)

@@ -16,7 +16,8 @@
 #' @param v_max The maximum velocity of the animal moving across the landscape,
 #' in meters per second; see \code{\link[lbmech]{getVelocity}}.
 #' @param method A character string for the method that energy costs per
-#' unit stride should be calculated. one of \code{method \%in\% c('kuo','heglund','oscillator')}.
+#' unit stride should be calculated. One of \code{method \%in\% c('kuo','heglund','oscillator')}; 
+#' see references.
 #' @param time The method by which time costs should be calculated by \code{energyCosts}
 #' should \code{c('dt','dl_t')} not be column names in the input data.table. 
 #' Default is \code{time = timeCosts}.
@@ -41,6 +42,18 @@
 #' @param row_work How much work in joules per second does a person use to move over water?
 #' Default is \code{row_work = NULL}, but required if \code{water} is provided. 
 #' @param ... Additional parameters to pass to \code{timeCosts}
+#' @references {
+#'  Heglund, N. C., Cavagna, G. A., and Taylor, C. R. (1982). "Energetics and 
+#'  mechanics of terrestrial locomotion. III. Energy changes of the centre of
+#'  mass as a function of speed and body size in birds and mammals." 
+#'  \emph{Journal of Experimental Biology} 97(1):41-56. 
+#'  \url{https://doi.org/10.1242/jeb.97.1.41}.
+#'  
+#'  Kuo, Arthur D. (2007). "The six determinants of gait and the inverted 
+#'  pendulum analogy: A dynamic walking perspective." \emph{Human Movement Science}
+#'  26(4):617-656. 
+#'  \url{https://doi.org/10.1016/j.humov.2007.04.003}.
+#'  }
 #' @return For \code{timeCosts}, A data.table object with two columns:
 #'
 #' (1) \code{$dl_t} The predicted walking speed in meters per second

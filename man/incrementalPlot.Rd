@@ -19,7 +19,7 @@ bandwidth sizes
 \examples{
 
 # Generate dummy observations
-x <- runif(10, 0, 100)
+x <- runif(10, 1, 100)
 
 # Get distance matrix
 dists <- dist(x)
