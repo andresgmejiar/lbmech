@@ -122,27 +122,27 @@ but any function that accepts a two-column data.frame is acceptable.</p></dd>
     <div id="ref-examples">
     <h2>Examples</h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Generate a data.table with different observations for different categories</span></span></span>
-<span class="r-in"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://Rdatatable.gitlab.io/data.table/reference/data.table.html" class="external-link">data.table</a></span><span class="op">(</span>ID <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>,<span class="st">"B"</span>,<span class="st">"C"</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>, </span></span>
+<span class="r-in"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu">data.table</span><span class="op">(</span>ID <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>,<span class="st">"B"</span>,<span class="st">"C"</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>, </span></span>
 <span class="r-in"><span>                   x  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">30</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>                   y  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">30</span>, min <span class="op">=</span> <span class="fl">10</span>, max <span class="op">=</span> <span class="fl">20</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Create a target data.table</span></span></span>
-<span class="r-in"><span><span class="va">target</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://Rdatatable.gitlab.io/data.table/reference/data.table.html" class="external-link">data.table</a></span><span class="op">(</span>ID <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>,<span class="st">"B"</span>,<span class="st">"C"</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">101</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span><span class="va">target</span> <span class="op">&lt;-</span> <span class="fu">data.table</span><span class="op">(</span>ID <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>,<span class="st">"B"</span>,<span class="st">"C"</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">101</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>                     x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span>,length.out<span class="op">=</span><span class="fl">101</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">target</span><span class="op">[</span>, <span class="va">y</span> <span class="op">:=</span> <span class="fu">approxMap</span><span class="op">(</span><span class="va">data</span>, id.val <span class="op">=</span> <span class="va">ID</span>, rule <span class="op">=</span> <span class="fl">2</span>, na.rm<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span><span class="op">(</span><span class="va">x</span><span class="op">)</span>,by<span class="op">=</span><span class="st">'ID'</span><span class="op">]</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      ID    x        y</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   1:  A 0.00 18.38772</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   2:  A 0.00 18.38772</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   3:  A 0.00 18.38772</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   4:  A 0.01 18.38772</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   5:  A 0.01 18.38772</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   1:  A 0.00 17.15732</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   2:  A 0.00 17.15732</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   3:  A 0.00 17.15732</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   4:  A 0.01 17.15732</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5:  A 0.01 17.15732</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  ---                 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 299:  C 0.99 10.87286</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 300:  C 0.99 10.87286</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 301:  C 1.00 10.87286</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 302:  C 1.00 10.87286</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 303:  C 1.00 10.87286</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 299:  C 0.99 14.86457</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 300:  C 0.99 14.86457</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 301:  C 1.00 14.86457</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 302:  C 1.00 14.86457</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 303:  C 1.00 14.86457</span>
 </code></pre></div>
     </div>
   </div>

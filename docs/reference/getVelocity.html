@@ -254,7 +254,7 @@ use this function in the <code>j</code> slot, passing it along <code>.SD</code>.
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">#### Example 1:</span></span></span>
 <span class="r-in"><span><span class="co"># If the data contains an 'elevation' or 'z' column</span></span></span>
-<span class="r-in"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://Rdatatable.gitlab.io/data.table/reference/data.table.html" class="external-link">data.table</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10000</span>,<span class="fl">10000</span>,<span class="fl">20000</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu">data.table</span><span class="op">(</span>x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10000</span>,<span class="fl">10000</span>,<span class="fl">20000</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>                   y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10000</span>,<span class="fl">30000</span>,<span class="fl">40000</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>                   elevation <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10000</span>,<span class="fl">0</span>,<span class="fl">200</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>                   dt <span class="op">=</span> <span class="fl">120</span>,</span></span>
@@ -266,23 +266,23 @@ use this function in the <code>j</code> slot, passing it along <code>.SD</code>.
 <span class="r-in"><span><span class="co"># If the data do not contain elevation, and 'z' is a raster</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings</a></span><span class="op">(</span> <span class="va">data</span><span class="op">[</span>, <span class="va">z</span> <span class="op">:=</span> <span class="cn">NULL</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               x        y  elevation  dt ID</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     1: 19107.52 36325.33 128.778770 120  1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     2: 10009.49 33799.04   7.504007 120  1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     3: 16070.67 39506.76 136.075889 120  1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     4: 18637.51 33187.73  25.348305 120  1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     5: 13742.64 32381.06  18.635074 120  1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     1: 19197.95 31660.38   5.360886 120  1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     2: 13874.84 30819.55  15.969853 120  1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     3: 13259.93 30059.33  40.255143 120  1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     4: 13926.57 35945.80 191.091049 120  1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     5: 13583.44 37005.09  47.189854 120  1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    ---                                    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  9996: 17094.23 37529.34 109.874744 120 10</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  9997: 17259.42 33630.32 126.022353 120 10</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  9998: 19215.68 39880.93 146.050569 120 10</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  9999: 11507.84 33686.01 158.794936 120 10</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10000: 14359.20 36456.35 166.556352 120 10</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  9996: 14462.01 31778.87  46.747152 120 10</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  9997: 12468.17 37831.73 100.501198 120 10</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  9998: 12850.95 31249.34  96.181285 120 10</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  9999: 11615.92 30343.52  29.586331 120 10</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10000: 10287.85 33540.86 146.470682 120 10</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Generate a DEM</span></span></span>
 <span class="r-in"><span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">5</span></span></span>
 <span class="r-in"><span><span class="va">dem</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/expand.grid.html" class="external-link">expand.grid</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="op">(</span><span class="va">n</span> <span class="op">*</span> <span class="fl">100</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>                        y <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="op">(</span><span class="va">n</span> <span class="op">*</span> <span class="fl">100</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">/</span> <span class="fl">100</span></span></span>
-<span class="r-in"><span><span class="va">dem</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://Rdatatable.gitlab.io/data.table/reference/as.data.table.html" class="external-link">as.data.table</a></span><span class="op">(</span><span class="va">dem</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">dem</span> <span class="op">&lt;-</span> <span class="fu">as.data.table</span><span class="op">(</span><span class="va">dem</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">dem</span><span class="op">[</span>, <span class="va">z</span> <span class="op">:=</span> <span class="fl">250</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="op">-</span><span class="op">(</span><span class="va">x</span> <span class="op">-</span> <span class="va">n</span><span class="op">/</span><span class="fl">2</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span> <span class="op">+</span> </span></span>
 <span class="r-in"><span>      <span class="fl">250</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="op">-</span><span class="op">(</span><span class="va">y</span> <span class="op">-</span> <span class="va">n</span><span class="op">/</span><span class="fl">2</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">]</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>            x    y         z</span>
@@ -297,9 +297,9 @@ use this function in the <code>j</code> slot, passing it along <code>.SD</code>.
 <span class="r-out co"><span class="r-pr">#&gt;</span> 249998: 4.98 5.00 1.0157707</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 249999: 4.99 5.00 0.9899205</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 250000: 5.00 5.00 0.9652271</span>
-<span class="r-in"><span><span class="va">dem</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/terra/man/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="va">dem</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/ext.html" class="external-link">ext</a></span><span class="op">(</span><span class="va">dem</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10000</span>, <span class="fl">20000</span>, <span class="fl">30000</span>, <span class="fl">40000</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/crs.html" class="external-link">crs</a></span><span class="op">(</span><span class="va">dem</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="st">"+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"</span></span></span>
+<span class="r-in"><span><span class="va">dem</span> <span class="op">&lt;-</span> <span class="fu">rast</span><span class="op">(</span><span class="va">dem</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">ext</span><span class="op">(</span><span class="va">dem</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10000</span>, <span class="fl">20000</span>, <span class="fl">30000</span>, <span class="fl">40000</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">crs</span><span class="op">(</span><span class="va">dem</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="st">"+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">velocity</span> <span class="op">&lt;-</span> <span class="fu">getVelocity</span><span class="op">(</span>data <span class="op">=</span> <span class="va">data</span>, z <span class="op">=</span> <span class="va">dem</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
@@ -310,40 +310,40 @@ use this function in the <code>j</code> slot, passing it along <code>.SD</code>.
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Export the DEM so it's not just stored on the memory</span></span></span>
 <span class="r-in"><span><span class="va">dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/writeRaster.html" class="external-link">writeRaster</a></span><span class="op">(</span><span class="va">dem</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">dir</span>,<span class="st">"/DEM.tif"</span><span class="op">)</span>,overwrite<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">writeRaster</span><span class="op">(</span><span class="va">dem</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">dir</span>,<span class="st">"/DEM.tif"</span><span class="op">)</span>,overwrite<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Import raster, get the grid</span></span></span>
-<span class="r-in"><span><span class="va">dem</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/terra/man/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">dir</span>,<span class="st">"/DEM.tif"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">dem</span> <span class="op">&lt;-</span> <span class="fu">rast</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">dir</span>,<span class="st">"/DEM.tif"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">grid</span> <span class="op">&lt;-</span> <span class="fu"><a href="makeGrid.html">makeGrid</a></span><span class="op">(</span>dem <span class="op">=</span> <span class="va">dem</span>, nx <span class="op">=</span> <span class="va">n</span>, ny <span class="op">=</span> <span class="va">n</span>, sources <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">velocity</span> <span class="op">&lt;-</span> <span class="fu">getVelocity</span><span class="op">(</span>data <span class="op">=</span> <span class="va">data</span>, z <span class="op">=</span> <span class="va">grid</span>, dir <span class="op">=</span> <span class="va">dir</span>, res <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/terra/man/dimensions.html" class="external-link">res</a></span><span class="op">(</span><span class="va">dem</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">velocity</span> <span class="op">&lt;-</span> <span class="fu">getVelocity</span><span class="op">(</span>data <span class="op">=</span> <span class="va">data</span>, z <span class="op">=</span> <span class="va">grid</span>, dir <span class="op">=</span> <span class="va">dir</span>, res <span class="op">=</span> <span class="fu">res</span><span class="op">(</span><span class="va">dem</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_04 (1 of 4)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_05 (2 of 4)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_09 (3 of 4)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_10 (4 of 4)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_01 (1 of 5)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_02 (2 of 5)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_06 (3 of 5)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_07 (4 of 5)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_03 (5 of 5)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_13 (1 of 3)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_16 (2 of 3)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_17 (3 of 3)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_21 (1 of 3)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_22 (2 of 3)"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_23 (3 of 3)"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_15 (1 of 5)"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_19 (2 of 5)"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_20 (3 of 5)"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_24 (4 of 5)"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_25 (5 of 5)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_02 (1 of 4)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_06 (2 of 4)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_07 (3 of 4)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_12 (4 of 4)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_23 (1 of 1)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_04 (1 of 4)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_05 (2 of 4)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_09 (3 of 4)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_10 (4 of 4)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_13 (1 of 3)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_03 (2 of 3)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_08 (3 of 3)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_17 (1 of 3)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_21 (2 of 3)"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Cropping Tile SECTOR_22 (3 of 3)"</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">#' # Example 4:</span></span></span>
 <span class="r-in"><span><span class="co"># If you want to get the values by group within a data.table</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Generate fake data with x,y coordinates, z elevation, and a t</span></span></span>
 <span class="r-in"><span><span class="co"># column representing the number of seconds into the observation</span></span></span>
-<span class="r-in"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://Rdatatable.gitlab.io/data.table/reference/data.table.html" class="external-link">data.table</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10000</span>,<span class="fl">10000</span>,<span class="fl">20000</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu">data.table</span><span class="op">(</span>x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10000</span>,<span class="fl">10000</span>,<span class="fl">20000</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>                   y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10000</span>,<span class="fl">30000</span>,<span class="fl">40000</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>                   z <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10000</span>,<span class="fl">0</span>,<span class="fl">200</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>                   dt <span class="op">=</span> <span class="fl">15</span>,</span></span>

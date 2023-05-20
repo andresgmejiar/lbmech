@@ -557,12 +557,12 @@ won’t need to be fetched and prepossessed again.</p>
 <span>                  destination <span class="op">=</span> <span class="st">'all'</span><span class="op">)</span>       <span class="co"># Distance to all points in region</span></span></code></pre></div>
 <p>Likewise, least-cost paths can be computed given a set of nodes:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Find all least-cost paths between Palma de Mallorca and Ma??</span></span>
+<code class="sourceCode R"><span><span class="co"># Find all least-cost paths between Palma de Mallorca and Maó</span></span>
 <span></span>
 <span><span class="va">paths</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getPaths.html">getPaths</a></span><span class="op">(</span>region <span class="op">=</span> <span class="va">reg</span>,</span>
 <span>                  nodes <span class="op">=</span> <span class="va">pobles</span>,</span>
 <span>                  costname <span class="op">=</span> <span class="st">'energyCosts'</span>,</span>
-<span>                  order <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Palma de Mallorca"</span>,<span class="st">"Ma??"</span><span class="op">)</span>,</span>
+<span>                  order <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Palma de Mallorca"</span>,<span class="st">"Maó"</span><span class="op">)</span>,</span>
 <span>                  id <span class="op">=</span> <span class="st">'Location'</span>,</span>
 <span>                  dir <span class="op">=</span> <span class="va">rd</span><span class="op">)</span></span></code></pre></div>
 <p><img src="movement_files/figure-html/unnamed-chunk-16-1.png" width="816" style="display: block; margin: auto;"></p>
@@ -573,7 +573,7 @@ the output cost rasters using the <code><a href="../reference/makeCorridor.html"
 function.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">corr</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/makeCorridor.html">makeCorridor</a></span><span class="op">(</span>rasters <span class="op">=</span> <span class="va">costs</span>, </span>
-<span>                     order <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rev.html" class="external-link">rev</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Castell de Cabrera"</span>,<span class="st">"Sa Calobra"</span>,<span class="st">"Ma??"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>                     order <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rev.html" class="external-link">rev</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Castell de Cabrera"</span>,<span class="st">"Sa Calobra"</span>,<span class="st">"Maó"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
