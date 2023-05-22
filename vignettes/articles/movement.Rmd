@@ -1,7 +1,7 @@
 ---
-title: "1. Movement Models"
-author: "Andrés G. Mejía Ramón"
-date: "`r Sys.Date()`"
+title: "1. A Thermodynamic Approach to Least-Cost Path Analysis"
+author: "Andres G. Mejia Ramon"
+date: "May 21, 2023"
 bibliography: "D:/lbmech/Package/lbmech/inst/REFERENCES.bib"
 md_document:
     variant: markdown_github
@@ -9,7 +9,7 @@ github_document:
     toc: true
     pandoc_args: --webtex https://latex.codecogs.com/svg.latex?
 ---
-
+  
 ```{r setup, include=FALSE}
 options(encoding = 'UTF-8')
 knitr::opts_chunk$set(
@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
   echo = TRUE,
   encoding = 'UTF-8',
   dev = "ragg_png"
-  )
+)
 options('digits' = 3)
 library(pandoc)
 ```
@@ -60,12 +60,14 @@ mgh & dz \geq 0\\
 ```
 To obtain the expected velocity when moving across a landscape of variable topography, we can employ Tobler's Hiking function, which predicts that velocity decreases exponentially as the slope departs from an \`optimum' slope at which an traveler's velocity can be maximized:
 
+
 ```{=tex}
 \begin{equation}
 \tag{2}
 \frac{d\ell}{dt} = v_{\textrm{max}} e^{-k | \frac{dz}{d\ell} - s |}
 \end{equation}
 ```
+
 where $\ell$ is horizontal movement, $z$ vertical movement, $v_{\textrm{max}}$ the maximum walking speed, $s$ the slope of maximum speed and $k$ how sensitive speed variation is to slope. Canonical applications of the Tobler function for humans employ $v_{\textrm{max}} = 1.5$ m/s, $k = 3.5$, and $s = - 0.05$ = $\tan(-2.83^\circ)$. However, the `getVelocity()` function in the `lbmech` package allows researchers to obtain the appropriate variables for their subject species of interest from high-resolution GPS tracking data.
 
 Humans and animals, however, are far from ideal engines. Generally, for every calorie of work expended humans require five calories of dietary energy resulting in an efficiency factor of $\varepsilon = 0.2$. Dividing Eq. 1 by $\varepsilon$, and plugging in Tobler's Hiking Function (Eq. 2) for $v$ results in the total amount of energy used by a human to travel between two points on the landscape. This is our function for kinematic energy expenditure.
@@ -80,6 +82,7 @@ mgh & dz \geq 0\\
 0 & dz < 0 \\\end{cases} 
 \end{equation}
 ```
+
 Both of the energetic equations derived above display anisotropic behavior due to dependence on $\theta = \arctan \left(\frac{dz}{dx}\right)$. However, only the potential energy term is linearly anisotropic whereas the kinetic energy term is dependent on slope through an exponential term to the second power. As such, the ArcGIS Distance toolkit is insufficient for true energetic analyses. This incapacity is largely because it---like other least-cost tools perform the calculations directly upon the localized value at a particular cell. Rather, since this is a problem of performing a line integral over a differential surface, an algorithm that performs its calculations based on the difference between individual cells is required.
 
 The figure below plots each of the above cost functions (for time, kinetic energy, gravitational potential energy, mechanical/kinematic energy, and net metabolic energy) versus slope, assuming the canonical parameters for Tobler's Hiking Function and a human male. $k = 3.5$, $s = -0.05$ $m = 68$ kg, $v_\textrm{max} = 1.5$ m/s, $L = 0.75$ m, $\ell_s = 1.6$ m, $g = 9.81$ m/s$^2$, $\frac{dH}{dt} = 93$ J/s, and $\varepsilon = 0.2$; (a) Tobler's Hiking Function inverted for Pace $t$; (b) Kinetic Energy, $K$; (c) Work against Gravitational Potential Energy, $U$; (e) Kinematic/Mechanical Energy Performed, $W = K + U$; (f) Net Metabolic Energy Consumed, $E = \frac{W}{\varepsilon} + \frac{dH}{dt}t$.
@@ -187,12 +190,13 @@ print(velocity_gps[1:(length(velocity_gps)-1)])
 ```
 Finally, the `lbmech::plotVelocity()` function can be used to plot the log-transformed probability of a given speed at a given slope versus the regressed function:
 
-```{r}
+```{r, fig.align='center'}
 plotVelocity(velocity_gps)
 ```
 
 ## 1.4 Energetic Cost-Distance Analysis
 
+### 1.4.1 Procuring Data
 Given the large amounts of data downloaded, processed, and re-used at different parts of the workflow, it is highly recommended to define a consistent directory for the workflow particularly during model-building stages. 
 
 ```{r, eval = FALSE}
@@ -211,20 +215,20 @@ if (!dir.exists(rd)){
 # MOTU Command to download Barealic Island ocean velocity
 # Note that you have to provide your own username and password
 command <- paste0('python -m motuclient --motu https://nrt.cmems-du.eu/motu-web/Motu --service-id MEDSEA_ANALYSISFORECAST_PHY_006_013-TDS --product-id cmems_mod_med_phy-cur_anfc_4.2km_P1D-m --longitude-min 1.8343864083631984 --longitude-max 4.736546729949184 --latitude-min 38.85730429069023 --latitude-max 40.484272955821766 --date-min "2022-06-13 00:00:00" --date-max "2022-06-14 00:00:00" --depth-min 1.0182366371154785 --depth-max 1.0182366371154785 --variable uo --variable vo --out-dir ', rd ,' --out-name Ocean_Currents.nc --user #YOUR#USERNAME#HERE# --pwd #YOUR#PASSWORD#HERE#>')
- 
- system(command, intern = TRUE)
- 
+
+system(command, intern = TRUE)
+
 # Import an ocean water surface velocity dataset
 currents <- project(rast(paste0(rd,"/Ocean_Currents.nc")),
                     proj)
 
- 
+
 # Projection will be UTM 31N WGS1984
 proj <- "EPSG:32631"
- 
+
 # Define region of maximum possible movement
 region <- as.polygons(ext(currents),proj)
- 
+
 ```
 
 
@@ -405,17 +409,19 @@ gg
 
 ```
 
+
+### 1.4.2 `lbmech` Least-Cost Workflow
 As with any raster operation, a consistent projection and grid needs to be defined to snap/fix all sources. However, unlike most raster packages `lbmech` does not require foreknowledge of the spatial extents; only the resolution and offsets. A raster can be provided, or one can be made with the `lbmech::fix_z()` function:
   
-```{r, eval = TRUE}
+  ```{r, eval = TRUE}
 # Define the raster properties
 z_fix <- fix_z(proj = proj, 
                res = 50)
 ```
 
-Although a 'world' can be defined directly based on a digital elevation model, generally it is easier to define a polygon coincident with the coverage of a digital elevation model and an attribute pointing to a URL/filepath with the source. The `lbmech::makeGrid()` can make such a polygon for a raster or filepath input, while using a polygon will induce future functions to download SRTM data as-needed. Similar polygons are frequently distributed by state GIS agencies (e.g. [Pennsylvania](https://www.pasda.psu.edu/download/pamap/); [Massachusetts](https://www.mass.gov/info-details/massgis-data-lidar-terrain-data-index):
-
-```{r, eval = TRUE}
+Although a 'world' can be defined directly based on a digital elevation model, generally it is easier to define a polygon coincident with the coverage of a digital elevation model and an attribute pointing to a URL/filepath with the source. The `lbmech::makeGrid()` can make such a polygon for a raster or filepath input, while using a polygon will induce future functions to download SRTM data as-needed. Similar polygons are frequently distributed by state GIS agencies (e.g. [Pennsylvania](https://www.pasda.psu.edu/download/pamap/); [Massachusetts](https://www.mass.gov/info-details/massgis-data-lidar-terrain-data-index)):
+  
+  ```{r, eval = TRUE}
 # Make a grid
 grid <- makeGrid(dem = region,     # Input; here polygon for SRTM
                  nx = 15, ny = 15, # Cols/Rows to divide the polygon
@@ -443,7 +449,7 @@ defineWorld(source = grid,            # Elevation source, like makeGrid() output
 ```
 
 
-Once a world has been defined, a cost function can be applied using the `lgmech::calculateCosts()` function. The `lbmech::energyCosts()` function is provided to perform least-time, least-work, and least-energy analyses as in the above sections of this manuscript. As with `lbmech::defineWorld()`, it itself is not generally used to perform calculations---just to define the values. 
+Once a world has been defined, a cost function can be applied using the `lbmech::calculateCosts()` function. The `lbmech::energyCosts()` function is provided to perform least-time, least-work, and least-energy analyses as in the above sections of this manuscript. As with `lbmech::defineWorld()`, it itself is not generally used to perform calculations---just to define the values. 
 
 ```{r, eval = FALSE}
 calculateCosts(costFUN = energyCosts,  
@@ -772,4 +778,3 @@ corr <- makeCorridor(rasters = costs,
 
 
 ## References
-\insertAllCited{}

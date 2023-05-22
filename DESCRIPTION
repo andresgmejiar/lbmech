@@ -38,4 +38,3 @@ Depends:
 Suggests:
     R.utils,
     rmarkdown
-RdMacros: Rdpack

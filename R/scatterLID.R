@@ -39,7 +39,7 @@
 #' 
 #' # Infer whether values are significant relative to the spatial distribution
 #' # of the neighbots
-#' inference <- inferLID(lid, w = weights, ntrials = 100)
+#' inference <- inferLID(lid, w = weights, ntrials = 100, pb = FALSE)
 #' 
 #' # Plot the inferences
 #' scatterLID(lid, inference)
@@ -76,7 +76,7 @@ gglid <- ggplot2::ggplot(cbind(lid$local,inference$local), ggplot2::aes(x = FUN(
 
 # Scale is just a tile form of the lid.cols variable
 ggcolors <- ggplot2::ggplot(lid.cols, ggplot2::aes(fill = Class, x = x, y = y)) + 
-  geom_tile() + 
+  ggplot2::geom_tile() + 
   ggplot2::theme_bw() + 
   ggplot2::theme(legend.position = 'none',
         plot.title = ggplot2::element_text(hjust = 0.5, size = 12),

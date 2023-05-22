@@ -423,6 +423,9 @@ slope versus the regressed function:</p>
 <div class="section level2">
 <h2 id="energetic-cost-distance-analysis">1.4 Energetic Cost-Distance Analysis<a class="anchor" aria-label="anchor" href="#energetic-cost-distance-analysis"></a>
 </h2>
+<div class="section level3">
+<h3 id="procuring-data">1.4.1 Procuring Data<a class="anchor" aria-label="anchor" href="#procuring-data"></a>
+</h3>
 <p>Given the large amounts of data downloaded, processed, and re-used at
 different parts of the workflow, it is highly recommended to define a
 consistent directory for the workflow particularly during model-building
@@ -469,6 +472,10 @@ provide their own username and password:</p>
 <span><span class="co">#&gt; z_range:       zmin: -4880 zmax: 345</span></span>
 <span><span class="co">#&gt; Geodetic CRS:  WGS 84</span></span></code></pre>
 <p><img src="movement_files/figure-html/unnamed-chunk-8-1.png" width="2666.66666666667" style="display: block; margin: auto;"></p>
+</div>
+<div class="section level3">
+<h3 id="lbmech-least-cost-workflow">1.4.2 <code>lbmech</code> Least-Cost Workflow<a class="anchor" aria-label="anchor" href="#lbmech-least-cost-workflow"></a>
+</h3>
 <p>As with any raster operation, a consistent projection and grid needs
 to be defined to snap/fix all sources. However, unlike most raster
 packages <code>lbmech</code> does not require foreknowledge of the
@@ -486,7 +493,7 @@ to a URL/filepath with the source. The <code><a href="../reference/makeGrid.html
 can make such a polygon for a raster or filepath input, while using a
 polygon will induce future functions to download SRTM data as-needed.
 Similar polygons are frequently distributed by state GIS agencies
-(e.g. <a href="https://www.pasda.psu.edu/download/pamap/" class="external-link">Pennsylvania</a>; <a href="https://www.mass.gov/info-details/massgis-data-lidar-terrain-data-index" class="external-link">Massachusetts</a>:</p>
+(e.g. <a href="https://www.pasda.psu.edu/download/pamap/" class="external-link">Pennsylvania</a>; <a href="https://www.mass.gov/info-details/massgis-data-lidar-terrain-data-index" class="external-link">Massachusetts</a>):</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Make a grid</span></span>
 <span><span class="va">grid</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/makeGrid.html">makeGrid</a></span><span class="op">(</span>dem <span class="op">=</span> <span class="va">region</span>,     <span class="co"># Input; here polygon for SRTM</span></span>
@@ -574,6 +581,7 @@ function.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">corr</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/makeCorridor.html">makeCorridor</a></span><span class="op">(</span>rasters <span class="op">=</span> <span class="va">costs</span>, </span>
 <span>                     order <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rev.html" class="external-link">rev</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Castell de Cabrera"</span>,<span class="st">"Sa Calobra"</span>,<span class="st">"Maó"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+</div>
 </div>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>

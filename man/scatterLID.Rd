@@ -64,7 +64,7 @@ lid <- LID(x, w = weights, index = 'gini', type = 'local')
 
 # Infer whether values are significant relative to the spatial distribution
 # of the neighbots
-inference <- inferLID(lid, w = weights, ntrials = 100)
+inference <- inferLID(lid, w = weights, ntrials = 100, pb = FALSE)
 
 # Plot the inferences
 scatterLID(lid, inference)
