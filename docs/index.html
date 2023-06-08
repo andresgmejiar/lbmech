@@ -18,7 +18,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="pkgdown.css" rel="stylesheet">
 <script src="pkgdown.js"></script><meta property="og:title" content="A Package to Study the Mechanics of Landscape and Behavior">
-<meta property="og:description" content="A series of functions to calculate the cost required to move across the landscape in terms of (1) time, (2) mechanical work, and (3) net metabolic expenditure---energy, as well as (4) estimate local indicators of dispersion. ">
+<meta property="og:description" content="A geospatial package to study the adaptive mechanics of landscape and behavior, including at present: (1) energetic and efficient least-cost analysis; (2) local indicators of dispersion; and (3) interpolation of agricultural productivity data ">
 <meta property="og:image" content="/logo.png">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
@@ -87,26 +87,36 @@
 </h1>
 <!-- badges: start -->
 <!-- badges: end -->
-<p><code>lbmech</code> is a geospatial package intended to study the mechanics of landscape and behavior. The entire project has been conceived of in seven parts, of which only four are in mature-enough states for public presentation/release. As such, the package should be considered largely a lengthy work-in-progress. The functions are very heavily documented under the ‘References’ section—each function contains at least one minimum working example needed to generate usable data for every entry. The chapters under the ‘Articles’ section provide extensive theoretical grounding behind the functions in each relevant part, before demonstrating their use in a non-trivial case usually involving some form of large data analysis. They can be considered as a series ‘living’ working papers; the aim is to eventually publish each of them independently, yet retain them together as part of an ever-growing corpus of analytical approaches. Use of the code or functions discussed in each part should use the appropriate citation.</p>
+<p><code>lbmech</code> is a geospatial package intended to study the mechanics of landscape and behavior. The entire project has been conceived of in seven parts, of which only four are in mature-enough states for public presentation/release. As such, the package should be considered largely a lengthy work-in-progress. The functions are very heavily documented under the ‘References’ section—each function contains at least one minimum working example needed to generate usable data for every entry.</p>
+<p>The chapters under the ‘Articles’ section provide extensive theoretical grounding behind the functions in each relevant part, before demonstrating their use in a non-trivial case usually involving some form of large data analysis. They can be considered as a series ‘living’ working papers; the aim is to eventually publish each of them independently, yet retain them together as part of an ever-growing corpus of analytical approaches. Use of the code or functions discussed in each part should use the appropriate citation.</p>
 <p>Backwards-compatibility with previous versions cannot be guaranteed until the release of version 1.0 unless explicitly stated; once particular parts have been accepted post peer review, they will be labeled as <code>completed</code>’ and the corresponding functions will be guaranteed to continue to behave as intended for future versions.</p>
+<div class="section level2">
+<h2 id="part-1-movement">Part 1: Movement<a class="anchor" aria-label="anchor" href="#part-1-movement"></a>
+</h2>
+<p><a href="https://andresgmejiar.github.io/lbmech/articles/movement.html" class="external-link">Part 1 is a set of highly-efficient functions for GIS-style cost-distance analysis.</a> It is currently in <code>gamma</code>, and therefore backwards compatibility cannot yet be guaranteed, although the functions are robust and significantly more efficient than <a href="https://agrdatasci.github.io/gdistance/" class="external-link"><code>gdistance</code></a> and stability is expected. The syntax is expected to remain consistent enough that plotting functions have been developed and are included.</p>
+<p>It was originally designed to allow for the calculation of time and energetic/thermodynamic costs when moving across the landscape. The default parameters allow for such calculations, but currently any arbitrary cost function depending on a single raster input is supported (Previous versions &lt; 0.4.0 supported any arbitrary cost function with any number of raster inputs; this functionality will be returned in a coming release). Version 0.2.0 was introduced in Mejia Ramon (2021: 136-240, 300-327) and was most recently presented at Mejia Ramon (2022).</p>
 </div>
-<div class="section level1">
-<h1 id="part-1-movement">Part 1: Movement<a class="anchor" aria-label="anchor" href="#part-1-movement"></a>
-</h1>
-<p><a href="https://andresgmejiar.github.io/lbmech/articles/movement.html" class="external-link">Part 1 is a set of highly-efficient functions for GIS-style cost-distance analysis.</a> It is currently in <code>beta</code>, and therefore backwards compatibility cannot yet be guaranteed, although the functions are robust and significantly more efficient than <a href="https://agrdatasci.github.io/gdistance/" class="external-link"><code>gdistance</code></a>.</p>
-<p>It was originally designed to allow for the calculation of time and energetic/thermodynamic costs when moving across the landscape. The default parameters allow for such calculations, but currently any arbitrary cost function depending on a single raster input is supported (Previous versions &lt; 0.4.0 supported any arbitrary cost function with any number of raster inputs; this functionality will be returned in a coming release).</p>
+<div class="section level2">
+<h2 id="part-2-inequality">Part 2: Inequality<a class="anchor" aria-label="anchor" href="#part-2-inequality"></a>
+</h2>
+<p><a href="https://andresgmejiar.github.io/lbmech/articles/inequality.html" class="external-link">Part 2 is a set of inferential tools to detect spatial inequality in vector datasets.</a>. It is currently in <code>gamma</code>, and therefore backwards compatibility cannot yet be guaranteed, although the functions are quite efficient and stability is expected. Moreover, they are the only robust method for inference regarding various types of within-and between group inequality in spatial contexts. The syntax is expected to remain consistent enough that plotting functions have been developed and are included.</p>
+<p>Its current implementation is limited to the set of error-based inequality metrics (such as the Gini and Inoua indexes), however the approach is applicable to a number of other spatial statistics including for autocorrelation. Version 0.2.0 first presented in Munson et al. (2023).</p>
 </div>
-<div class="section level1">
-<h1 id="part-2-inequality">Part 2: Inequality<a class="anchor" aria-label="anchor" href="#part-2-inequality"></a>
-</h1>
-<p><a href="https://andresgmejiar.github.io/lbmech/articles/inequality.html" class="external-link">Part 2 is a set of inferential tools to detect spatial inequality in vector datasets.</a>. It is currently in <code>beta</code>, and therefore backwards compatibility cannot yet be guaranteed, although the functions are quite efficient. Moreover, they are the only robust method for inference regarding various types of within-and between group inequality in spatial contexts.</p>
-<p>Its current implementation is limited to the set of error-based inequality metrics (such as the Gini and Inoua indexes), however the approach is applicable to a number of other spatial statistics including for autocorrelation.</p>
+<div class="section level2">
+<h2 id="part-3-productivity">Part 3: Productivity<a class="anchor" aria-label="anchor" href="#part-3-productivity"></a>
+</h2>
+<p>Part 3 is a set of tools to interpolate agricultural productivity data. It is currently in early <code>beta</code>. Therefore, while the functions are included and heavily documented, a theory and applications chapter is not yet included nor have they been rigorously stress tested beyond their intended applications. Moreover, the base data has not yet been included in the compiled package but will be shortly.</p>
+<p>The current implementation is designed to take municipal-level aggregates of agricultural productivity for a number of crops in the various agricultural censuses of mid-1900s Mexico and convert them into location-level predictions of expected productive quantiles. Version 0.2.0 was introduced in Mejia Ramon (2021: 71-135, 284-299) and was most recently presented at Mejia Ramon et al. (2023).</p>
 </div>
-<div class="section level1">
-<h1 id="part-3-productivity">Part 3: Productivity<a class="anchor" aria-label="anchor" href="#part-3-productivity"></a>
-</h1>
-<p>Part 3 is a set of tools to interpolate agricultural productivity data. It is currently in <code>alpha</code>. Therefore, while the functions are included and heavily documented, a theory and applications chapter is not yet included nor have they been stress tested beyond their intended applications. Moreover, the base data has not yet been included in the compiled package but will be shortly.</p>
-<p>The current implementation is designed to take municipal-level aggregates of agricultural productivity for a number of crops in the various agricultural censuses of mid-1900s Mexico and convert them into location-level predictions of expected productive quantiles.</p>
+<div class="section level2">
+<h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+</h2>
+<p>Inoua, Sabiou (2021). “Beware the Gini Index! A New Inequality Measure.” <em>ESI Working Paper</em> 21-18. <a href="https://digitalcommons.chapman.edu/esi_working_papers/355/" class="external-link uri">https://digitalcommons.chapman.edu/esi_working_papers/355/</a></p>
+<p>Mejia Ramon, Andres G. (2021). <em>Agricultural Productivity and Human-Landscape Dynamics in the Early Basin of Mexico</em>. Ph.D. dissertation in Anthropology, The Pennsylvania State University, University Park. <a href="https://doi.org/10.26207/rj25-0380" class="external-link uri">https://doi.org/10.26207/rj25-0380</a></p>
+<p>Mejia Ramon, Andres G.(2022). “The Mechanics of Landscape and Behavior: A Least-Cost Path Approach Grounded in Mechanical Physics.” Paper presented at the <em>87th Annual Meeting of the Society for American Archaeology</em>, Chicago.</p>
+<p>Mejia Ramon, Andres G., Jessica L. Munson, Jill Onken, and Lorena Paiz Aragon (2023). “Let the Crops Speak for Themselves: How to Avoid Imposing Agroecological Assumptions at Altar de Sacrificios.” Paper presented at the <em>87th Annual Meeting of the Society for American Archaeology</em>, Chicago.</p>
+<p>Munson, Jessica L., Andres G. Mejia Ramon, Lorena Paiz Aragon, Jill Onken, and Jonathan Scholnick (2023). “Settlement Density, Household Inequality, and Social Interaction in the Western Maya Lowlands.” Paper presented at the <em>88th Annual Meeting of the Society for American Archaeology</em>, Portland, Oregon.</p>
+</div>
 </div>
 
   </div>

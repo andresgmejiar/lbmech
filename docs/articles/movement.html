@@ -76,10 +76,10 @@
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>1. Movement Models</h1>
-                        <h4 data-toc-skip class="author">Andrés G. Mejía
-Ramón</h4>
+                        <h4 data-toc-skip class="author">Andres G. Mejia
+Ramon</h4>
             
-            <h4 data-toc-skip class="date">2023-05-21</h4>
+            <h4 data-toc-skip class="date">May 21, 2023</h4>
       
       
       <div class="hidden name"><code>movement.Rmd</code></div>
@@ -276,14 +276,13 @@ dietary energy resulting in an efficiency factor of <span class="math inline">\(
 <span class="math inline">\(\varepsilon\)</span>, and plugging in
 Tobler’s Hiking Function (Eq. 2) for <span class="math inline">\(v\)</span> results in the total amount of energy
 used by a human to travel between two points on the landscape. This is
-our function for kinematic energy expenditure.</p>
-<p>People also consume energy just to stay alive as defined by our base
-metabolic rate (BMR, represented by <span class="math inline">\(\frac{dH}{dt}\)</span>). Assuming a relatively
-constant amount of daily physical activity and by extension a relatively
-constant basal metabolic rate, we can model the total amount of energy
-used by a human to travel between two points on the landscape and stay
-alive, by adding <span class="math inline">\(H\)</span> to our
-equation:</p>
+our function for kinematic energy expenditure. , People also consume
+energy just to stay alive as defined by our base metabolic rate (BMR,
+represented by <span class="math inline">\(\frac{dH}{dt}\)</span>).
+Assuming a relatively constant amount of daily physical activity and by
+extension a relatively constant basal metabolic rate, we can model the
+total amount of energy used by a human to travel between two points on
+the landscape and stay alive, by adding <span class="math inline">\(H\)</span> to our equation:</p>
 <span class="math display">\[\begin{equation}
 \tag{3}
 E = \frac{1}{4} m v^2 \frac{\ell_s}{L} + \frac{dH}{dt} dt +
@@ -334,8 +333,8 @@ movement is mainly gravitational potential energy-limited. The situation
 is similar for net metabolic energy, but here additional penalties are
 incurred for overly-slow routes that be more mechanically efficient but
 take long enough that metabolic processes incur costs. Thus, the most
-efficient slopes are those that occur at the global minimum at <span class="math inline">\(\frac{dz}{d\ell} = -0.317 =
-\arctan(-17.6^\circ)\)</span>.</p>
+efficient slopes are those that occur at the global minimum at <span class="math inline">\(\frac{dz}{d\ell} = -0.0818 =
+\arctan(-4.7^\circ)\)</span>.</p>
 <p>One final consideration that to date no other least-cost toolkit
 rigorously assesses is potential movement on and across water. Movement
 considerations across bodies of water are conceptually simpler than
@@ -365,13 +364,25 @@ used it to identify seasonal variability in hiking trail activity and
 network organization. Given a directory with <code>.gpx</code> files,
 the tracks can be imported as a data.table using
 <code><a href="../reference/importGPX.html">lbmech::importGPX()</a></code>:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/getData.html">getData</a></span><span class="op">(</span><span class="st">'baleares-gps'</span>, dir <span class="op">=</span> <span class="va">dir</span><span class="op">)</span></span>
+<span></span>
+<span></span>
+<span><span class="co"># Detect files with 'gpx' extension in working directory</span></span>
+<span><span class="va">gpx</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files</a></span><span class="op">(</span><span class="va">dir</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span>, full.names <span class="op">=</span> <span class="cn">TRUE</span>, pattern <span class="op">=</span> <span class="st">".gpx$"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Import with lbmech::importGPX()</span></span>
+<span><span class="va">gpx</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">gpx</span>,<span class="va">importGPX</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Join into a single object</span></span>
+<span><span class="va">gpx</span> <span class="op">&lt;-</span> <span class="fu">rbindlist</span><span class="op">(</span><span class="va">gpx</span><span class="op">)</span></span></code></pre></div>
 <p>Since GPS tracks can be sampled at a per-length rate smaller than the
 size of even the smallest raster pixels we might employ, GPS tracks are
 downsampled to a comparable rate—about a pixel length per GPS sample.
 For an expected pixel size of 50 m and an approximate maximum speed of
 1.5 m/s, <code>t_step = 50/1.5</code>. We can use the
 <code><a href="../reference/downsampleXYZ.html">lbmech::downsampleXYZ()</a></code> function for this:</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">gpx</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/downsampleXYZ.html">downsampleXYZ</a></span><span class="op">(</span><span class="va">gpx</span>, t_step <span class="op">=</span> <span class="fl">50</span><span class="op">/</span><span class="fl">1.5</span>,</span>
 <span>                     t <span class="op">=</span> <span class="st">'t'</span>, x <span class="op">=</span> <span class="st">'long'</span>, y <span class="op">=</span> <span class="st">'lat'</span>, z <span class="op">=</span> <span class="st">'z'</span>, </span>
 <span>                     ID <span class="op">=</span> <span class="st">'TrackID'</span><span class="op">)</span></span></code></pre></div>
@@ -382,7 +393,7 @@ planimetric speed <span class="math inline">\(\frac{d\ell}{dt}\)</span>,
 and (2) performs a nonlinear quantile regression to get a function of
 the form Tobler, which returns a list with the nonlinear model, the
 model parameters, and the transformed data.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">velocity_gps</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getVelocity.html">getVelocity</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">gpx</span><span class="op">[</span><span class="va">y</span> <span class="op">&lt;</span> <span class="fl">90</span><span class="op">]</span>, <span class="co"># Filter for y</span></span>
 <span>                            degs <span class="op">=</span> <span class="cn">TRUE</span>,        <span class="co"># Lat/Long; geodesic correction</span></span>
 <span>                            tau_vmax <span class="op">=</span> <span class="fl">0.95</span>,    <span class="co"># Quantile for v_max</span></span>
@@ -416,9 +427,9 @@ model parameters, and the transformed data.</p>
 <p>Finally, the <code><a href="../reference/plotVelocity.html">lbmech::plotVelocity()</a></code> function can be used
 to plot the log-transformed probability of a given speed at a given
 slope versus the regressed function:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plotVelocity.html">plotVelocity</a></span><span class="op">(</span><span class="va">velocity_gps</span><span class="op">)</span></span></code></pre></div>
-<p><img src="movement_files/figure-html/unnamed-chunk-5-1.png" width="700"></p>
+<p><img src="movement_files/figure-html/unnamed-chunk-5-1.png" width="700" style="display: block; margin: auto;"></p>
 </div>
 <div class="section level2">
 <h2 id="energetic-cost-distance-analysis">1.4 Energetic Cost-Distance Analysis<a class="anchor" aria-label="anchor" href="#energetic-cost-distance-analysis"></a>
@@ -430,11 +441,11 @@ slope versus the regressed function:</p>
 different parts of the workflow, it is highly recommended to define a
 consistent directory for the workflow particularly during model-building
 stages.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Define a working directory</span></span>
 <span><span class="va">rd</span> <span class="op">&lt;-</span> <span class="st">"Baleares"</span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.exists</a></span><span class="op">(</span><span class="va">rd</span><span class="op">)</span><span class="op">)</span><span class="op">{</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">rd</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">rd</span><span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
 <p><code>lbmech</code> can automatically download terrain data, but we
 also want to consider ocean movement. Here, we’ll import the
@@ -442,27 +453,18 @@ Mediterranean Sea Physics Analysis and Forecast (CMEMS MED-Currents,
 EAS6 system) <span class="citation">(Clementi et al. 2021)</span> for
 ocean currents around two of the principal Balearic Islands—Mallorca and
 Menorca—on 13 June 2022 and define our region of maximum movement (our
-‘world’) around that raster’s extent. Note that the user needs to
-provide their own username and password:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="co"># MOTU Command to download Barealic Island ocean velocity</span></span>
-<span><span class="co"># Note that you have to provide your own username and password</span></span>
-<span><span class="va">command</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">'python -m motuclient --motu https://nrt.cmems-du.eu/motu-web/Motu --service-id MEDSEA_ANALYSISFORECAST_PHY_006_013-TDS --product-id cmems_mod_med_phy-cur_anfc_4.2km_P1D-m --longitude-min 1.8343864083631984 --longitude-max 4.736546729949184 --latitude-min 38.85730429069023 --latitude-max 40.484272955821766 --date-min "2022-06-13 00:00:00" --date-max "2022-06-14 00:00:00" --depth-min 1.0182366371154785 --depth-max 1.0182366371154785 --variable uo --variable vo --out-dir '</span>, <span class="va">rd</span> ,<span class="st">' --out-name Ocean_Currents.nc --user #YOUR#USERNAME#HERE# --pwd #YOUR#PASSWORD#HERE#&gt;'</span><span class="op">)</span></span>
-<span> </span>
-<span> <span class="fu"><a href="https://rdrr.io/r/base/system.html" class="external-link">system</a></span><span class="op">(</span><span class="va">command</span>, intern <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span> </span>
-<span><span class="co"># Import an ocean water surface velocity dataset</span></span>
-<span><span class="va">currents</span> <span class="op">&lt;-</span> <span class="fu">project</span><span class="op">(</span><span class="fu">rast</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">rd</span>,<span class="st">"/Ocean_Currents.nc"</span><span class="op">)</span><span class="op">)</span>,</span>
+‘world’) around that raster’s extent:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Import an ocean water surface velocity dataset</span></span>
+<span><span class="va">currents</span> <span class="op">&lt;-</span> <span class="fu">project</span><span class="op">(</span><span class="fu"><a href="../reference/getData.html">getData</a></span><span class="op">(</span><span class="st">'baleares-currents'</span><span class="op">)</span>,</span>
 <span>                    <span class="va">proj</span><span class="op">)</span></span>
 <span></span>
-<span> </span>
+<span></span>
 <span><span class="co"># Projection will be UTM 31N WGS1984</span></span>
 <span><span class="va">proj</span> <span class="op">&lt;-</span> <span class="st">"EPSG:32631"</span></span>
-<span> </span>
+<span></span>
 <span><span class="co"># Define region of maximum possible movement</span></span>
-<span><span class="va">region</span> <span class="op">&lt;-</span> <span class="fu">as.polygons</span><span class="op">(</span><span class="fu">ext</span><span class="op">(</span><span class="va">currents</span><span class="op">)</span>,<span class="va">proj</span><span class="op">)</span></span>
-<span> </span></code></pre></div>
+<span><span class="va">region</span> <span class="op">&lt;-</span> <span class="fu">as.polygons</span><span class="op">(</span><span class="fu">ext</span><span class="op">(</span><span class="va">currents</span><span class="op">)</span>,<span class="va">proj</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">#&gt; Reading layer `Baleares_Region' from data source </span></span>
 <span><span class="co">#&gt;   `D:\lbmech\Altar\Vignettes\outputs\Baleares_Region.kml' using driver `KML'</span></span>
 <span><span class="co">#&gt; Simple feature collection with 1 feature and 2 fields</span></span>
@@ -482,7 +484,7 @@ packages <code>lbmech</code> does not require foreknowledge of the
 spatial extents; only the resolution and offsets. A raster can be
 provided, or one can be made with the <code><a href="../reference/fix_z.html">lbmech::fix_z()</a></code>
 function:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Define the raster properties</span></span>
 <span><span class="va">z_fix</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fix_z.html">fix_z</a></span><span class="op">(</span>proj <span class="op">=</span> <span class="va">proj</span>, </span>
 <span>               res <span class="op">=</span> <span class="fl">50</span><span class="op">)</span></span></code></pre></div>
@@ -494,7 +496,7 @@ can make such a polygon for a raster or filepath input, while using a
 polygon will induce future functions to download SRTM data as-needed.
 Similar polygons are frequently distributed by state GIS agencies
 (e.g. <a href="https://www.pasda.psu.edu/download/pamap/" class="external-link">Pennsylvania</a>; <a href="https://www.mass.gov/info-details/massgis-data-lidar-terrain-data-index" class="external-link">Massachusetts</a>):</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Make a grid</span></span>
 <span><span class="va">grid</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/makeGrid.html">makeGrid</a></span><span class="op">(</span>dem <span class="op">=</span> <span class="va">region</span>,     <span class="co"># Input; here polygon for SRTM</span></span>
 <span>                 nx <span class="op">=</span> <span class="fl">15</span>, ny <span class="op">=</span> <span class="fl">15</span>, <span class="co"># Cols/Rows to divide the polygon</span></span>
@@ -509,7 +511,7 @@ in the memory. the <code><a href="../reference/defineWorld.html">defineWorld()</
 potential world of movement into individual, slightly-overlapping
 ‘sectors’ that are calculated and read-in only as needed. It itself
 generally is not used to perform calculations.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Define world of motion within a workspace</span></span>
 <span><span class="fu"><a href="../reference/defineWorld.html">defineWorld</a></span><span class="op">(</span>source <span class="op">=</span> <span class="va">grid</span>,            <span class="co"># Elevation source, like makeGrid() output</span></span>
 <span>            grid <span class="op">=</span> <span class="va">grid</span>,              <span class="co"># How to divide up the world</span></span>
@@ -524,13 +526,13 @@ generally is not used to perform calculations.</p>
 <span>            dir <span class="op">=</span> <span class="va">rd</span>,                 <span class="co"># Working directory</span></span>
 <span>            overwrite<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <p>Once a world has been defined, a cost function can be applied using
-the <code>lgmech::calculateCosts()</code> function. The
+the <code><a href="../reference/calculateCosts.html">lbmech::calculateCosts()</a></code> function. The
 <code><a href="../reference/energyCosts.html">lbmech::energyCosts()</a></code> function is provided to perform
 least-time, least-work, and least-energy analyses as in the above
 sections of this manuscript. As with <code><a href="../reference/defineWorld.html">lbmech::defineWorld()</a></code>,
 it itself is not generally used to perform calculations—just to define
 the values.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/calculateCosts.html">calculateCosts</a></span><span class="op">(</span>costFUN <span class="op">=</span> <span class="va">energyCosts</span>,  </span>
 <span>               dir <span class="op">=</span> <span class="va">rd</span>,                    <span class="co"># Working directory with world</span></span>
 <span>               method <span class="op">=</span> <span class="st">"kuo"</span>,              <span class="co"># Method to calculate work</span></span>
@@ -550,9 +552,9 @@ data has been downloaded (and do so if not), perform the calculations,
 and save the cell-wise transition cost tables to the working directory.
 That way, if they are needed for another calculation in the future they
 won’t need to be fetched and prepossessed again.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Import locations on Mallorca, Menorca, and Cabrera</span></span>
-<span><span class="va">pobles</span> <span class="op">&lt;-</span> <span class="fu">vect</span><span class="op">(</span><span class="st">"localitats.shp"</span><span class="op">)</span></span>
+<span><span class="va">pobles</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getData.html">getData</a></span><span class="op">(</span><span class="st">"baleares-places"</span><span class="op">)</span></span>
 <span><span class="va">reg</span> <span class="op">&lt;-</span> <span class="fu">as.polygons</span><span class="op">(</span><span class="fu">ext</span><span class="op">(</span><span class="fu">buffer</span><span class="op">(</span><span class="va">pobles</span>, <span class="fl">10000</span><span class="op">)</span><span class="op">)</span>,crs <span class="op">=</span> <span class="fu">crs</span><span class="op">(</span><span class="va">proj</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">costs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getCosts.html">getCosts</a></span><span class="op">(</span>region <span class="op">=</span> <span class="va">reg</span>,              <span class="co"># Area of maximum movement</span></span>
@@ -563,7 +565,7 @@ won’t need to be fetched and prepossessed again.</p>
 <span>                  dir <span class="op">=</span> <span class="va">rd</span>,                  <span class="co"># Directory with world</span></span>
 <span>                  destination <span class="op">=</span> <span class="st">'all'</span><span class="op">)</span>       <span class="co"># Distance to all points in region</span></span></code></pre></div>
 <p>Likewise, least-cost paths can be computed given a set of nodes:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Find all least-cost paths between Palma de Mallorca and Maó</span></span>
 <span></span>
 <span><span class="va">paths</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getPaths.html">getPaths</a></span><span class="op">(</span>region <span class="op">=</span> <span class="va">reg</span>,</span>
@@ -578,13 +580,13 @@ given location on a path between two or more given points relative to
 the least cost path between those points. These can be calculated from
 the output cost rasters using the <code><a href="../reference/makeCorridor.html">lbmech::makeCorridor()</a></code>
 function.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">corr</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/makeCorridor.html">makeCorridor</a></span><span class="op">(</span>rasters <span class="op">=</span> <span class="va">costs</span>, </span>
 <span>                     order <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rev.html" class="external-link">rev</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Castell de Cabrera"</span>,<span class="st">"Sa Calobra"</span>,<span class="st">"Maó"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
-<div class="section level2">
-<h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+<div class="section level2 unnumbered">
+<h2 class="unnumbered" id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
 <div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-Clementi2021" class="csl-entry">
@@ -597,7 +599,7 @@ Marine Service</span>. <a href="https://doi.org/10.25423/CMCC/MEDSEA_ANALYSISFOR
 <div id="ref-Csardi2006" class="csl-entry">
 Csardi, Gabor, and Tamas Nepusz. 2006. <span>“The Igraph <span>Software
 Package</span> for <span>Complex Network Research</span>.”</span>
-<em>InterJournal</em> Complex Systems: 1695. <a href="https://igraph.org" class="external-link">https://igraph.org</a>.
+<em>InterJournal</em> 1695: 1–9. <a href="https://igraph.org" class="external-link">https://igraph.org</a>.
 </div>
 <div id="ref-Dowle2023" class="csl-entry">
 Dowle, Matt, Arun Srinivasan, Michael Chirico, Pasha Stetsenko, Tom

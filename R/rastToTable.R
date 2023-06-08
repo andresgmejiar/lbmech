@@ -1,8 +1,6 @@
-#' Convert a raster to a data.table keeping the geometry properties. Note that
-#' the raster may not have any layers named 'x' or 'y' (lowercase). This does
-#' not preserve projection information.
+#' Append x,y data to a raster (wrapper for \code{\link[terra]{init}}).
 #' 
-#' @title Convert raster to data.table
+#' @title Append x,y data to a raster 
 #' @param z An object of class Raster* or SpatRaster
 #' @return A data.table containing the raster values in column names after
 #' the raster layers, and 'x' and 'y' columns containing the cell locations

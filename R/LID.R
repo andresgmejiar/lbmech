@@ -97,7 +97,7 @@ LID <- function(x, w, index = 'gini', expect = 'self', standard = 'global',
                 pb = FALSE, clear.mem = TRUE){
   # This bit to silence CRAN warnings
   Error=val_j=val_i=n_g=Denom=n_ng=G_Denom=NG_Denom=stand=G_Error=NG_Error=NULL
-  G_i=G_Gi=..n=G_NGi=var=..subset_x=..subset_n=NULL
+  G_i=G_Gi=..n=G_NGi=var=..subset_x=..subset_n=..x=..sub_range=NULL
   # In what L-space are we working? If the user declares 'gini' or 'inoua', then
   # override function name and standard transformation entries
   if (index == 'gini' | index == 1){

@@ -3,8 +3,8 @@ Type: Package
 Title: A Package to Study the Mechanics of Landscape and Behavior
 Version: 0.5.1
 Author: Andres G. Mejia Ramon
-Maintainer: Andres G. Mejia Ramon <andres.mejiaramon@oist.jp>
-Description: A series of functions to calculate the cost required to move across the landscape in terms of (1) time, (2) mechanical work, and (3) net metabolic expenditure---energy, as well as (4) estimate local indicators of dispersion. 
+Maintainer: Andres G. Mejia Ramon <andres.mejia@oist.jp>
+Description: A geospatial package to study the adaptive mechanics of landscape and behavior, including at present: (1) energetic and efficient least-cost analysis; (2) local indicators of dispersion; and (3) interpolation of agricultural productivity data 
 License: CC BY-NC 4.0
 Encoding: UTF-8
 LazyData: true
@@ -30,7 +30,8 @@ Imports:
         matrixStats,
         ggplot2,
         cowplot,
-        leaflet
+        leaflet,
+        archive
 Depends:
     terra,
     data.table,

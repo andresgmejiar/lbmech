@@ -154,7 +154,7 @@ this can be overwritten by providing a <code>dem</code></p></dd>
 <dt>twi</dt>
 <dd><p>Logical. Should the topgraphic wetness index be calculated?
 Default uses the provided <code>dem</code> as a slope source, and 
-(HydroSHEDS 15s arcsecond)[https://www.hydrosheds.org/hydrosheds-core-downloads#w-tabs-0-data-w-pane-3]
+<a href="https://www.hydrosheds.org/hydrosheds-core-downloads#w-tabs-0-data-w-pane-3" class="external-link">HydroSHEDS 15s arcsecond</a>
 data as a flow accumulation source, however this can
 be altered by modifying the <code>acc</code> parameter. All data are corrected
 for geodesic distorsion, which can be time-consuming if <code>acc = 3</code></p></dd>
@@ -163,7 +163,7 @@ for geodesic distorsion, which can be time-consuming if <code>acc = 3</code></p>
 <dt>depth</dt>
 <dd><p>Logical. Should the depth to bedrock be obtained? If TRUE,
 SoilGrids v. 1.0 data are downloaded from 
-(ISRIC SoilGrids)[https://files.isric.org/soilgrids/former/2017-03-10/data/]. 
+<a href="https://files.isric.org/soilgrids/former/2017-03-10/data/" class="external-link">ISRIC SoilGrids</a>. 
 Unfortunately, these data are only provided globally and therefore the 
 download is 1.34 GB.</p></dd>
 
@@ -172,15 +172,15 @@ download is 1.34 GB.</p></dd>
 <dd><p>A character vector containing zero, all or, some of 
 <code>c('sand','silt','clay','cec','soc')</code> representing soil's parts per million
 sand, silt, and clay content, the cation exchange capacity, and the organic carbon
-(respectively). Data are downloaded from 
-(ISRIC SoilGrids)[https://maps.isric.org/] using their OGC Web Service API.</p></dd>
+(respectively). Data are downloaded from <a href="https://maps.isric.org/" class="external-link">ISRIC SoilGrids</a>
+using their OGC Web Service API allowing the download to be fairly efficient.</p></dd>
 
 
 <dt>climate</dt>
 <dd><p>A character vector containing zero, all or, some of 
 c("tmin","tavg","tmax","prec","srad") representing the minimum average temperature,
 average temperature, maximum average temperature, precipitation, and solar radiation.
-Data are downloaded from (WorldClim v. 2)[http://www.worldclim.com/version2]
+Data are downloaded from <a href="http://www.worldclim.com/version2" class="external-link">WorldClim v. 2</a>
 using <code><a href="https://rdrr.io/pkg/geodata/man/worldclim.html" class="external-link">worldclim_country</a></code>.</p></dd>
 
 
@@ -188,7 +188,7 @@ using <code><a href="https://rdrr.io/pkg/geodata/man/worldclim.html" class="exte
 <dd><p>One of (1) A Raster or SpatRaster representing the flow accumulation
 in units of incoming per cell, or (2) an integer equal to one of 
 <code>acc = c(3, 15, 30)</code>, representing the resolution in arcseconds to download
-from (HydroSHEDS)[https://www.hydrosheds.org/hydrosheds-core-downloads#w-tabs-0-data-w-pane-3].
+from <a href="https://www.hydrosheds.org/hydrosheds-core-downloads#w-tabs-0-data-w-pane-3" class="external-link">HydroSHEDS</a>.
 Default is <code>acc = 15</code>. Note that the 3s data is 2.29 GB.</p></dd>
 
 

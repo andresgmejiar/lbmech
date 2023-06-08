@@ -5,7 +5,7 @@
 #' @param velocity The list output to \code{\link[lbmech]{getVelocity}}.
 #' @param v_lim The maximum velocities to plot (y-axis limit). Default is 3 m/s.
 #' @param v_min The minimum velocities to plot (y-axis limit). Default is 0.
-#' @param slope The maximum slopes to plot (x-axis limits). Default is 1.
+#' @param slope_lim The maximum slopes to plot (x-axis limits). Default is 1.
 #' @param bins Into how many bins are the axes divided? 
 #' @param x.bins Into how many bins are the axes divided? 
 #' @param y.bins Into how many bins are the axes divided? 
@@ -26,6 +26,9 @@
 #' @export
 plotVelocity <- function(velocity, v_lim = 3, v_min = 0, slope_lim = 1,
                          bins = 100, x.bins = bins, y.bins = bins){
+  # This bit to silence CRAN check warnings
+  dl_dt=dz_dl=.N=N_x=N_xy=x_plot=N_plot=y_plot=NULL
+  
   # Extract the relevant variables
   v_max <- velocity$vmax
   s <- velocity$s

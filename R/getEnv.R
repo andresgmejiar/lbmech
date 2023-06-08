@@ -40,29 +40,29 @@
 #' this can be overwritten by providing a \code{dem}
 #' @param twi Logical. Should the topgraphic wetness index be calculated?
 #' Default uses the provided \code{dem} as a slope source, and 
-#' (HydroSHEDS 15s arcsecond)[https://www.hydrosheds.org/hydrosheds-core-downloads#w-tabs-0-data-w-pane-3]
+#' \href{https://www.hydrosheds.org/hydrosheds-core-downloads#w-tabs-0-data-w-pane-3}{HydroSHEDS 15s arcsecond}
 #' data as a flow accumulation source, however this can
 #' be altered by modifying the \code{acc} parameter. All data are corrected
 #' for geodesic distorsion, which can be time-consuming if \code{acc = 3}
 #' @param depth Logical. Should the depth to bedrock be obtained? If TRUE,
 #' SoilGrids v. 1.0 data are downloaded from 
-#' (ISRIC SoilGrids)[https://files.isric.org/soilgrids/former/2017-03-10/data/]. 
+#' \href{https://files.isric.org/soilgrids/former/2017-03-10/data/}{ISRIC SoilGrids}. 
 #' Unfortunately, these data are only provided globally and therefore the 
 #' download is 1.34 GB. 
 #' @param soils A character vector containing zero, all or, some of 
 #' \code{c('sand','silt','clay','cec','soc')} representing soil's parts per million
 #' sand, silt, and clay content, the cation exchange capacity, and the organic carbon
-#' (respectively). Data are downloaded from 
-#' (ISRIC SoilGrids)[https://maps.isric.org/] using their OGC Web Service API.
+#' (respectively). Data are downloaded from \href{https://maps.isric.org/}{ISRIC SoilGrids}
+#' using their OGC Web Service API allowing the download to be fairly efficient.
 #' @param climate A character vector containing zero, all or, some of 
 #' c("tmin","tavg","tmax","prec","srad") representing the minimum average temperature,
 #' average temperature, maximum average temperature, precipitation, and solar radiation.
-#' Data are downloaded from (WorldClim v. 2)[http://www.worldclim.com/version2]
+#' Data are downloaded from \href{http://www.worldclim.com/version2}{WorldClim v. 2}
 #' using \code{\link[geodata]{worldclim_country}}.
 #' @param acc One of (1) A Raster or SpatRaster representing the flow accumulation
 #' in units of incoming per cell, or (2) an integer equal to one of 
 #' \code{acc = c(3, 15, 30)}, representing the resolution in arcseconds to download
-#' from (HydroSHEDS)[https://www.hydrosheds.org/hydrosheds-core-downloads#w-tabs-0-data-w-pane-3].
+#' from \href{https://www.hydrosheds.org/hydrosheds-core-downloads#w-tabs-0-data-w-pane-3}{HydroSHEDS}.
 #' Default is \code{acc = 15}. Note that the 3s data is 2.29 GB.
 #' @param vars A SpatRaster object (or something coercible to it using the
 #' \code{\link[terra]{rast}} function) of one or multiple layers containing

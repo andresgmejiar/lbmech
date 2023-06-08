@@ -21,13 +21,13 @@ plotVelocity(
 
 \item{v_min}{The minimum velocities to plot (y-axis limit). Default is 0.}
 
+\item{slope_lim}{The maximum slopes to plot (x-axis limits). Default is 1.}
+
 \item{bins}{Into how many bins are the axes divided?}
 
 \item{x.bins}{Into how many bins are the axes divided?}
 
 \item{y.bins}{Into how many bins are the axes divided?}
-
-\item{slope}{The maximum slopes to plot (x-axis limits). Default is 1.}
 }
 \value{
 A ggplot object

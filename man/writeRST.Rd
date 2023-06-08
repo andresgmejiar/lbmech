@@ -5,21 +5,34 @@
 \alias{importRST}
 \title{Fast read and write rasters}
 \usage{
-writeRST(x, filename, ...)
+writeRST(x, filename = NULL, object = FALSE, ...)
 
-importRST(filename, layers = NULL, ...)
+importRST(x, layers = NULL, ...)
 }
 \arguments{
 \item{x}{An object of class SpatRaster or Raster. It may not contain
 layers named 'x' or 'y'}
 
-\item{filename}{Character. Output filename. Do not use extensions.}
+\item{filename}{Character. Output filename. Do not use extensions. If null,
+(the defaul), no file is saved}
+
+\item{object}{Logical. If true, function returns a data.table passable to 
+\code{\link[lbmech]{importRST}} that will produce a valid raster (i.e. fixes
+rounding errors when using \code{\link[terra]{init}}. Default is \code{FALSE}.}
 
 \item{...}{Additional parameters to pass on to \code{\link[fst]{read_fst}} or
 \code{\link[fst]{write_fst}}}
 
 \item{layers}{Character vector containing the names of the layers to import.
 Default is \code{layers = NULL} which imports all layers.}
+}
+\value{
+If \code{object = TRUE}, a data.table with an added \code{$crs} attribute
+containing the projection information. Special values are stored in the first 
+three rows:
+(1) The x and y resolution
+(2) The x and y coordinates of the corner, and
+(3) The x and y coordinates of the rounding offset
 }
 \description{
 Read and write rasters using the fst library

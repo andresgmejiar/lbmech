@@ -1,0 +1,46 @@
+reference:
+- title: Movement
+  desc: Functions for efficient least-cost spatial analysis.
+- contents:
+  - calculateCosts
+  - defineWorld
+  - downsampleXYZ
+  - energyCosts
+  - fix_z
+  - getCoords
+  - getCosts
+  - getData
+  - getDistortion
+  - getMap
+  - getPaths
+  - getVelocity
+  - importGPX
+  - importMap
+  - importWorld
+  - makeCorridor
+  - makeGrid
+  - makeWorld
+  - plotVelocity
+  - rastToTable
+  - regionMask
+  - whichTiles
+  - writeRST
+- title: Inequality
+  desc: Functions to measure spatial dispersion in datasets. 
+- contents: 
+  - average
+  - dispersionIndex
+  - incrementalLID
+  - incrementalPlot
+  - inferLID
+  - LID
+  - makeWeights
+  - scatterLID
+- title: Productivity
+  desc: Functions to interpolate agricultural productivity data across space
+- contents:
+  - approxMap
+  - getEnv
+  - getSuitability
+  - rangeSample
+  - rescaleSD

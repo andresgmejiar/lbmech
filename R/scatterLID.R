@@ -45,6 +45,9 @@
 #' scatterLID(lid, inference)
 #' @export
 scatterLID <- function(lid, inference, log.scale = FALSE, x.lim = NULL, y.lim = NULL){
+  # CRAN Check silencing bit
+  G_Gi=G_NGi=Class=x=y=NULL
+  
 # lid.cols is an internal variable
 
 # Create a color assignment function
@@ -107,6 +110,9 @@ return(cowplot::plot_grid(gglid,ggcolors,ncol=2,rel_widths = c(0.8,0.2)))
 #' or should it return the conversion table itself?
 #' @export
 colorLID <- function(x = NULL, table = FALSE){
+  # This bit to silence CRAN warnings
+  Class=Color=NULL
+  
   if (table){
     return(lid.cols[,.(Class,Color)])
   } else if (!table){

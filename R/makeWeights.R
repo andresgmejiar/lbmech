@@ -104,7 +104,7 @@ makeWeights <- function(x, bw, mode = 'adaptive', weighting = 'membership',
   if (clear.mem) gc()
   if (row.stand == TRUE){
     # Traditional Row standardization, where all rows sum to one
-    x <- x/rowSums(weights,na.rm=TRUE)
+    x <- x/rowSums(x,na.rm=TRUE)
   }
   
   if (row.stand == 'fuzzy'){
