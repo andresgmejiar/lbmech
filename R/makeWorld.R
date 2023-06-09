@@ -130,7 +130,6 @@ makeWorld <- function(tiles = NULL,
       i_poly <- grid[grid$id == i,]
       dem <- importMap(i_poly, polys = source, tile_id = 'source_id', vals = vals,
                        z_fix = z_fix, z_min = z_min, mask = FALSE, filt = filt,
-                       max_attempts = max_attempts, t_delay = t_delay,
                        dir = normalizePath(paste0(dir,"/Raw/")))
       if (methods::is(dem,'SpatRaster')){
       names(dem) <- 'z'

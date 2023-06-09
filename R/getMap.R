@@ -192,80 +192,80 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
                 }
                 writeRST(files, normalizePath(file_path))
                 unlink(paste0(file_path,".",extension),recursive=TRUE)
-              } else if (vals == 'location' & methods::is(unique(polys$location),'numeric')){
-                # If what we provide is a polygon from makeGrid but no URLs to the source,
-                # download from AWS
-                zoom <- unique(polys$location)
-                for (i in seq(1,length(down))){
-                  tile_name <- as.character(polys[down[i],][[tile_id]])
-                  print(paste0("Downloading Tile ",tile_name," (",
-                               i," of ",length(down),")"))
-                  file_path <- normalizePath(paste0(rd,"/",tile_name),mustWork = FALSE)
-                  clip <- suppressWarnings(rast(elevatr::get_elev_raster(sf::st_as_sf(
-                    methods::as(polys[down[i],],'Spatial')),z = zoom,src = 'aws')))
-                  poly <- which(polys[[tile_id]] == tile_name)
-                  
-                  if (!is.null(z_min)){
-                    clip[clip < z_min] <- NA
-                  }
-                  if (filt != 0){
-                    clip <- focal(clip,w=filt,fun=mean,na.policy='omit')
-                  }
-                  clip <- crop(clip,polys[poly,], snap = 'out')
-                  writeRST(clip, file_path)
-                }
-              } else {
-                # If what we provide is a polygon and a raster or a path to a singular
-                # DEM as the source, crop the necessary DEM
-                if (!((methods::is(vals,"Raster")) | (methods::is(vals,"SpatRaster")))){
-                  # If dem is not a raster, it's because the source raster is stored
-                  # elsewhere. Import it
-                  dem <- rast(unique(polys$location))
-                } else {
-                  if (methods::is(vals,"Raster")){
-                    dem <- rast(vals)
-                  } else if (methods::is(vals,'SpatRaster')){
-                    dem <- vals
-                  }
-                }
+              }
+            } else if (vals == 'location' & methods::is(unique(polys$location),'numeric')){
+              # If what we provide is a polygon from makeGrid but no URLs to the source,
+              # download from AWS
+              zoom <- unique(polys$location)
+              for (i in seq(1,length(down))){
+                tile_name <- as.character(polys[down[i],][[tile_id]])
+                print(paste0("Downloading Tile ",tile_name," (",
+                             i," of ",length(down),")"))
+                file_path <- normalizePath(paste0(rd,"/",tile_name),mustWork = FALSE)
+                clip <- suppressWarnings(rast(elevatr::get_elev_raster(sf::st_as_sf(
+                  methods::as(polys[down[i],],'Spatial')),z = zoom,src = 'aws')))
+                poly <- which(polys[[tile_id]] == tile_name)
                 
                 if (!is.null(z_min)){
-                  dem[dem < z_min] <- NA
+                  clip[clip < z_min] <- NA
                 }
                 if (filt != 0){
-                  dem <- focal(dem,w=filt,fun=mean,na.policy='omit')
+                  clip <- focal(clip,w=filt,fun=mean,na.policy='omit')
                 }
-                # For every tile that needs to be acquired...
-                for (i in seq(1,length(down))){
-                  
-                  # Get the unique tile id, and define the output filepath
-                  tile_name <- as.character(polys[down[i],][[tile_id]])
-                  file_path <- normalizePath(paste0(rd,"/",tile_name),mustWork=FALSE)
-                  if (!verbose){
-                    print(paste0("Cropping Tile ",tile_name," (",
-                                 i," of ",length(down),")"))
-                  }
-                  # Select the singular tile, and use it to crop the dem.
-                  # Save it to the above filepath, zip it, and delete the tiff
-                  poly <- which(polys[[tile_id]] == tile_name)
-                  clip <- crop(dem,polys[poly,], snap = 'out') * 1.0
-                  writeRST(clip,file_path)
-                }
-              } 
-            },
-            error = function(e) {
-              attempt <- attempt + 1
-              error_happened <- TRUE
-              if (attempt < max_attempts) {
-                Sys.sleep(t_delay)  # wait before trying again
+                clip <- crop(clip,polys[poly,], snap = 'out')
+                writeRST(clip, file_path)
               }
-            }
+            } else {
+              # If what we provide is a polygon and a raster or a path to a singular
+              # DEM as the source, crop the necessary DEM
+              if (!((methods::is(vals,"Raster")) | (methods::is(vals,"SpatRaster")))){
+                # If dem is not a raster, it's because the source raster is stored
+                # elsewhere. Import it
+                dem <- rast(unique(polys$location))
+              } else {
+                if (methods::is(vals,"Raster")){
+                  dem <- rast(vals)
+                } else if (methods::is(vals,'SpatRaster')){
+                  dem <- vals
+                }
+              }
+              
+              if (!is.null(z_min)){
+                dem[dem < z_min] <- NA
+              }
+              if (filt != 0){
+                dem <- focal(dem,w=filt,fun=mean,na.policy='omit')
+              }
+              # For every tile that needs to be acquired...
+              for (i in seq(1,length(down))){
+                
+                # Get the unique tile id, and define the output filepath
+                tile_name <- as.character(polys[down[i],][[tile_id]])
+                file_path <- normalizePath(paste0(rd,"/",tile_name),mustWork=FALSE)
+                if (!verbose){
+                  print(paste0("Cropping Tile ",tile_name," (",
+                               i," of ",length(down),")"))
+                }
+                # Select the singular tile, and use it to crop the dem.
+                # Save it to the above filepath, zip it, and delete the tiff
+                poly <- which(polys[[tile_id]] == tile_name)
+                clip <- crop(dem,polys[poly,], snap = 'out') * 1.0
+                writeRST(clip,file_path)
+              }
+            } ,
+        error = function(e) {
+          attempt <- attempt + 1
+          error_happened <- TRUE
+          if (attempt < max_attempts) {
+            Sys.sleep(t_delay)  # wait before trying again
+          }
+        }
           ) # end of tryCatch
           if (attempt == max_attempts) {
             stop("Max number of attempts reached. Download failed.")
           }
-        } # end of while loop
-      }) # end of lapply
+      } # end of while loop
+    }) # end of lapply
     }
   }
 }

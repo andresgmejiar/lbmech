@@ -108,10 +108,6 @@
 #' @param cols A character vector. Default is c("x_i","y_i","dz","dl","dr"), and
 #' dictates which columns are returned but final values for x and y and final/initial
 #' z values are also available
-#' @param max_attempts If the the download fails, how many times whould we
-#' retry? Default is 10. Ignored if raster is provided.
-#' @param t_delay If the download fails, how many seconds before trying again?
-#' Default is 0.5. Ignored if raster is provided.
 #' @param ... Additional arguments to pass to \code{\link[lbmech]{fix_z}}.
 #' @return A \code{/World/} directory, containing \code{/Loc/}, \code{/Diff/},
 #' and \code{/Raw/}, directories where cropped and transformed files will be stored,
@@ -166,8 +162,6 @@ defineWorld <- function(source, source_id = 'TILEID', z_min = NULL,
                         overwrite = FALSE,
                         filt = 0,
                         dir = tempdir(),
-                        max_attempts = 10,
-                        t_delay = 0.5,
                         cols = c("x_i","y_i","dz","dl","dr"), ...){
   ..source_id=location=..vals=..grid_id=NULL
   # Source needs to be in the form of makeGrid-type object
@@ -254,8 +248,6 @@ defineWorld <- function(source, source_id = 'TILEID', z_min = NULL,
                          sampling = sampling,
                          dist = dist,
                          filt = filt,
-                         max_attempts = max_attempts,
-                         t_delay = t_delay,
                          r = r,
                          f = f,
                          b = b,
