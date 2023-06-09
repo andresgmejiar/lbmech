@@ -37,6 +37,10 @@
 #' ocean bathymetry as does the SRTM data from AWS. Default is \code{z_min = NULL},
 #' but set to \code{0} for SRTM data. Ignored unless the tiles need to be generated from
 #' the raw source files. 
+#' @param max_attempts If the the download fails, how many times whould we
+#' retry? Default is 10.
+#' @param t_delay If the download fails, how many seconds before trying again?
+#' Default is 0.5.
 #' @param dir A filepath to the directory being used as the workspace. Default
 #' is \code{tempdir()}, but unless the analyses will only be performed a few times 
 #' it is highly recommended to define a permanent workspace.
@@ -83,6 +87,7 @@ importMap <- function(region, polys,
                       tile_id = 'TILEID', z_fix = NULL,
                       neighbor_distance = 5, FUN = NULL, mask = FALSE,
                       vals = 'location', filt = 0, z_min = NULL,
+                      max_attempts = 10, t_delay = 0.5,
                       dir = tempdir(), ...){
   dir <- normalizePath(dir,mustWork=FALSE)
   
@@ -125,7 +130,8 @@ importMap <- function(region, polys,
   tiles <- buffer(region,width=neighbor_distance)
   tiles <- intersect(region[,NA],polys)[[tile_id]]
   tiles <- unlist(tiles)
-  getMap(tiles, polys, tile_id = tile_id, dir = dir, filt = filt, z_min = z_min)
+  getMap(tiles, polys, tile_id = tile_id, dir = dir, filt = filt, z_min = z_min,
+         max_attempts = max_attempts, t_delay = t_delay)
   
   # Import all DEMs
   dem <- normalizePath(paste0(dir,'/',tiles),mustWork=FALSE)
