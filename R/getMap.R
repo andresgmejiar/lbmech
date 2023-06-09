@@ -28,10 +28,6 @@
 #' @param dir A filepath to the directory being used as the workspace.
 #' Default is \code{tempdir()} but unless the analyses will only be performed a few
 #' times it is highly recommended to define a permanent workspace.
-#' @param max_attempts If the the download fails, how many times whould we
-#' retry? Default is 10.
-#' @param t_delay If the download fails, how many seconds before trying again?
-#' Default is 0.5.
 #' @return Function does not return any objects, but sets up the workspace
 #' such that the necessary DEM files are downloaded/cropped and accessible.
 #' @importFrom terra rast
@@ -68,8 +64,7 @@
 #' getMap(tiles = tile_list, polys = grid, dir = dir)
 #' @export
 getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location", 
-                   z_min = NULL, filt = 0, verbose = FALSE, max_attempts = 10,
-                   t_delay = 0.5,
+                   z_min = NULL, filt = 0, verbose = FALSE,
                    dir = tempdir()){
   # The function first checks to see if the needed "tiles" sector DEMs exist
   # If not, it downloads the correct sectors or crops them from the master
@@ -101,171 +96,150 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
         (!("makeGrid" %in% names(polys)))){
       # If what we provide is a polygon with URLs to the source,
       # download the file
-      
-      lapply(seq_len(length(down)), function(i) {
-        attempt <- 0
-        error_happened <- TRUE
-        
-        while (error_happened && attempt < max_attempts) {
-          error_happened <- FALSE
-          tryCatch(
-            {
-              tile_name <- as.character(polys[down[i],][[tile_id]])
-              if (!verbose){
-                print(paste0("Downloading Tile ",tile_name," (",
-                             i," of ",length(down),")"))
-              }
-              if(!('extension' %in% names(polys))){
-                extension <- unlist(stringr::str_split(polys[down[i],][[vals]],"\\."))
-                extension <- extension[length(extension)]
-              }
-              file_path <- normalizePath(paste0(rd,"/",tile_name),mustWork = FALSE)
-              utils::download.file(url=unlist(polys[down[i],][[vals]]),
-                                   destfile=paste0(file_path,".",extension))
-              
-              
-              # If downloaded file is a compressed file
-              exts <- c(".(grd)|(asc)|(sdat)|(rst)|(nc)|(tif)|(envi)|(bil)|(img)|(adf)|(nc)$")
-              if (extension == 'zip'){
-                utils::unzip(paste0(file_path,".zip"), 
-                             exdir = normalizePath(paste0(rd,"/",tile_name),
-                                                   mustWork = FALSE),
-                             junkpaths = FALSE)        
-                files <- unlist(list.files(paste0(rd,"/",tile_name), pattern = exts,
-                                           recursive = TRUE,
-                                           full.names = TRUE))
-                if (length(files) > 1){
-                  files <- lapply(files,rast)
-                  files <- do.call(merge,files) 
-                } else {
-                  files <- rast(files) 
-                }
-                if (!is.null(z_min)){
-                  files[files < z_min] <- NA
-                }
-                if (filt != 0){
-                  files <- focal(files,w=filt,fun=mean,na.policy='omit')
-                }
-                names(files) <- 'z'
-                
-                writeRST(files, normalizePath(file_path))
-                unlink(paste0(file_path),recursive=TRUE)
-                unlink(paste0(file_path,".zip"),recursive=TRUE)
-              } 
-              
-              if (extension == 'gz'){
-                R.utils::decompressFile(normalizePath(paste0(file_path,".gz"),mustWork=FALSE), 
-                                        destname = normalizePath(paste0(rd,"/",tile_name),
-                                                                 mustWork = FALSE),
-                                        remove = TRUE,
-                                        FUN = gzfile,
-                                        ext = 'gz')        
-                files <- unlist(list.files(paste0(rd,"/",tile_name), pattern = exts,
-                                           recursive = TRUE,
-                                           full.names = TRUE))
-                if (length(files) > 1){
-                  files <- lapply(files,rast)
-                  files <- do.call(merge,files) * 1.0
-                } else {
-                  files <- rast(files) * 1.0
-                }
-                if (!is.null(z_min)){
-                  files[files < z_min] <- NA
-                }
-                if (filt != 0){
-                  files <- focal(files,w=filt,fun=mean,na.policy='omit')
-                }
-                writeRST(files, normalizePath(file_path))
-                unlink(normalizePath(paste0(rd,"/",tile_name),
-                                     mustWork = FALSE),recursive=TRUE)
-              } 
-              
-              # If downloaded file is an uncompressed file
-              exts <- unlist(stringr::str_extract_all(exts,pattern="[a-z]+"))
-              if (extension %in% exts){
-                files <- rast(paste0(file_path,".",extension)) 
-                if (!is.null(z_min)){
-                  files[files < z_min] <- NA
-                }
-                if (filt != 0){
-                  files <- focal(files,w=filt,fun=mean,na.policy='omit')
-                }
-                writeRST(files, normalizePath(file_path))
-                unlink(paste0(file_path,".",extension),recursive=TRUE)
-              }
-            } else if (vals == 'location' & methods::is(unique(polys$location),'numeric')){
-              # If what we provide is a polygon from makeGrid but no URLs to the source,
-              # download from AWS
-              zoom <- unique(polys$location)
-              for (i in seq(1,length(down))){
-                tile_name <- as.character(polys[down[i],][[tile_id]])
-                print(paste0("Downloading Tile ",tile_name," (",
-                             i," of ",length(down),")"))
-                file_path <- normalizePath(paste0(rd,"/",tile_name),mustWork = FALSE)
-                clip <- suppressWarnings(rast(elevatr::get_elev_raster(sf::st_as_sf(
-                  methods::as(polys[down[i],],'Spatial')),z = zoom,src = 'aws')))
-                poly <- which(polys[[tile_id]] == tile_name)
-                
-                if (!is.null(z_min)){
-                  clip[clip < z_min] <- NA
-                }
-                if (filt != 0){
-                  clip <- focal(clip,w=filt,fun=mean,na.policy='omit')
-                }
-                clip <- crop(clip,polys[poly,], snap = 'out')
-                writeRST(clip, file_path)
-              }
-            } else {
-              # If what we provide is a polygon and a raster or a path to a singular
-              # DEM as the source, crop the necessary DEM
-              if (!((methods::is(vals,"Raster")) | (methods::is(vals,"SpatRaster")))){
-                # If dem is not a raster, it's because the source raster is stored
-                # elsewhere. Import it
-                dem <- rast(unique(polys$location))
-              } else {
-                if (methods::is(vals,"Raster")){
-                  dem <- rast(vals)
-                } else if (methods::is(vals,'SpatRaster')){
-                  dem <- vals
-                }
-              }
-              
-              if (!is.null(z_min)){
-                dem[dem < z_min] <- NA
-              }
-              if (filt != 0){
-                dem <- focal(dem,w=filt,fun=mean,na.policy='omit')
-              }
-              # For every tile that needs to be acquired...
-              for (i in seq(1,length(down))){
-                
-                # Get the unique tile id, and define the output filepath
-                tile_name <- as.character(polys[down[i],][[tile_id]])
-                file_path <- normalizePath(paste0(rd,"/",tile_name),mustWork=FALSE)
-                if (!verbose){
-                  print(paste0("Cropping Tile ",tile_name," (",
-                               i," of ",length(down),")"))
-                }
-                # Select the singular tile, and use it to crop the dem.
-                # Save it to the above filepath, zip it, and delete the tiff
-                poly <- which(polys[[tile_id]] == tile_name)
-                clip <- crop(dem,polys[poly,], snap = 'out') * 1.0
-                writeRST(clip,file_path)
-              }
-            } ,
-        error = function(e) {
-          attempt <- attempt + 1
-          error_happened <- TRUE
-          if (attempt < max_attempts) {
-            Sys.sleep(t_delay)  # wait before trying again
-          }
+      for (i in seq(1,length(down))){
+        tile_name <- as.character(polys[down[i],][[tile_id]])
+        if (!verbose){
+          print(paste0("Downloading Tile ",tile_name," (",
+                       i," of ",length(down),")"))
         }
-          ) # end of tryCatch
-          if (attempt == max_attempts) {
-            stop("Max number of attempts reached. Download failed.")
+        if(!('extension' %in% names(polys))){
+          extension <- unlist(stringr::str_split(polys[down[i],][[vals]],"\\."))
+          extension <- extension[length(extension)]
+        }
+        file_path <- normalizePath(paste0(rd,"/",tile_name),mustWork = FALSE)
+        utils::download.file(url=unlist(polys[down[i],][[vals]]),
+                             destfile=paste0(file_path,".",extension))
+        
+        
+        # If downloaded file is a compressed file
+        exts <- c(".(grd)|(asc)|(sdat)|(rst)|(nc)|(tif)|(envi)|(bil)|(img)|(adf)|(nc)$")
+        if (extension == 'zip'){
+          utils::unzip(paste0(file_path,".zip"), 
+                       exdir = normalizePath(paste0(rd,"/",tile_name),
+                                             mustWork = FALSE),
+                       junkpaths = FALSE)        
+          files <- unlist(list.files(paste0(rd,"/",tile_name), pattern = exts,
+                                     recursive = TRUE,
+                                     full.names = TRUE))
+          if (length(files) > 1){
+            files <- lapply(files,rast)
+            files <- do.call(merge,files) 
+          } else {
+            files <- rast(files) 
           }
-      } # end of while loop
-    }) # end of lapply
+          if (!is.null(z_min)){
+            files[files < z_min] <- NA
+          }
+          if (filt != 0){
+            files <- focal(files,w=filt,fun=mean,na.policy='omit')
+          }
+          names(files) <- 'z'
+          
+          writeRST(files, normalizePath(file_path))
+          unlink(paste0(file_path),recursive=TRUE)
+          unlink(paste0(file_path,".zip"),recursive=TRUE)
+        } 
+        
+        if (extension == 'gz'){
+          R.utils::decompressFile(normalizePath(paste0(file_path,".gz"),mustWork=FALSE), 
+                                  destname = normalizePath(paste0(rd,"/",tile_name),
+                                                           mustWork = FALSE),
+                                  remove = TRUE,
+                                  FUN = gzfile,
+                                  ext = 'gz')        
+          files <- unlist(list.files(paste0(rd,"/",tile_name), pattern = exts,
+                                     recursive = TRUE,
+                                     full.names = TRUE))
+          if (length(files) > 1){
+            files <- lapply(files,rast)
+            files <- do.call(merge,files) * 1.0
+          } else {
+            files <- rast(files) * 1.0
+          }
+          if (!is.null(z_min)){
+            files[files < z_min] <- NA
+          }
+          if (filt != 0){
+            files <- focal(files,w=filt,fun=mean,na.policy='omit')
+          }
+          writeRST(files, normalizePath(file_path))
+          unlink(normalizePath(paste0(rd,"/",tile_name),
+                               mustWork = FALSE),recursive=TRUE)
+        } 
+        
+        # If downloaded file is an uncompressed file
+        exts <- unlist(stringr::str_extract_all(exts,pattern="[a-z]+"))
+        if (extension %in% exts){
+          files <- rast(paste0(file_path,".",extension)) 
+          if (!is.null(z_min)){
+            files[files < z_min] <- NA
+          }
+          if (filt != 0){
+            files <- focal(files,w=filt,fun=mean,na.policy='omit')
+          }
+          writeRST(files, normalizePath(file_path))
+          unlink(paste0(file_path,".",extension),recursive=TRUE)
+        }
+      }
+    } else if (vals == 'location' & methods::is(unique(polys$location),'numeric')){
+      # If what we provide is a polygon from makeGrid but no URLs to the source,
+      # download from AWS
+      zoom <- unique(polys$location)
+      for (i in seq(1,length(down))){
+        tile_name <- as.character(polys[down[i],][[tile_id]])
+        print(paste0("Downloading Tile ",tile_name," (",
+                     i," of ",length(down),")"))
+        file_path <- normalizePath(paste0(rd,"/",tile_name),mustWork = FALSE)
+        clip <- suppressWarnings(rast(elevatr::get_elev_raster(sf::st_as_sf(
+          methods::as(polys[down[i],],'Spatial')),z = zoom,src = 'aws')))
+        poly <- which(polys[[tile_id]] == tile_name)
+        
+        if (!is.null(z_min)){
+          clip[clip < z_min] <- NA
+        }
+        if (filt != 0){
+          clip <- focal(clip,w=filt,fun=mean,na.policy='omit')
+        }
+        clip <- crop(clip,polys[poly,], snap = 'out')
+        writeRST(clip, file_path)
+      }
+    } else {
+      # If what we provide is a polygon and a raster or a path to a singular
+      # DEM as the source, crop the necessary DEM
+      if (!((methods::is(vals,"Raster")) | (methods::is(vals,"SpatRaster")))){
+        # If dem is not a raster, it's because the source raster is stored
+        # elsewhere. Import it
+        dem <- rast(unique(polys$location))
+      } else {
+        if (methods::is(vals,"Raster")){
+          dem <- rast(vals)
+        } else if (methods::is(vals,'SpatRaster')){
+          dem <- vals
+        }
+      }
+      
+      if (!is.null(z_min)){
+        dem[dem < z_min] <- NA
+      }
+      if (filt != 0){
+        dem <- focal(dem,w=filt,fun=mean,na.policy='omit')
+      }
+      # For every tile that needs to be acquired...
+      for (i in seq(1,length(down))){
+        
+        # Get the unique tile id, and define the output filepath
+        tile_name <- as.character(polys[down[i],][[tile_id]])
+        file_path <- normalizePath(paste0(rd,"/",tile_name),mustWork=FALSE)
+        if (!verbose){
+          print(paste0("Cropping Tile ",tile_name," (",
+                       i," of ",length(down),")"))
+        }
+        # Select the singular tile, and use it to crop the dem.
+        # Save it to the above filepath, zip it, and delete the tiff
+        poly <- which(polys[[tile_id]] == tile_name)
+        clip <- crop(dem,polys[poly,], snap = 'out') * 1.0
+        writeRST(clip,file_path)
+      }
     }
   }
 }
