@@ -47,6 +47,8 @@
 #' @importFrom data.table :=
 #' @importFrom data.table melt
 #' @importFrom data.table fifelse
+#' @importFrom data.table as.data.table
+#' @importFrom data.table data.table
 #' @importFrom terra terrain
 #' @importFrom terra atan2
 #' @importFrom terra nlyr
@@ -230,6 +232,18 @@ calculateCosts <- function(tiles = NULL, costFUN = energyCosts, dir = tempdir(),
         flowadj <- as.data.table(adjacent(flowdir,cells(flowdir),
                                           pairs=FALSE,directions = 8),
                                  keep.rownames = TRUE)
+        if (nrow(flowadj) == 0){
+          flowadj <- data.table(Column1 = numeric(0),
+                                Column2 = numeric(0),
+                                Column3 = numeric(0),
+                                Column4 = numeric(0),
+                                Column5 = numeric(0),
+                                Column6 = numeric(0),
+                                Column7 = numeric(0),
+                                Column8 = numeric(0),
+                                Column* = numeric(0))
+        }
+        
         names(flowadj) <- c("cell",1:8)
         flowadj[, cell := cells(flowdir)]
         flowadj$cell <- getCoords(xyFromCell(flowdir,as.numeric(flowadj$cell)),
