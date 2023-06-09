@@ -157,7 +157,7 @@ For a given cost function and set of origins/destinations, `getCosts()` identifi
 ```{r getCosts}
 # Import locations on Mallorca, Menorca, and Cabrera
 pobles <- getData('baleares-places')
-pobles <- project(pobles,proj)
+pobles <- poject(pobles,proj)
 reg <- as.polygons(ext(buffer(pobles, 10000)),crs = crs(proj))
 
 costs <- getCosts(region = reg,              # Area of maximum movement

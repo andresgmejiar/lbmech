@@ -44,16 +44,15 @@ getData <- function(data, name = NULL, dir = tempdir(), timeout = 999){
   dir <- normalizePath(dir,mustWork=FALSE)
   
   if (data == 'baleares-currents'){
-    message("Clementi, Emanuela; Ali Aydogdu; Ana Chiara Goglio; Jenny Pistoia; Romain Escudier; Massimiliano Drudi; Alessandro Grandi; et al.\n(2021) Ocean Surface Currents around Mallorca, Menorca, and Cabrera, 13 June 2022. Mediterranean Sea Physics Analysis and Forecast, CMEMS MED-Currents EAS6 system. European Union Copernicus Marine Service, https://marine.copernicus.eu/\n")
-
     return(importRST(baleares.currents))
   } else if (data == 'baleares-gps'){
     
     if (is.null(name)) name <- 'gpx'
     
-    message("Lera, Isaac; Toni Perez; Carlos Guerrero; Victor M. Eguiluz; and Carlos Juiz;\n(2017) Dataset of Human Hiking GPS Trajectories on Balearic Islands. Supplemental material to \"Analysing human mobility patterns of hiking activities through complex network theory,\" PLoS ONE 12(5): e0177712. https://doi.org/10.1371/journal.pone.0177712\n")
-    message("Dataset will be download and uncompressed but will not be imported.\nPlease use 'importGPX()' for that.") 
-
+    message("Dataset of Human Hiking GPS Trajectories on Balearic Islands (2017)\nIsaac Lera, Toni Perez, Carlos Guerrero, Victor M. Eguiluz, and Carlos Juiz;\n")
+    message("Dataset will be download and uncompressed but will not be imported.\n") 
+    message("Please use importGPX() for that.\n")
+    
     timeout.orig <- getOption('timeout')
     options(timeout=timeout)
     gpxDir <- normalizePath(paste0(dir, "/",name),mustWork = FALSE)
