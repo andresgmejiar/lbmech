@@ -2,22 +2,23 @@
 title: "Raw Cost Analysis Code"
 author: "Andres G. Mejia Ramon"
 date: "June 6, 2023"
-md_document:
-    variant: markdown_github
-github_document:
+output:
+  github_document:
     toc: true
-pandoc_args: --webtex "https://latex.codecogs.com/svg.latex?"
+    pandoc_args: --webtex "https://latex.codecogs.com/svg.latex?"
 ---
+
 
 # Preparation
 
 The package can be installed within R:
 
-```{r setup}  
+```{r setup}
+options(encoding = 'UTF-8')
 install.packages('remotes')
 remotes::install_github('andresgmejiar/lbmech')
 library(lbmech)
-dir <- 'D:/lbmech/Altar' # Set the directory here
+dir <- tempdir()
 ```
 
 # Velocity Estimation
@@ -77,14 +78,16 @@ dir.create(rd)
 }
 ```
 
-`lbmech` offers automatic terrain data download. Nevertheless, to incorporate ocean movement, we also need to import ocean currents around Mallorca and Menorca---the principal Balearic Islands on June 13, 2022---previously downloaded from \url{https://data.marine.copernicus.eu/}. Subsequently, the maximum movement region (the `world') is defined around the raster's extent:
+`lbmech` offers automatic terrain data download. Nevertheless, to incorporate ocean movement, we also need to import ocean currents around Mallorca and Menorca---the principal Balearic Islands on June 13, 2022---previously downloaded from \url{https://data.marine.copernicus.eu/}. Subsequently, the maximum movement region (the `world`) is defined around the raster's extent:
+
 
 ```{r currents}
 # Projection will be UTM 31N WGS1984
 proj <- "EPSG:32631"
 
 # Import an ocean water surface velocity dataset
-currents <- project(getData('baleares-currents'),proj)
+currents <- project(getData('baleares-currents'),
+proj)
 
 # Define region of maximum possible movement
 region <- as.polygons(ext(currents),proj)
@@ -113,7 +116,7 @@ zoom = 11,        # Zoom level for SRTM data
 overlap = 0.05)   # Fraction overlap between adjacent tiles
 ```
 
-The `defineWorld()` function segments the movement world into manageable, overlapping `sectors', read-in only as required due to memory limitations:
+The `defineWorld()` function segments the movement world into manageable, overlapping sectors, read-in only as required due to memory limitations:
 
 ```{r defineWorld}
 # Define world of motion within a workspace
@@ -166,7 +169,7 @@ dir = rd,                  # Directory with world
 destination = 'all')       # Distance to all points in region
 ```
 
-Least-cost paths can be computed for a given set of nodes, here between Palma de Mallorca and Ma\'o:
+Least-cost paths can be computed for a given set of nodes, here between Palma de Mallorca and Maó:
 
 ```{r getPaths}
 # Find all least-cost paths between Palma de Mallorca and Maó
@@ -180,7 +183,7 @@ dir = rd)
 
 ```
 
-Corridors specify the minimum detour cost to a particular location on a path between two or more points, relative to the least cost path between those points. This can be calculated from the output cost rasters utilizing the `makeCorridor()` function, here from Castell de Cabrera to Ma\'o via Sa Calobra:
+Corridors specify the minimum detour cost to a particular location on a path between two or more points, relative to the least cost path between those points. This can be calculated from the output cost rasters utilizing the `makeCorridor()` function, here from Castell de Cabrera to Maó via Sa Calobra:
 
 ```{r makeCorridor}
 corr <- makeCorridor(rasters = costs, 
@@ -230,6 +233,7 @@ pdf("D:/lbmech/Figs/VelocityPlot.pdf", width = 6, height = 4)
 plotVelocity(velocity_gps)
 dev.off()
 ```
+
 
 Elevation, ocean currents, and locations:
 
@@ -589,13 +593,11 @@ scale_y_continuous(position = 'right', expand=c(0,0))
 
 
 ```{r, echo=FALSE,warning=FALSE,message=FALSE, fig.height=9.5, fig.width=8.5, fig.align='center'}
-gg_egg <- egg::ggarrange(ggtime_to,ggtime_from,
+
+# Final figure is the above 6 with ggarrange. Can't do it by facets since the scales are all different. 
+egg::ggarrange(ggtime_to,ggtime_from,
 ggwork_to,ggwork_from,
 ggenergy_to,ggenergy_from,
 nrow=3)
-# Final figure is the above 6 with ggarrange. Can't do it by facets since the scales are all different. 
-pdf("D:/lbmech/Figs/Paths.pdf",width=8.5,height=7.75)
-print(gg_egg)
-dev.off()
 
 ```

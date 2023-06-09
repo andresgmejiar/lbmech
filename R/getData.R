@@ -49,9 +49,7 @@ getData <- function(data, name = NULL, dir = tempdir(), timeout = 999){
     
     if (is.null(name)) name <- 'gpx'
     
-    message("Dataset of Human Hiking GPS Trajectories on Balearic Islands (2017)\n")
-    message("Isaac Lera, Toni Perez, Carlos Guerrero, Victor M. Eguiluz, and Carlos Juiz;\n")
-    message("Total Size: 2236.5 MB\n\n")
+    message("Dataset of Human Hiking GPS Trajectories on Balearic Islands (2017)\nIsaac Lera, Toni Perez, Carlos Guerrero, Victor M. Eguiluz, and Carlos Juiz;\n")
     message("Dataset will be download and uncompressed but will not be imported.\n") 
     message("Please use importGPX() for that.\n")
     

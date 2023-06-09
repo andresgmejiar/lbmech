@@ -1,11 +1,10 @@
 ---
-title: "1. Movement Models"
+title: "Raw Cost Analysis Code"
 author: "Andres G. Mejia Ramon"
-date: "May 21, 2023"
 bibliography: "D:/lbmech/Package/lbmech/inst/REFERENCES.bib"
-md_document:
-    variant: markdown_github
-github_document:
+date: "June 6, 2023"
+output:
+  github_document:
     toc: true
     pandoc_args: --webtex "https://latex.codecogs.com/svg.latex?"
 ---
@@ -20,7 +19,6 @@ encoding = 'UTF-8',
 dev = "ragg_png"
 )
 options('digits' = 3)
-library(pandoc)
 ```
 
 In this chapter, I introduce the `lbmech` package for R's cost distance tools, originally the core of the `lbmech` package's functionality. I derive cost functions for the movement of an arbitrary animal from first principles of energetics and mechanical physics---not from regressed functions of energetic expenditure with limited applicability across taxa and behavioral modes. This allows us to ensure that the cost model is generalizable, and allows us to separate out three independent types of energy expenditure involved in locomotive transport: (1) kinematic/mechanical work for moving things; (2) kinematic/mechanical work against gravity for lifting things; and (3) basal metabolic expenditure required to keep the animal alive. In the second section. Finally, I provide a brief example of the analytical framework using GPS, topographic, and ocean current data from the *Illes Balears* [@Clementi2021;@Farr2007;@Lera2017].
@@ -29,7 +27,7 @@ In this chapter, I introduce the `lbmech` package for R's cost distance tools, o
 
 `lbmech` is a geospatial package originally designed for least-cost path analysis in `R` employing differential surfaces representing the cost to move between any adjacent locations on the landscape. It contains additional tools to calculate time- and energy-based costs-of-travel for humans and animals moving across the landscape, including built-in statistical tools to derive the cost functions themselves from GPS data. Moreover, the package contains a number of additional features in development related to estimating potential energetic net primary productivity on the landscape from tabulated data; the demographic implications of adaptive processes; and geostatistical tools to measure inequality. However those functions are independent of the cost-distance functions of `lbmech` that were developed in response to questions arising from the original purpose and will be discussed in other vignettes.
 
-The general philosophy behind the least-cost aspects of the package is that energetic and least-cost path analyses should always be simple, the most time-taking parts should be done at most once, and ideally that costs should be rooted in empirical reality. In general terms, both the cost-distance functions of `lbmech` and the deterministic functions of the `R` library [`gdistance`](https://agrdatasci.github.io/gdistance/) [@vanEtten2017] provide similar capabilities but with notable differences in computation and ease-of-use. Both employ differential surfaces representing the cost to move between any adjacent locations on the landscape, and both store these costs in ways that enumerate the possible transitions. Both then perform transformations on the cost values before generating a network graph object and using  [`igraph`'s](https://igraph.org/r/) highly-efficient `distances()` function [@Csardi2006] to perform distance calculations before outputting a matrix or raster. [`gdistance`](https://agrdatasci.github.io/gdistance/) stores movement costs as their reciprocal (\textit{conductance} , i.e. $1/\textrm{resistance}$ in a sparse matrix representing every possible transition between two cells on a raster. The use of conductance allows for most cell-to-cell transitions to be zero, since impossible transitions due to distance have a conductance of $1/\infty = 0$. This, in turn, allows the sparse matrix to be relatively small on the disk or memory given that zero values are not stored. However, the use of conductance makes it cumbersome to employ functions where $f(0) \neq 0$ requiring the use of index masking. This in turn encounters integer overflow errors with 'large' datasets that are nonetheless of a necessary size for most reasonable purposes. Moreover, the use of sparse matrices requires that the object be recreated every time it is modified, greatly limiting I/O speed and severely affecting complex calculations.
+The general philosophy behind the least-cost aspects of the package is that energetic and least-cost path analyses should always be simple, the most time-taking parts should be done at most once, and ideally that costs should be rooted in empirical reality. In general terms, both the cost-distance functions of `lbmech` and the deterministic functions of the `R` library [`gdistance`](https://agrdatasci.github.io/gdistance/) [@vanEtten2017] provide similar capabilities but with notable differences in computation and ease-of-use. Both employ differential surfaces representing the cost to move between any adjacent locations on the landscape, and both store these costs in ways that enumerate the possible transitions. Both then perform transformations on the cost values before generating a network graph object and using  [`igraph`'s](https://igraph.org/r/) highly-efficient `distances()` function [@Csardi2006] to perform distance calculations before outputting a matrix or raster. [`gdistance`](https://agrdatasci.github.io/gdistance/) stores movement costs as their reciprocal (\textit{conductance} , i.e. $1/\textrm{resistance}$ in a sparse matrix representing every possible transition between two cells on a raster. The use of conductance allows for most cell-to-cell transitions to be zero, since impossible transitions due to distance have a conductance of $1/\infty = 0$. This, in turn, allows the sparse matrix to be relatively small on the disk or memory given that zero values are not stored. However, the use of conductance makes it cumbersome to employ functions where $f(0) \neq 0$ requiring the use of index masking. This in turn encounters integer overflow errors with "large" datasets that are nonetheless of a necessary size for most reasonable purposes. Moreover, the use of sparse matrices requires that the object be recreated every time it is modified, greatly limiting I/O speed and severely affecting complex calculations.
 
 `lbmech` stores data and performs all linear algebra directly on resistance values using the [`data.table`](https://rdatatable.gitlab.io/data.table/) package [@Dowle2023]. Not only is this more intuitive, but it greatly simplifies the syntax necessary for many types of algebraically simple operations. `lbmech` stores each possible movement as its own unique row, with entries for a `from` node, a `to` node, and either the difference in or raw final and initial values of the raster encountered during the transition. Nodes are named after the coordinates of the raster cell to which they correspond, and are stored as character strings in the form `'x,y'`. This allows for (1) in-place modification of objects, greatly increasing processing speed; (2) bidirectional raster analysis describing accumulated costs to and from a node, and (3) additive, nonlinear, and multivariate transformations of large rasters and independent considerations without running into integer overflow limits. Since `lbmech` largely functions as a wrapper for applying [`data.table`](https://rdatatable.gitlab.io/data.table/), [`igraph`](https://igraph.org/r/), and [`fst`](https://www.fstpackage.org/) functions to [`terra`](https://rspatial.org/) SpatRaster raster objects, it's easy to generate any arbitrary cost function using [`data.table`](https://rdatatable.gitlab.io/data.table/) syntax.
 
@@ -38,9 +36,9 @@ To ensure that the most computationally intensive steps only need to be performe
 Finally, to encourage the use of least-cost analysis rooted in empirical reality, `lbmech`'s default workflow is geared towards the study of time- and energy- based considerations when moving across a landscape as described in the above theory section (although the use of any cost function is possible as well). The default `energyCosts()` function used by `calculateCosts()` employs a generalized form of Tobler's hiking function to estimate maximum preferred walking speed at a given slope, and one of three biomechanical models for the amount of kinematic work exerted per unit time or per stride. Unlike similar tools such as `enerscape` for `R` in this regard, `lbmech` allows for the estimation of various types of energetic losses (due to kinematic locomotion, work against gravity, basal metabolic processes) instead of simply the total energetic or metabolic expenditure. Moreover, through the `getVelocity()` function it provides a way of deriving cost functions from GPS data of human and animal movement. This is significantly easier to collect and less invasive than the VO$_2$ meters required for direct estimation of net energetic expenditure. Finally, `lbmech` incorporates the [`geosphere`](https://CRAN.R-project.org/package=geosphere) package's distance functions [@Hijmans2022] thereby allowing for simple, native geodesic corrections at all stages of calculation.
 
 
-## 1.2 The Energetics of Locomotion                                                                          
+## 1.2 The Energetics of Locomotion
 
-In order to move across the terrestrial landscape, two principal types of work must be performed. The first is kinetic work, required to move an object at a particular speed, $K = \frac{1}{2}mv^2$ for an arbitrary particle: 
+In order to move across the terrestrial landscape, two principal types of work must be performed. The first is kinetic work, required to move an object at a particular speed, $K = \frac{1}{2}mv^2$ for an arbitrary particle:
 
 ```{=tex}
 \begin{equation}
@@ -53,12 +51,12 @@ for human locomotion as derived by @Kuo2007: 654---where $m$ is an object's mass
 ```{=tex}
 \begin{equation}
 \tag{1}
-W = \frac{1}{4} m v^2 \frac{\ell_s}{L} + \begin{cases} 
-mgh & dz \geq 0\\
+W = \frac{1}{4} m v^2 \frac{\ell_s}{L} + \begin{cases}
+mgh & dz \geq 0 \\
 0 & dz < 0 \\\end{cases}
 \end{equation}
 ```
-To obtain the expected velocity when moving across a landscape of variable topography, we can employ Tobler's Hiking function, which predicts that velocity decreases exponentially as the slope departs from an \`optimum' slope at which an traveler's velocity can be maximized:
+To obtain the expected velocity when moving across a landscape of variable topography, we can employ Tobler's Hiking function, which predicts that velocity decreases exponentially as the slope departs from an 'optimum' slope at which an traveler's velocity can be maximized:
 
 
 ```{=tex}
@@ -71,15 +69,15 @@ To obtain the expected velocity when moving across a landscape of variable topog
 where $\ell$ is horizontal movement, $z$ vertical movement, $v_{\textrm{max}}$ the maximum walking speed, $s$ the slope of maximum speed and $k$ how sensitive speed variation is to slope. Canonical applications of the Tobler function for humans employ $v_{\textrm{max}} = 1.5$ m/s, $k = 3.5$, and $s = - 0.05$ = $\tan(-2.83^\circ)$. However, the `getVelocity()` function in the `lbmech` package allows researchers to obtain the appropriate variables for their subject species of interest from high-resolution GPS tracking data.
 
 Humans and animals, however, are far from ideal engines. Generally, for every calorie of work expended humans require five calories of dietary energy resulting in an efficiency factor of $\varepsilon = 0.2$. Dividing Eq. 1 by $\varepsilon$, and plugging in Tobler's Hiking Function (Eq. 2) for $v$ results in the total amount of energy used by a human to travel between two points on the landscape. This is our function for kinematic energy expenditure.
-,
+
 People also consume energy just to stay alive as defined by our base metabolic rate (BMR, represented by $\frac{dH}{dt}$). Assuming a relatively constant amount of daily physical activity and by extension a relatively constant basal metabolic rate, we can model the total amount of energy used by a human to travel between two points on the landscape and stay alive, by adding $H$ to our equation:
 
 ```{=tex}
 \begin{equation}
 \tag{3}
-E = \frac{1}{4} m v^2 \frac{\ell_s}{L} + \frac{dH}{dt} dt + \begin{cases} 
-mgh & dz \geq 0\\
-0 & dz < 0 \\\end{cases} 
+E = \frac{1}{4} m v^2 \frac{\ell_s}{L} + \frac{dH}{dt} dt + \begin{cases}
+mgh & dz \geq 0 \\
+0 & dz < 0 \\\end{cases}
 \end{equation}
 ```
 
@@ -93,7 +91,7 @@ library(data.table)
 library(ggplot2)
 funs <- data.table(Slope = seq(-0.25,0.25,length.out = 1000)
 )[, `(a)  Pace (s/m)` := 1.5 * exp(3.5 * abs(Slope + 0.05))
-][, `(b)  Kinteic Energy (J/m)` := 1 / 2 *  68 * `(a)  Pace (s/m)`^-2 
+][, `(b)  Kinteic Energy (J/m)` := 1 / 2 *  68 * `(a)  Pace (s/m)`^-2
 ][, `(c)  Potential Energy (J/m)` := fifelse(Slope > 0, 68 * 9.81 * Slope, 0),
 ][, `(d)  Mechanical Work (J/m)` := `(b)  Kinteic Energy (J/m)` + `(c)  Potential Energy (J/m)`
 ][, `(e)  Net Metabolic Work (J/m)` := `(d)  Mechanical Work (J/m)`/0.2 + 72 * `(a)  Pace (s/m)`]
@@ -101,13 +99,13 @@ funs <- data.table(Slope = seq(-0.25,0.25,length.out = 1000)
 f <- melt(funs,id.vars = 'Slope', variable.name = 'Cost')
 
 ggplot(f, aes(x = Slope, y = value, color = Cost)) +
-geom_line(show.legend=FALSE, linewidth = 1) + facet_wrap(Cost ~ ., scales = 'free', ncol = 2) + 
+geom_line(show.legend=FALSE, linewidth = 1) + facet_wrap(Cost ~ ., scales = 'free', ncol = 2) +
 theme_bw() +
-theme(plot.title = element_text(hjust = 0.5, size = 13, face = 'bold'), 
-panel.grid.major = element_blank(), 
+theme(plot.title = element_text(hjust = 0.5, size = 13, face = 'bold'),
+panel.grid.major = element_blank(),
 panel.grid.minor = element_blank(),
 strip.text.x = element_text(size = 12),
-strip.background =element_rect(fill=NA,linewidth=NA)) + 
+strip.background =element_rect(fill=NA,linewidth=NA)) +
 scale_x_continuous(expand = c(0,0)) +
 scale_y_continuous(expand = c(0,0)) +
 ggtitle("Cost versus Slope using Canonical Parameters\nFor Various Costs") + ylab("Cost")
@@ -149,7 +147,7 @@ Since GPS tracks can be sampled at a per-length rate smaller than the size of ev
 
 ```{r, message=FALSE,warning=FALSE, eval = FALSE}
 gpx <- downsampleXYZ(gpx, t_step = 50/1.5,
-                     t = 't', x = 'long', y = 'lat', z = 'z', 
+                     t = 't', x = 'long', y = 'lat', z = 'z',
                      ID = 'TrackID')
 ```
 
@@ -182,7 +180,7 @@ plotVelocity(velocity_gps)
 ## 1.4 Energetic Cost-Distance Analysis
 
 ### 1.4.1 Procuring Data
-Given the large amounts of data downloaded, processed, and re-used at different parts of the workflow, it is highly recommended to define a consistent directory for the workflow particularly during model-building stages. 
+Given the large amounts of data downloaded, processed, and re-used at different parts of the workflow, it is highly recommended to define a consistent directory for the workflow particularly during model-building stages.
 
 ```{r, eval = FALSE}
 # Define a working directory
@@ -192,7 +190,7 @@ dir.create(rd)
 }
 ```
 
-`lbmech` can automatically download terrain data, but we also want to consider ocean movement. Here, we'll import the  Mediterranean Sea Physics Analysis and Forecast (CMEMS MED-Currents, EAS6 system) [@Clementi2021] for ocean currents around two of the principal Balearic Islands---Mallorca and Menorca---on 13 June 2022 and define our region of maximum movement (our 'world') around that raster's extent:
+`lbmech` can automatically download terrain data, but we also want to consider ocean movement. Here, we'll import the  Mediterranean Sea Physics Analysis and Forecast (CMEMS MED-Currents, EAS6 system) [@Clementi2021] for ocean currents around two of the principal Balearic Islands---Mallorca and Menorca---on 13 June 2022 and define our region of maximum movement (our `world`) around that raster's extent:
 
 
 ```{r, eval=FALSE}
@@ -298,7 +296,7 @@ names(hill) <- "shades"
 # Get a pallete of greys for hillshading
 pal_greys <- hcl.colors(1000, "Grays")
 
-# Round the hillshade values to the nearest factor 
+# Round the hillshade values to the nearest factor
 hill <- (hill - minmax(hill)['min',]) / (minmax(hill)['max',] - minmax(hill)['min',])
 hill <- ceiling(hill * (length(pal_greys)-1)) + 1
 
@@ -315,11 +313,11 @@ names(field)[1:2] <- c("u","v")
 field <- na.omit(field)
 
 topo <- ggplot() +
-geom_spatraster(data= dem) + 
+geom_spatraster(data= dem) +
 scale_fill_gradientn(" \nElevació\n(m)",
 colours = hypso.colors(15,'dem_poster'), na.value='#005EB8',
 limits = c(0,unlist(global(dem,'max',na.rm=TRUE)))) +
-theme_bw() + 
+theme_bw() +
 theme(legend.position = "top",
 legend.text = element_text(angle = 45, size = 15),
 legend.title = element_text(size=20),
@@ -327,40 +325,40 @@ strip.text = element_blank(),
 strip.background =element_rect(fill=NA,linewidth=NA),
 panel.grid.major = element_blank(),
 panel.grid.minor = element_blank()
-) + 
+) +
 guides(fill = guide_colorbar(barwidth = 60, barheight = 1.5, alpha = 0.7,
 label.position = "top",
 override.aes = list(alpha = 0.7))) +
 geom_spatraster(data = hill, fill = pal_greys[as.matrix(hill)],
-alpha=0.4, 
+alpha=0.4,
 maxcell = Inf) +
 geom_spatvector(data = muns, fill=NA,
-size=1,col = '#EEEEEE') + 
-geom_spatvector(data = islands, 
-linewidth = 2.5, col = '#454545',fill=NA) + 
+size=1,col = '#EEEEEE') +
+geom_spatvector(data = islands,
+linewidth = 2.5, col = '#454545',fill=NA) +
 geom_quiver(field, mapping = aes(x=x,y=y,u=u,v=v),center=TRUE, linewidth = 0.75,
 col = 'lightblue', inherit.aes=FALSE) +
-geom_spatvector(data = pobles, color = 'red', size = 5) + 
+geom_spatvector(data = pobles, color = 'red', size = 5) +
 ggrepel::geom_label_repel(data = pobles, mapping = aes(x = geom(pobles)[,'x'],
 y = geom(pobles)[,'y'],
 label = pobles$Location),
 size = 7) +
-scale_x_continuous(position = 'top', expand=c(0,0)) + 
-scale_y_continuous(position = 'right', expand=c(0,0)) + 
-annotation_scale(location = 'br', height = unit(1,'cm'),text_cex = 3) + 
+scale_x_continuous(position = 'top', expand=c(0,0)) +
+scale_y_continuous(position = 'right', expand=c(0,0)) +
+annotation_scale(location = 'br', height = unit(1,'cm'),text_cex = 3) +
 annotation_north_arrow(location = 'tl',
 style = north_arrow_nautical,
 height = unit(4.5,'cm'),
 width = unit(4.5,'cm'))
 
 
-political <- ggplot(states) + 
+political <- ggplot(states) +
 geom_spatvector(fill = '#396b27',
 linewidth = 0.5, col = '#D0D0D0') +
 geom_spatvector(data = countries,
-linewidth = 1, col = 'black', fill= NA) + 
+linewidth = 1, col = 'black', fill= NA) +
 geom_spatvector(data = plotreg,
-linewidth = 2, col = 'red', fill = NA) + 
+linewidth = 2, col = 'red', fill = NA) +
 theme_bw()+
 theme(axis.text.y=element_blank(),  #remove y axis labels
 axis.ticks.y=element_blank(),  #remove y axis ticks
@@ -368,9 +366,9 @@ axis.text.x=element_blank(),  #remove x axis labels
 axis.ticks.x=element_blank(),
 panel.background = element_rect(fill='#bce6f9'),
 panel.grid.major = element_blank(),
-panel.grid.minor = element_blank()) + 
-scale_x_continuous(expand=c(0,0)) + 
-scale_y_continuous(expand = c(0,0)) 
+panel.grid.minor = element_blank()) +
+scale_x_continuous(expand=c(0,0)) +
+scale_y_continuous(expand = c(0,0))
 
 header <- ggdraw() + draw_image(paste0(rd,"/RegionMap_Header.png"))
 
@@ -391,28 +389,28 @@ As with any raster operation, a consistent projection and grid needs to be defin
 
 ```{r, eval = TRUE}
 # Define the raster properties
-z_fix <- fix_z(proj = proj, 
+z_fix <- fix_z(proj = proj,
                res = 50)
 ```
 
-Although a 'world' can be defined directly based on a digital elevation model, generally it is easier to define a polygon coincident with the coverage of a digital elevation model and an attribute pointing to a URL/filepath with the source. The `lbmech::makeGrid()` can make such a polygon for a raster or filepath input, while using a polygon will induce future functions to download SRTM data as-needed. Similar polygons are frequently distributed by state GIS agencies (e.g. [Pennsylvania](https://www.pasda.psu.edu/download/pamap/); [Massachusetts](https://www.mass.gov/info-details/massgis-data-lidar-terrain-data-index)):
+Although a `world` can be defined directly based on a digital elevation model, generally it is easier to define a polygon coincident with the coverage of a digital elevation model and an attribute pointing to a URL/filepath with the source. The `lbmech::makeGrid()` can make such a polygon for a raster or filepath input, while using a polygon will induce future functions to download SRTM data as-needed. Similar polygons are frequently distributed by state GIS agencies (e.g. [Pennsylvania](https://www.pasda.psu.edu/download/pamap/); [Massachusetts](https://www.mass.gov/info-details/massgis-data-lidar-terrain-data-index)):
 
 ```{r, eval = TRUE}
 # Make a grid
 grid <- makeGrid(dem = region,     # Input; here polygon for SRTM
                  nx = 15, ny = 15, # Cols/Rows to divide the polygon
                  sources = TRUE,   # Just crop/divide, or point to source?
-                 zoom = 11,        # Zoom level for SRTM data 
+                 zoom = 11,        # Zoom level for SRTM data
                  overlap = 0.05)   # Fraction overlap between adjacent tiles
 ```
 
-A 'world' is formally defined as a directory containing all possible constraints on movement, fixed to a particular spatial projection. Given the very large areas and relatively-small spatial resolutions often employed, the data can rapidly become too large to compute all at once in the memory. the `defineWorld()` function divides the potential world of movement into individual, slightly-overlapping 'sectors' that are  calculated and read-in only as needed. It itself generally is not used to perform calculations.
+A `world` is formally defined as a directory containing all possible constraints on movement, fixed to a particular spatial projection. Given the very large areas and relatively-small spatial resolutions often employed, the data can rapidly become too large to compute all at once in the memory. the `defineWorld()` function divides the potential world of movement into individual, slightly-overlapping sectorss that are  calculated and read-in only as needed. It itself generally is not used to perform calculations.
 
 ```{r, eval = FALSE}
 # Define world of motion within a workspace
 defineWorld(source = grid,            # Elevation source, like makeGrid() output
             grid = grid,              # How to divide up the world
-            directions = 8,           # How adjacency between cells are defined 
+            directions = 8,           # How adjacency between cells are defined
             neighbor_distance = 10,   # Overlap between tiles in addition to ^
             cut_slope = 0.5,          # Maximum traversible slope
             water = currents,         # Water velocity source
@@ -424,10 +422,10 @@ defineWorld(source = grid,            # Elevation source, like makeGrid() output
             overwrite=FALSE)
 ```
 
-Once a world has been defined, a cost function can be applied using the `lbmech::calculateCosts()` function. The `lbmech::energyCosts()` function is provided to perform least-time, least-work, and least-energy analyses as in the above sections of this manuscript. As with `lbmech::defineWorld()`, it itself is not generally used to perform calculations---just to define the values. 
+Once a world has been defined, a cost function can be applied using the `lbmech::calculateCosts()` function. The `lbmech::energyCosts()` function is provided to perform least-time, least-work, and least-energy analyses as in the above sections of this manuscript. As with `lbmech::defineWorld()`, it itself is not generally used to perform calculations---just to define the values.
 
 ```{r, eval = FALSE}
-calculateCosts(costFUN = energyCosts,  
+calculateCosts(costFUN = energyCosts,
                dir = rd,                    # Working directory with world
                method = "kuo",              # Method to calculate work
                water = TRUE,                # Consider water, or only land?
@@ -442,7 +440,7 @@ calculateCosts(costFUN = energyCosts,
                L = 0.8)                     # Leg length
 ```
 
-For a given (set of) cost function(s) and origin(s)/destination(s), `getCosts()` will identify the needed sectors, make sure the data has been downloaded (and do so if not), perform the calculations, and save the cell-wise transition cost tables to the working directory. That way, if they are needed for another calculation in the future they won't need to be fetched and prepossessed again. 
+For a given (set of) cost function(s) and origin(s)/destination(s), `getCosts()` will identify the needed sectors, make sure the data has been downloaded (and do so if not), perform the calculations, and save the cell-wise transition cost tables to the working directory. That way, if they are needed for another calculation in the future they won't need to be fetched and prepossessed again.
 
 ```{r, eval = FALSE}
 # Import locations on Mallorca, Menorca, and Cabrera
@@ -451,7 +449,7 @@ reg <- as.polygons(ext(buffer(pobles, 10000)),crs = crs(proj))
 
 costs <- getCosts(region = reg,              # Area of maximum movement
                   from = pobles,             # Origins
-                  to = NULL,                 # Destinations 
+                  to = NULL,                 # Destinations
                   costname = 'energyCosts',  # Name of costFUN above
                   id = 'Location',           # Column with origin names
                   dir = rd,                  # Directory with world
@@ -525,7 +523,7 @@ names(hill) <- "shades"
 # Get a pallete of greys for hillshading
 pal_greys <- hcl.colors(1000, "Grays")
 
-# Round the hillshade values to the nearest factor 
+# Round the hillshade values to the nearest factor
 hill <- (hill - minmax(hill)['min',]) / (minmax(hill)['max',] - minmax(hill)['min',])
 hill <- ceiling(hill * (length(pal_greys)-1)) + 1
 
@@ -546,7 +544,7 @@ palma_paths$cost=='dt',])
 
 # ggplot call for the from raster with time, involving the islands, hillshade
 # cost raster, cost paths, and ocean currents
-ggtime_from <- ggplot(islands) + 
+ggtime_from <- ggplot(islands) +
 geom_spatraster(data = palma_dt[[1]]/3600) +
 scale_fill_viridis_c(expression(paste(atop("Hores",
 italic("Hours")," (hr)"))),
@@ -555,15 +553,15 @@ limits = rowMeans(minmax(palma_dt))/3600) +
 geom_spatraster(data = hill, fill = pal_greys[as.matrix(hill)],
 alpha=0.4, maxcell = Inf) +
 geom_quiver(field, mapping = aes(x=x,y=y,u=u,v=v),center=TRUE,
-col = 'white', inherit.aes=FALSE) + 
+col = 'white', inherit.aes=FALSE) +
 geom_spatvector(
-linewidth = 1.25, col = '#000000',fill=NA) + 
-geom_spatraster_contour(data = palma_dt[[1]],binwidth = 3600) + 
+linewidth = 1.25, col = '#000000',fill=NA) +
+geom_spatraster_contour(data = palma_dt[[1]],binwidth = 3600) +
 geom_spatvector(data = palma_dt_paths[[1]],
 linewidth = 1.4, col = 'yellow') +
 geom_spatvector(data = pobles,
-size = 3, color = 'red') + 
-theme_bw() + 
+size = 3, color = 'red') +
+theme_bw() +
 theme(legend.position = "right",
 legend.text = element_text(angle = 45, size = 10),
 legend.title = element_text(size=12, hjust=0),
@@ -571,14 +569,14 @@ axis.title.y = element_blank(),
 strip.text.x = element_blank(),
 strip.background =element_rect(fill=NA,linewidth=NA),
 panel.grid.major = element_blank(),
-panel.grid.minor = element_blank()) + 
+panel.grid.minor = element_blank()) +
 xlab(expression(paste("Temps des de Palma — ",italic("Time from Palma")))) +
-scale_x_continuous(position = 'top', expand=c(0,0)) + 
-scale_y_continuous(position = 'right', expand=c(0,0)) + 
+scale_x_continuous(position = 'top', expand=c(0,0)) +
+scale_y_continuous(position = 'right', expand=c(0,0)) +
 ylab("")
 
 # Now likewise for time to
-ggtime_to <- ggplot(islands) + 
+ggtime_to <- ggplot(islands) +
 geom_spatraster(data = palma_dt[[2]]/3600) +
 scale_fill_viridis_c(expression(paste(atop("Hores",
 italic("Hours")," (hr)"))),
@@ -587,15 +585,15 @@ limits = rowMeans(minmax(palma_dt))/3600) +
 geom_spatraster(data = hill, fill = pal_greys[as.matrix(hill)],
 alpha=0.4, maxcell = Inf) +
 geom_quiver(field, mapping = aes(x=x,y=y,u=u,v=v),center=TRUE,
-col = 'white', inherit.aes=FALSE) + 
+col = 'white', inherit.aes=FALSE) +
 geom_spatvector(
-linewidth = 1.25, col = '#000000',fill=NA) + 
-geom_spatraster_contour(data = palma_dt[[2]],binwidth = 3600) + 
+linewidth = 1.25, col = '#000000',fill=NA) +
+geom_spatraster_contour(data = palma_dt[[2]],binwidth = 3600) +
 geom_spatvector(data = palma_dt_paths[[2]],
 linewidth = 1.4, col = 'yellow') +
 geom_spatvector(data = pobles,
-size = 3, color = 'red') + 
-theme_bw() + 
+size = 3, color = 'red') +
+theme_bw() +
 theme(legend.position = "none",
 legend.text = element_text(angle = 45, size = 10),
 legend.title = element_text(size=12, hjust=0),
@@ -603,10 +601,10 @@ strip.text.x = element_blank(),
 strip.background =element_rect(fill=NA,linewidth=NA),
 panel.grid.major = element_blank(),
 panel.grid.minor = element_blank(),
-)  + 
+)  +
 xlab(expression(paste("Temps cap a Palma — ",italic("Time to Palma")))) +
-scale_x_continuous(position = 'top', expand=c(0,0)) + 
-scale_y_continuous(position = 'right', expand=c(0,0)) + 
+scale_x_continuous(position = 'top', expand=c(0,0)) +
+scale_y_continuous(position = 'right', expand=c(0,0)) +
 ylab("")
 
 
@@ -616,7 +614,7 @@ palma_dW_paths <- svc(palma_paths[stringr::str_detect(palma_paths$segment,"Mallo
 palma_paths$cost=='dW_l',],
 palma_paths[stringr::str_detect(palma_paths$segment,"_to_Palma") &
 palma_paths$cost=='dW_l',])
-ggwork_from <- ggplot(islands) + 
+ggwork_from <- ggplot(islands) +
 geom_spatraster(data = palma_dW[[1]]/1000/4.184) +
 scale_fill_viridis_c(expression("(kcal)"),
 option='magma',direction = -1,
@@ -624,15 +622,15 @@ limits = rowMeans(minmax(palma_dW))/1000/4.184) +
 geom_spatraster(data = hill, fill = pal_greys[as.matrix(hill)],
 alpha=0.4, maxcell = Inf) +
 geom_quiver(field, mapping = aes(x=x,y=y,u=u,v=v),center=TRUE,
-col = 'white', inherit.aes=FALSE) + 
+col = 'white', inherit.aes=FALSE) +
 geom_spatvector(
-linewidth = 1.25, col = '#000000',fill=NA) + 
-geom_spatraster_contour(data = palma_dW[[1]],binwidth =500000*4.184) + 
+linewidth = 1.25, col = '#000000',fill=NA) +
+geom_spatraster_contour(data = palma_dW[[1]],binwidth =500000*4.184) +
 geom_spatvector(data = palma_dW_paths[[1]],
 linewidth = 1.4, col = 'yellow') +
 geom_spatvector(data = pobles,
-size = 3, color = 'red') + 
-theme_bw() + 
+size = 3, color = 'red') +
+theme_bw() +
 theme(legend.position = "right",
 legend.text = element_text(angle = 45, size = 10),
 legend.title = element_text(size=12, hjust=0),
@@ -641,12 +639,12 @@ axis.title.y = element_blank(),
 strip.background =element_rect(fill=NA,linewidth=NA),
 panel.grid.major = element_blank(),
 panel.grid.minor = element_blank()
-) + ylab("") + 
+) + ylab("") +
 xlab(expression(paste("Treball des de Palma — ",italic("Work from Palma")))) +
-scale_x_continuous(position = 'top', expand=c(0,0)) + 
+scale_x_continuous(position = 'top', expand=c(0,0)) +
 scale_y_continuous(position = 'right', expand=c(0,0))
 
-ggwork_to <- ggplot(islands) + 
+ggwork_to <- ggplot(islands) +
 geom_spatraster(data = palma_dW[[2]]/1000/4.184) +
 scale_fill_viridis_c(expression("(kcal)"),
 option='magma',direction = -1,
@@ -654,15 +652,15 @@ limits = rowMeans(minmax(palma_dW))/1000/4.184) +
 geom_spatraster(data = hill, fill = pal_greys[as.matrix(hill)],
 alpha=0.4, maxcell = Inf) +
 geom_quiver(field, mapping = aes(x=x,y=y,u=u,v=v),center=TRUE,
-col = 'white', inherit.aes=FALSE) + 
+col = 'white', inherit.aes=FALSE) +
 geom_spatvector(
-linewidth = 1.25, col = '#000000',fill=NA) + 
-geom_spatraster_contour(data = palma_dW[[2]],binwidth =500000*4.184) + 
+linewidth = 1.25, col = '#000000',fill=NA) +
+geom_spatraster_contour(data = palma_dW[[2]],binwidth =500000*4.184) +
 geom_spatvector(data = palma_dW_paths[[2]],
 linewidth = 1.4, col = 'yellow') +
 geom_spatvector(data = pobles,
-size = 3, color = 'red') + 
-theme_bw() + 
+size = 3, color = 'red') +
+theme_bw() +
 theme(legend.position = "none",
 legend.text = element_text(angle = 45, size = 10),
 legend.title = element_text(size=12, hjust=0),
@@ -671,9 +669,9 @@ axis.title.y = element_blank(),
 strip.background =element_rect(fill=NA,linewidth=NA),
 panel.grid.major = element_blank(),
 panel.grid.minor = element_blank()
-) + ylab("") + 
+) + ylab("") +
 xlab(expression(paste("Treball cap a Palma — ",italic("Work to Palma")))) +
-scale_x_continuous(position = 'top', expand=c(0,0)) + 
+scale_x_continuous(position = 'top', expand=c(0,0)) +
 scale_y_continuous(position = 'right', expand=c(0,0))
 
 # And finally energy
@@ -682,7 +680,7 @@ palma_dE_paths <- svc(palma_paths[stringr::str_detect(palma_paths$segment,"Mallo
 palma_paths$cost=='dE_l',],
 palma_paths[stringr::str_detect(palma_paths$segment,"_to_Palma") &
 palma_paths$cost=='dE_l',])
-ggenergy_from <- ggplot(islands) + 
+ggenergy_from <- ggplot(islands) +
 geom_spatraster(data = palma_dE[[1]]/1000/4.184) +
 scale_fill_viridis_c(expression("(kcal)"),
 option='magma',direction = -1,
@@ -690,15 +688,15 @@ limits = rowMeans(minmax(palma_dE))/1000/4.184) +
 geom_spatraster(data = hill, fill = pal_greys[as.matrix(hill)],
 alpha=0.4, maxcell = Inf) +
 geom_quiver(field, mapping = aes(x=x,y=y,u=u,v=v),center=TRUE,
-col = 'white', inherit.aes=FALSE) + 
+col = 'white', inherit.aes=FALSE) +
 geom_spatvector(
-linewidth = 1.25, col = '#000000',fill=NA) + 
-geom_spatraster_contour(data = palma_dE[[1]],binwidth =1250000*4.184) + 
+linewidth = 1.25, col = '#000000',fill=NA) +
+geom_spatraster_contour(data = palma_dE[[1]],binwidth =1250000*4.184) +
 geom_spatvector(data = palma_dE_paths[[1]],
 linewidth = 1.4, col = 'yellow') +
 geom_spatvector(data = pobles,
-size = 3, color = 'red') + 
-theme_bw() + 
+size = 3, color = 'red') +
+theme_bw() +
 theme(legend.position = "right",
 legend.text = element_text(angle = 45, size = 10),
 legend.title = element_text(size=12, hjust=0),
@@ -707,12 +705,12 @@ axis.title.y = element_blank(),
 strip.background =element_rect(fill=NA,linewidth=NA),
 panel.grid.major = element_blank(),
 panel.grid.minor = element_blank()
-) + ylab("") + 
+) + ylab("") +
 xlab(expression(paste("Energia des de Palma — ",italic("Energy from Palma")))) +
-scale_x_continuous(position = 'top', expand=c(0,0)) + 
+scale_x_continuous(position = 'top', expand=c(0,0)) +
 scale_y_continuous(position = 'right', expand=c(0,0))
 
-ggenergy_to <- ggplot(islands) + 
+ggenergy_to <- ggplot(islands) +
 geom_spatraster(data = palma_dE[[2]]/1000/4.184) +
 scale_fill_viridis_c(expression("(kcal)"),
 option='magma',direction = -1,
@@ -720,15 +718,15 @@ limits = rowMeans(minmax(palma_dE))/1000/4.184) +
 geom_spatraster(data = hill, fill = pal_greys[as.matrix(hill)],
 alpha=0.4, maxcell = Inf) +
 geom_quiver(field, mapping = aes(x=x,y=y,u=u,v=v),center=TRUE,
-col = 'white', inherit.aes=FALSE) + 
+col = 'white', inherit.aes=FALSE) +
 geom_spatvector(
-linewidth = 1.25, col = '#000000',fill=NA) + 
-geom_spatraster_contour(data = palma_dE[[2]],binwidth =1250000*4.184) + 
+linewidth = 1.25, col = '#000000',fill=NA) +
+geom_spatraster_contour(data = palma_dE[[2]],binwidth =1250000*4.184) +
 geom_spatvector(data = palma_dE_paths[[2]],
 linewidth = 1.4, col = 'yellow') +
 geom_spatvector(data = pobles,
-size = 3, color = 'red') + 
-theme_bw() + 
+size = 3, color = 'red') +
+theme_bw() +
 theme(legend.position = "none",
 legend.text = element_text(angle = 45, size = 10),
 legend.title = element_text(size=12, hjust=0),
@@ -737,16 +735,16 @@ axis.title.y = element_blank(),
 strip.background =element_rect(fill=NA,linewidth=NA),
 panel.grid.major = element_blank(),
 panel.grid.minor = element_blank()
-) + ylab("") + 
+) + ylab("") +
 xlab(expression(paste("Energia cap a Palma — ",italic("Energy to Palma")))) +
-scale_x_continuous(position = 'top', expand=c(0,0)) + 
+scale_x_continuous(position = 'top', expand=c(0,0)) +
 scale_y_continuous(position = 'right', expand=c(0,0))
 ```
 
 
 ```{r, echo=FALSE,warning=FALSE,message=FALSE, fig.height=9.5, fig.width=8.5, fig.align='center'}
 
-# Final figure is the above 6 with ggarrange. Can't do it by facets since the scales are all different. 
+# Final figure is the above 6 with ggarrange. Can't do it by facets since the scales are all different.
 egg::ggarrange(ggtime_to,ggtime_from,
 ggwork_to,ggwork_from,
 ggenergy_to,ggenergy_from,
@@ -755,10 +753,10 @@ nrow=3)
 ```
 
 
-Corridors describe the minimum cost required to take a detour to a given location on a path between two or more given points relative to the least cost path between those points. These can be calculated from the output cost rasters using the `lbmech::makeCorridor()` function. 
+Corridors describe the minimum cost required to take a detour to a given location on a path between two or more given points relative to the least cost path between those points. These can be calculated from the output cost rasters using the `lbmech::makeCorridor()` function.
 
 ```{r, eval = FALSE}
-corr <- makeCorridor(rasters = costs, 
+corr <- makeCorridor(rasters = costs,
                      order = rev(c("Castell de Cabrera","Sa Calobra","Maó")))
 ```
 
