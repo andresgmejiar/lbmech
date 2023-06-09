@@ -102,7 +102,7 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
       # If what we provide is a polygon with URLs to the source,
       # download the file
       
-      lapply(seq_len(length(down)), function(i) {
+      for (i in seq_len(length(down))) {
         attempt <- 0
         error_happened <- TRUE
         
@@ -265,7 +265,7 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
             stop("Max number of attempts reached. Download failed.")
           }
         } # end of while loop
-      }) # end of lapply
+      } 
     }
   }
 }
