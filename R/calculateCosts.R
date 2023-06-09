@@ -241,7 +241,7 @@ calculateCosts <- function(tiles = NULL, costFUN = energyCosts, dir = tempdir(),
                                 Column6 = numeric(0),
                                 Column7 = numeric(0),
                                 Column8 = numeric(0),
-                                Column* = numeric(0))
+                                Column9 = numeric(0))
         }
         
         names(flowadj) <- c("cell",1:8)
