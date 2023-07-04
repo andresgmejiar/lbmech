@@ -1,24 +1,23 @@
 ---
-title: "Raw Cost Analysis Code"
+  title: "Raw Cost Analysis Code"
 author: "Andres G. Mejia Ramon"
 date: "June 6, 2023"
 output:
   github_document:
-    toc: true
-    pandoc_args: --webtex "https://latex.codecogs.com/svg.latex?"
+  toc: true
+pandoc_args: --webtex "https://latex.codecogs.com/svg.latex?"
 ---
-
-
+  
+  
 # Preparation
 
 The package can be installed within R:
-
+  
 ```{r setup}
 options(encoding = 'UTF-8')
 install.packages('remotes')
 remotes::install_github('andresgmejiar/lbmech')
 library(lbmech)
-dir <- tempdir()
 ```
 
 # Velocity Estimation
@@ -28,11 +27,12 @@ The GPS dataset of 15,296 usable GPX tracks from [https://wikiloc.com](https://w
 files, tracks can be imported as a data.table using `importGPX()`:
 
 ```{r import}
-getData('baleares-gpx', dir = dir) 
+dir <- tempdir()
+lbmech::getData('baleares-gps', dir = dir) 
 gpx <- list.files(dir ,
-recursive = TRUE,
-full.names = TRUE,
-pattern = ".gpx$")
+                  recursive = TRUE,
+                  full.names = TRUE,
+                  pattern = ".gpx$")
 gpx <- lapply(gpx, importGPX)
 gpx <- rbindlist(gpx)
 ```
@@ -44,8 +44,8 @@ sample. For an expected pixel size of 50 m and a maximum speed close to 1.5 m/s,
 
 ```{r downsample}
 gpx <- downsampleXYZ(gpx, t_step = 50/1.5,
-t = 't', x = 'long', y = 'lat', z = 'z', 
-ID = 'TrackID')
+                     t = 't', x = 'long', y = 'lat', z = 'z', 
+                     ID = 'TrackID')
 ```
 
 Subsequently, the xyz data is input into getVelocity(), which for each GPS point sequence (1) calculates
@@ -55,10 +55,10 @@ the transformed data.
 
 ```{r getVelocity}
 velocity_gps <- getVelocity(data = gpx[y < 90], # Filter for y
-degs = TRUE,        # Lat/Long; geodesic correction
-tau_vmax = 0.95,    # Quantile for v_max
-tau_nlrq = 0.50,    # Quantile for nlrq
-v_lim = 3)          # Filter for dl/dt
+                            degs = TRUE,        # Lat/Long; geodesic correction
+                            tau_vmax = 0.95,    # Quantile for v_max
+                            tau_nlrq = 0.50,    # Quantile for nlrq
+                            v_lim = 3)          # Filter for dl/dt
 
 print(velocity_gps[1:(length(velocity_gps)-1)])
 
@@ -71,10 +71,11 @@ For efficient data handling in various stages of the workflow, particularly duri
 directory should be set.
 
 ```{r workingDir}
+tempdir()
 # Define a working directory
 rd <- "Baleares"
 if (!dir.exists(rd)){
-dir.create(rd)
+  dir.create(rd)
 }
 ```
 
@@ -138,18 +139,18 @@ Once a world has been defined, a cost function can be applied using `calculateCo
 
 ```{r calculateCosts}
 calculateCosts(costFUN = energyCosts,  
-dir = rd,                    # Working directory with world
-method = "kuo",              # Method to calculate work
-water = TRUE,                # Consider water, or only land?
-v_max = velocity_gps$vmax,   # Max walking speed (m/s)
-k = velocity_gps$k,          # Slope sensitivity (dimensionless)
-s = velocity_gps$s,          # Slope of fastest motion (dimlss.)
-row_speed = 1.8,             # Speed over water (m/s)
-row_work = 581,              # work over water (J/s)
-m = 68,                      # Mass (kg)
-BMR = 72,                    # Basal metabolic rate (J/s)
-l_s = 1.8,                   # Stride length (m)
-L = 0.8)                     # Leg length
+               dir = rd,                    # Working directory with world
+               method = "kuo",              # Method to calculate work
+               water = TRUE,                # Consider water, or only land?
+               v_max = velocity_gps$vmax,   # Max walking speed (m/s)
+               k = velocity_gps$k,          # Slope sensitivity (dimensionless)
+               s = velocity_gps$s,          # Slope of fastest motion (dimlss.)
+               row_speed = 1.8,             # Speed over water (m/s)
+               row_work = 581,              # work over water (J/s)
+               m = 68,                      # Mass (kg)
+               BMR = 72,                    # Basal metabolic rate (J/s)
+               l_s = 1.8,                   # Stride length (m)
+               L = 0.8)                     # Leg length
 ```
 
 For a given cost function and set of origins/destinations, `getCosts()` identifies necessary sectors, checks and downloads data, performs calculations, and saves cell-wise transition cost tables to the working directory. This way, they won't need to be fetched or preprocessed again for future calculations.
@@ -286,39 +287,39 @@ geom_spatraster(data= dem) +    # Elevation is the basemap
 scale_fill_gradientn(" \nElevació (m)",
 colours = hypso.colors(15,'dem_poster'), na.value='#005EB8', # Color palette
 limits = c(0,unlist(global(dem,'max',na.rm=TRUE)))) +    
-theme_bw() +                            # Thematic factors
-theme(legend.position = "top",
-legend.text = element_text(angle = 45, size = 15),
-legend.title = element_text(size=20),
-strip.text = element_blank(),
-strip.background =element_rect(fill=NA,linewidth=NA),
-panel.grid.major = element_blank(),
-panel.grid.minor = element_blank()
-) + 
-guides(fill = guide_colorbar(barwidth = 65, barheight = 1.5, alpha = 0.7,
-label.position = "top",
-override.aes = list(alpha = 0.7))) +
-geom_spatraster(data = hill, fill = pal_greys[as.matrix(hill)],  # Hillshade layer
-alpha=0.4, 
-maxcell = Inf) +
-geom_spatvector(data = muns, fill=NA,    # Municipal layer
-size=1,col = '#EEEEEE') + 
-geom_spatvector(data = islands,     # Islands layer
-linewidth = 2.5, col = '#454545',fill=NA) + 
-geom_quiver(field, mapping = aes(x=x,y=y,u=u,v=v),center=TRUE, linewidth = 0.75,
-col = 'lightblue', inherit.aes=FALSE) +   # Ocean currents layer
-geom_spatvector(data = pobles, color = 'red', size = 5) +  # Location layer
-ggrepel::geom_label_repel(data = pobles, mapping = aes(x = geom(pobles)[,'x'],
-y = geom(pobles)[,'y'],
-label = pobles$Location),
-size = 7) +
-scale_x_continuous(position = 'top', expand=c(0,0)) + 
-scale_y_continuous(position = 'right', expand=c(0,0)) + 
-annotation_scale(location = 'br', height = unit(1,'cm'),text_cex = 3) + 
-annotation_north_arrow(location = 'tl',
-style = north_arrow_nautical,
-height = unit(4.5,'cm'),
-width = unit(4.5,'cm'))
+  theme_bw() +                            # Thematic factors
+  theme(legend.position = "top",
+        legend.text = element_text(angle = 45, size = 15),
+        legend.title = element_text(size=20),
+        strip.text = element_blank(),
+        strip.background =element_rect(fill=NA,linewidth=NA),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()
+  ) + 
+  guides(fill = guide_colorbar(barwidth = 65, barheight = 1.5, alpha = 0.7,
+                               label.position = "top",
+                               override.aes = list(alpha = 0.7))) +
+  geom_spatraster(data = hill, fill = pal_greys[as.matrix(hill)],  # Hillshade layer
+                  alpha=0.4, 
+                  maxcell = Inf) +
+  geom_spatvector(data = muns, fill=NA,    # Municipal layer
+                  size=1,col = '#EEEEEE') + 
+  geom_spatvector(data = islands,     # Islands layer
+                  linewidth = 2.5, col = '#454545',fill=NA) + 
+  geom_quiver(field, mapping = aes(x=x,y=y,u=u,v=v),center=TRUE, linewidth = 0.75,
+              col = 'lightblue', inherit.aes=FALSE) +   # Ocean currents layer
+  geom_spatvector(data = pobles, color = 'red', size = 5) +  # Location layer
+  ggrepel::geom_label_repel(data = pobles, mapping = aes(x = geom(pobles)[,'x'],
+                                                         y = geom(pobles)[,'y'],
+                                                         label = pobles$Location),
+                            size = 7) +
+  scale_x_continuous(position = 'top', expand=c(0,0)) + 
+  scale_y_continuous(position = 'right', expand=c(0,0)) + 
+  annotation_scale(location = 'br', height = unit(1,'cm'),text_cex = 3) + 
+  annotation_north_arrow(location = 'tl',
+                         style = north_arrow_nautical,
+                         height = unit(4.5,'cm'),
+                         width = unit(4.5,'cm'))
 ```
 
 Cost raster and path figure
@@ -386,207 +387,207 @@ palma_dt <- palma[[stringr::str_detect(names(palma),"dt_")]]
 
 # SpatVector Collection with to, from rasters for time
 palma_dt_paths <- svc(palma_paths[stringr::str_detect(palma_paths$segment,"Mallorca_to_") &
-palma_paths$cost=='dt',],
-palma_paths[stringr::str_detect(palma_paths$segment,"_to_Palma") &
-palma_paths$cost=='dt',])
+                                    palma_paths$cost=='dt',],
+                      palma_paths[stringr::str_detect(palma_paths$segment,"_to_Palma") &
+                                    palma_paths$cost=='dt',])
 
 # ggplot call for the from raster with time, involving the islands, hillshade
 # cost raster, cost paths, and ocean currents
 ggtime_from <- ggplot(islands) + 
-geom_spatraster(data = palma_dt[[1]]/3600) +
-scale_fill_viridis_c(expression(paste(atop("Hores",
-italic("Hours")," (hr)"))),
-option='magma',direction = -1,
-limits = rowMeans(minmax(palma_dt))/3600) +
-geom_spatraster(data = hill, fill = pal_greys[as.matrix(hill)],
-alpha=0.4, maxcell = Inf) +
-geom_quiver(field, mapping = aes(x=x,y=y,u=u,v=v),center=TRUE,
-col = 'white', inherit.aes=FALSE) + 
-geom_spatvector(
-linewidth = 1.25, col = '#000000',fill=NA) + 
-geom_spatraster_contour(data = palma_dt[[1]],binwidth = 3600) + 
-geom_spatvector(data = palma_dt_paths[[1]],
-linewidth = 1.4, col = 'yellow') +
-geom_spatvector(data = pobles,
-size = 3, color = 'red') + 
-theme_bw() + 
-theme(legend.position = "right",
-legend.text = element_text(angle = 45, size = 10),
-legend.title = element_text(size=12, hjust=0),
-axis.title.y = element_blank(),
-strip.text.x = element_blank(),
-strip.background =element_rect(fill=NA,linewidth=NA),
-panel.grid.major = element_blank(),
-panel.grid.minor = element_blank()) + 
-xlab(expression(paste("Temps des de Palma — ",italic("Time from Palma")))) +
-scale_x_continuous(position = 'top', expand=c(0,0)) + 
-scale_y_continuous(position = 'right', expand=c(0,0)) + 
-ylab("")
+  geom_spatraster(data = palma_dt[[1]]/3600) +
+  scale_fill_viridis_c(expression(paste(atop("Hores",
+                                             italic("Hours")," (hr)"))),
+                       option='magma',direction = -1,
+                       limits = rowMeans(minmax(palma_dt))/3600) +
+  geom_spatraster(data = hill, fill = pal_greys[as.matrix(hill)],
+                  alpha=0.4, maxcell = Inf) +
+  geom_quiver(field, mapping = aes(x=x,y=y,u=u,v=v),center=TRUE,
+              col = 'white', inherit.aes=FALSE) + 
+  geom_spatvector(
+    linewidth = 1.25, col = '#000000',fill=NA) + 
+  geom_spatraster_contour(data = palma_dt[[1]],binwidth = 3600) + 
+  geom_spatvector(data = palma_dt_paths[[1]],
+                  linewidth = 1.4, col = 'yellow') +
+  geom_spatvector(data = pobles,
+                  size = 3, color = 'red') + 
+  theme_bw() + 
+  theme(legend.position = "right",
+        legend.text = element_text(angle = 45, size = 10),
+        legend.title = element_text(size=12, hjust=0),
+        axis.title.y = element_blank(),
+        strip.text.x = element_blank(),
+        strip.background =element_rect(fill=NA,linewidth=NA),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) + 
+  xlab(expression(paste("Temps des de Palma — ",italic("Time from Palma")))) +
+  scale_x_continuous(position = 'top', expand=c(0,0)) + 
+  scale_y_continuous(position = 'right', expand=c(0,0)) + 
+  ylab("")
 
 # Now likewise for time to
 ggtime_to <- ggplot(islands) + 
-geom_spatraster(data = palma_dt[[2]]/3600) +
-scale_fill_viridis_c(expression(paste(atop("Hores",
-italic("Hours")," (hr)"))),
-option='magma',direction = -1,
-limits = rowMeans(minmax(palma_dt))/3600) +
-geom_spatraster(data = hill, fill = pal_greys[as.matrix(hill)],
-alpha=0.4, maxcell = Inf) +
-geom_quiver(field, mapping = aes(x=x,y=y,u=u,v=v),center=TRUE,
-col = 'white', inherit.aes=FALSE) + 
-geom_spatvector(
-linewidth = 1.25, col = '#000000',fill=NA) + 
-geom_spatraster_contour(data = palma_dt[[2]],binwidth = 3600) + 
-geom_spatvector(data = palma_dt_paths[[2]],
-linewidth = 1.4, col = 'yellow') +
-geom_spatvector(data = pobles,
-size = 3, color = 'red') + 
-theme_bw() + 
-theme(legend.position = "none",
-legend.text = element_text(angle = 45, size = 10),
-legend.title = element_text(size=12, hjust=0),
-strip.text.x = element_blank(),
-strip.background =element_rect(fill=NA,linewidth=NA),
-panel.grid.major = element_blank(),
-panel.grid.minor = element_blank(),
-)  + 
-xlab(expression(paste("Temps cap a Palma — ",italic("Time to Palma")))) +
-scale_x_continuous(position = 'top', expand=c(0,0)) + 
-scale_y_continuous(position = 'right', expand=c(0,0)) + 
-ylab("")
+  geom_spatraster(data = palma_dt[[2]]/3600) +
+  scale_fill_viridis_c(expression(paste(atop("Hores",
+                                             italic("Hours")," (hr)"))),
+                       option='magma',direction = -1,
+                       limits = rowMeans(minmax(palma_dt))/3600) +
+  geom_spatraster(data = hill, fill = pal_greys[as.matrix(hill)],
+                  alpha=0.4, maxcell = Inf) +
+  geom_quiver(field, mapping = aes(x=x,y=y,u=u,v=v),center=TRUE,
+              col = 'white', inherit.aes=FALSE) + 
+  geom_spatvector(
+    linewidth = 1.25, col = '#000000',fill=NA) + 
+  geom_spatraster_contour(data = palma_dt[[2]],binwidth = 3600) + 
+  geom_spatvector(data = palma_dt_paths[[2]],
+                  linewidth = 1.4, col = 'yellow') +
+  geom_spatvector(data = pobles,
+                  size = 3, color = 'red') + 
+  theme_bw() + 
+  theme(legend.position = "none",
+        legend.text = element_text(angle = 45, size = 10),
+        legend.title = element_text(size=12, hjust=0),
+        strip.text.x = element_blank(),
+        strip.background =element_rect(fill=NA,linewidth=NA),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+  )  + 
+  xlab(expression(paste("Temps cap a Palma — ",italic("Time to Palma")))) +
+  scale_x_continuous(position = 'top', expand=c(0,0)) + 
+  scale_y_continuous(position = 'right', expand=c(0,0)) + 
+  ylab("")
 
 
 # And likewise for work
 palma_dW <- palma[[stringr::str_detect(names(palma),"dW_")]]
 palma_dW_paths <- svc(palma_paths[stringr::str_detect(palma_paths$segment,"Mallorca_to_") &
-palma_paths$cost=='dW_l',],
-palma_paths[stringr::str_detect(palma_paths$segment,"_to_Palma") &
-palma_paths$cost=='dW_l',])
+                                    palma_paths$cost=='dW_l',],
+                      palma_paths[stringr::str_detect(palma_paths$segment,"_to_Palma") &
+                                    palma_paths$cost=='dW_l',])
 ggwork_from <- ggplot(islands) + 
-geom_spatraster(data = palma_dW[[1]]/1000/4.184) +
-scale_fill_viridis_c(expression("(kcal)"),
-option='magma',direction = -1,
-limits = rowMeans(minmax(palma_dW))/1000/4.184) +
-geom_spatraster(data = hill, fill = pal_greys[as.matrix(hill)],
-alpha=0.4, maxcell = Inf) +
-geom_quiver(field, mapping = aes(x=x,y=y,u=u,v=v),center=TRUE,
-col = 'white', inherit.aes=FALSE) + 
-geom_spatvector(
-linewidth = 1.25, col = '#000000',fill=NA) + 
-geom_spatraster_contour(data = palma_dW[[1]],binwidth =500000*4.184) + 
-geom_spatvector(data = palma_dW_paths[[1]],
-linewidth = 1.4, col = 'yellow') +
-geom_spatvector(data = pobles,
-size = 3, color = 'red') + 
-theme_bw() + 
-theme(legend.position = "right",
-legend.text = element_text(angle = 45, size = 10),
-legend.title = element_text(size=12, hjust=0),
-strip.text.x = element_blank(),
-axis.title.y = element_blank(),
-strip.background =element_rect(fill=NA,linewidth=NA),
-panel.grid.major = element_blank(),
-panel.grid.minor = element_blank()
-) + ylab("") + 
-xlab(expression(paste("Treball des de Palma — ",italic("Work from Palma")))) +
-scale_x_continuous(position = 'top', expand=c(0,0)) + 
-scale_y_continuous(position = 'right', expand=c(0,0))
+  geom_spatraster(data = palma_dW[[1]]/1000/4.184) +
+  scale_fill_viridis_c(expression("(kcal)"),
+                       option='magma',direction = -1,
+                       limits = rowMeans(minmax(palma_dW))/1000/4.184) +
+  geom_spatraster(data = hill, fill = pal_greys[as.matrix(hill)],
+                  alpha=0.4, maxcell = Inf) +
+  geom_quiver(field, mapping = aes(x=x,y=y,u=u,v=v),center=TRUE,
+              col = 'white', inherit.aes=FALSE) + 
+  geom_spatvector(
+    linewidth = 1.25, col = '#000000',fill=NA) + 
+  geom_spatraster_contour(data = palma_dW[[1]],binwidth =500000*4.184) + 
+  geom_spatvector(data = palma_dW_paths[[1]],
+                  linewidth = 1.4, col = 'yellow') +
+  geom_spatvector(data = pobles,
+                  size = 3, color = 'red') + 
+  theme_bw() + 
+  theme(legend.position = "right",
+        legend.text = element_text(angle = 45, size = 10),
+        legend.title = element_text(size=12, hjust=0),
+        strip.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        strip.background =element_rect(fill=NA,linewidth=NA),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()
+  ) + ylab("") + 
+  xlab(expression(paste("Treball des de Palma — ",italic("Work from Palma")))) +
+  scale_x_continuous(position = 'top', expand=c(0,0)) + 
+  scale_y_continuous(position = 'right', expand=c(0,0))
 
 ggwork_to <- ggplot(islands) + 
-geom_spatraster(data = palma_dW[[2]]/1000/4.184) +
-scale_fill_viridis_c(expression("(kcal)"),
-option='magma',direction = -1,
-limits = rowMeans(minmax(palma_dW))/1000/4.184) +
-geom_spatraster(data = hill, fill = pal_greys[as.matrix(hill)],
-alpha=0.4, maxcell = Inf) +
-geom_quiver(field, mapping = aes(x=x,y=y,u=u,v=v),center=TRUE,
-col = 'white', inherit.aes=FALSE) + 
-geom_spatvector(
-linewidth = 1.25, col = '#000000',fill=NA) + 
-geom_spatraster_contour(data = palma_dW[[2]],binwidth =500000*4.184) + 
-geom_spatvector(data = palma_dW_paths[[2]],
-linewidth = 1.4, col = 'yellow') +
-geom_spatvector(data = pobles,
-size = 3, color = 'red') + 
-theme_bw() + 
-theme(legend.position = "none",
-legend.text = element_text(angle = 45, size = 10),
-legend.title = element_text(size=12, hjust=0),
-strip.text.x = element_blank(),
-axis.title.y = element_blank(),
-strip.background =element_rect(fill=NA,linewidth=NA),
-panel.grid.major = element_blank(),
-panel.grid.minor = element_blank()
-) + ylab("") + 
-xlab(expression(paste("Treball cap a Palma — ",italic("Work to Palma")))) +
-scale_x_continuous(position = 'top', expand=c(0,0)) + 
-scale_y_continuous(position = 'right', expand=c(0,0))
+  geom_spatraster(data = palma_dW[[2]]/1000/4.184) +
+  scale_fill_viridis_c(expression("(kcal)"),
+                       option='magma',direction = -1,
+                       limits = rowMeans(minmax(palma_dW))/1000/4.184) +
+  geom_spatraster(data = hill, fill = pal_greys[as.matrix(hill)],
+                  alpha=0.4, maxcell = Inf) +
+  geom_quiver(field, mapping = aes(x=x,y=y,u=u,v=v),center=TRUE,
+              col = 'white', inherit.aes=FALSE) + 
+  geom_spatvector(
+    linewidth = 1.25, col = '#000000',fill=NA) + 
+  geom_spatraster_contour(data = palma_dW[[2]],binwidth =500000*4.184) + 
+  geom_spatvector(data = palma_dW_paths[[2]],
+                  linewidth = 1.4, col = 'yellow') +
+  geom_spatvector(data = pobles,
+                  size = 3, color = 'red') + 
+  theme_bw() + 
+  theme(legend.position = "none",
+        legend.text = element_text(angle = 45, size = 10),
+        legend.title = element_text(size=12, hjust=0),
+        strip.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        strip.background =element_rect(fill=NA,linewidth=NA),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()
+  ) + ylab("") + 
+  xlab(expression(paste("Treball cap a Palma — ",italic("Work to Palma")))) +
+  scale_x_continuous(position = 'top', expand=c(0,0)) + 
+  scale_y_continuous(position = 'right', expand=c(0,0))
 
 # And finally energy
 palma_dE <- palma[[stringr::str_detect(names(palma),"dE_")]]
 palma_dE_paths <- svc(palma_paths[stringr::str_detect(palma_paths$segment,"Mallorca_to_") &
-palma_paths$cost=='dE_l',],
-palma_paths[stringr::str_detect(palma_paths$segment,"_to_Palma") &
-palma_paths$cost=='dE_l',])
+                                    palma_paths$cost=='dE_l',],
+                      palma_paths[stringr::str_detect(palma_paths$segment,"_to_Palma") &
+                                    palma_paths$cost=='dE_l',])
 ggenergy_from <- ggplot(islands) + 
-geom_spatraster(data = palma_dE[[1]]/1000/4.184) +
-scale_fill_viridis_c(expression("(kcal)"),
-option='magma',direction = -1,
-limits = rowMeans(minmax(palma_dE))/1000/4.184) +
-geom_spatraster(data = hill, fill = pal_greys[as.matrix(hill)],
-alpha=0.4, maxcell = Inf) +
-geom_quiver(field, mapping = aes(x=x,y=y,u=u,v=v),center=TRUE,
-col = 'white', inherit.aes=FALSE) + 
-geom_spatvector(
-linewidth = 1.25, col = '#000000',fill=NA) + 
-geom_spatraster_contour(data = palma_dE[[1]],binwidth =1250000*4.184) + 
-geom_spatvector(data = palma_dE_paths[[1]],
-linewidth = 1.4, col = 'yellow') +
-geom_spatvector(data = pobles,
-size = 3, color = 'red') + 
-theme_bw() + 
-theme(legend.position = "right",
-legend.text = element_text(angle = 45, size = 10),
-legend.title = element_text(size=12, hjust=0),
-strip.text.x = element_blank(),
-axis.title.y = element_blank(),
-strip.background =element_rect(fill=NA,linewidth=NA),
-panel.grid.major = element_blank(),
-panel.grid.minor = element_blank()
-) + ylab("") + 
-xlab(expression(paste("Energia des de Palma — ",italic("Energy from Palma")))) +
-scale_x_continuous(position = 'top', expand=c(0,0)) + 
-scale_y_continuous(position = 'right', expand=c(0,0))
+  geom_spatraster(data = palma_dE[[1]]/1000/4.184) +
+  scale_fill_viridis_c(expression("(kcal)"),
+                       option='magma',direction = -1,
+                       limits = rowMeans(minmax(palma_dE))/1000/4.184) +
+  geom_spatraster(data = hill, fill = pal_greys[as.matrix(hill)],
+                  alpha=0.4, maxcell = Inf) +
+  geom_quiver(field, mapping = aes(x=x,y=y,u=u,v=v),center=TRUE,
+              col = 'white', inherit.aes=FALSE) + 
+  geom_spatvector(
+    linewidth = 1.25, col = '#000000',fill=NA) + 
+  geom_spatraster_contour(data = palma_dE[[1]],binwidth =1250000*4.184) + 
+  geom_spatvector(data = palma_dE_paths[[1]],
+                  linewidth = 1.4, col = 'yellow') +
+  geom_spatvector(data = pobles,
+                  size = 3, color = 'red') + 
+  theme_bw() + 
+  theme(legend.position = "right",
+        legend.text = element_text(angle = 45, size = 10),
+        legend.title = element_text(size=12, hjust=0),
+        strip.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        strip.background =element_rect(fill=NA,linewidth=NA),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()
+  ) + ylab("") + 
+  xlab(expression(paste("Energia des de Palma — ",italic("Energy from Palma")))) +
+  scale_x_continuous(position = 'top', expand=c(0,0)) + 
+  scale_y_continuous(position = 'right', expand=c(0,0))
 
 ggenergy_to <- ggplot(islands) + 
-geom_spatraster(data = palma_dE[[2]]/1000/4.184) +
-scale_fill_viridis_c(expression("(kcal)"),
-option='magma',direction = -1,
-limits = rowMeans(minmax(palma_dE))/1000/4.184) +
-geom_spatraster(data = hill, fill = pal_greys[as.matrix(hill)],
-alpha=0.4, maxcell = Inf) +
-geom_quiver(field, mapping = aes(x=x,y=y,u=u,v=v),center=TRUE,
-col = 'white', inherit.aes=FALSE) + 
-geom_spatvector(
-linewidth = 1.25, col = '#000000',fill=NA) + 
-geom_spatraster_contour(data = palma_dE[[2]],binwidth =1250000*4.184) + 
-geom_spatvector(data = palma_dE_paths[[2]],
-linewidth = 1.4, col = 'yellow') +
-geom_spatvector(data = pobles,
-size = 3, color = 'red') + 
-theme_bw() + 
-theme(legend.position = "none",
-legend.text = element_text(angle = 45, size = 10),
-legend.title = element_text(size=12, hjust=0),
-strip.text.x = element_blank(),
-axis.title.y = element_blank(),
-strip.background =element_rect(fill=NA,linewidth=NA),
-panel.grid.major = element_blank(),
-panel.grid.minor = element_blank()
-) + ylab("") + 
-xlab(expression(paste("Energia cap a Palma — ",italic("Energy to Palma")))) +
-scale_x_continuous(position = 'top', expand=c(0,0)) + 
-scale_y_continuous(position = 'right', expand=c(0,0))
+  geom_spatraster(data = palma_dE[[2]]/1000/4.184) +
+  scale_fill_viridis_c(expression("(kcal)"),
+                       option='magma',direction = -1,
+                       limits = rowMeans(minmax(palma_dE))/1000/4.184) +
+  geom_spatraster(data = hill, fill = pal_greys[as.matrix(hill)],
+                  alpha=0.4, maxcell = Inf) +
+  geom_quiver(field, mapping = aes(x=x,y=y,u=u,v=v),center=TRUE,
+              col = 'white', inherit.aes=FALSE) + 
+  geom_spatvector(
+    linewidth = 1.25, col = '#000000',fill=NA) + 
+  geom_spatraster_contour(data = palma_dE[[2]],binwidth =1250000*4.184) + 
+  geom_spatvector(data = palma_dE_paths[[2]],
+                  linewidth = 1.4, col = 'yellow') +
+  geom_spatvector(data = pobles,
+                  size = 3, color = 'red') + 
+  theme_bw() + 
+  theme(legend.position = "none",
+        legend.text = element_text(angle = 45, size = 10),
+        legend.title = element_text(size=12, hjust=0),
+        strip.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        strip.background =element_rect(fill=NA,linewidth=NA),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()
+  ) + ylab("") + 
+  xlab(expression(paste("Energia cap a Palma — ",italic("Energy to Palma")))) +
+  scale_x_continuous(position = 'top', expand=c(0,0)) + 
+  scale_y_continuous(position = 'right', expand=c(0,0))
 
 
 ```
@@ -596,8 +597,8 @@ scale_y_continuous(position = 'right', expand=c(0,0))
 
 # Final figure is the above 6 with ggarrange. Can't do it by facets since the scales are all different. 
 egg::ggarrange(ggtime_to,ggtime_from,
-ggwork_to,ggwork_from,
-ggenergy_to,ggenergy_from,
-nrow=3)
+               ggwork_to,ggwork_from,
+               ggenergy_to,ggenergy_from,
+               nrow=3)
 
 ```

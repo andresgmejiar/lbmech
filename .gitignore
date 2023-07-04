@@ -80,3 +80,4 @@
 .Rhistory
 .Rbuildignore
 lbmech.Rproj
+/data-raw/Baleares/

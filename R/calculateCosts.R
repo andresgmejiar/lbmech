@@ -128,7 +128,7 @@ calculateCosts <- function(tiles = NULL, costFUN = energyCosts, dir = tempdir(),
   } else {
     params <- readRDS(costPath)
     if (length(list(...) )> 0){
-    warning(paste0(costPath," already defined. Ignoring input parameters."))
+      warning(paste0(costPath," already defined. Ignoring input parameters."))
     }
   }
   
@@ -167,35 +167,35 @@ calculateCosts <- function(tiles = NULL, costFUN = energyCosts, dir = tempdir(),
     }
     
     if (do_water && doTile){
-        # If the provided water file is a polygon vector, use flow direction
-        # from elevation raster and speed from attribute
+      # If the provided water file is a polygon vector, use flow direction
+      # from elevation raster and speed from attribute
       waterHere <- FALSE
       if (methods::is(waterAll,"SpatVector")){
-       if (length(intersect(grid[which(grid[['id']] == i), ], waterAll)) > 0){
-         waterHere <- 1
-         # Import terrain, calculate direction of flow
-         flowdir <- suppressWarnings(importRST(normalizePath(paste0(subdirs[2],"/",i),mustWork = FALSE)))
-         z_fix <- flowdir
-         flowdir <- terrain(flowdir,'flowdir')
-         
-         flowdir <- mask(flowdir,waterAll)
-         water <- rasterize(waterAll,flowdir,field=water_speed)
-         names(water) <- 'WaterSpeed'
-       } 
+        if (length(intersect(grid[which(grid[['id']] == i), ], waterAll)) > 0){
+          waterHere <- 1
+          # Import terrain, calculate direction of flow
+          flowdir <- suppressWarnings(importRST(normalizePath(paste0(subdirs[2],"/",i),mustWork = FALSE)))
+          z_fix <- flowdir
+          flowdir <- terrain(flowdir,'flowdir')
+          
+          flowdir <- mask(flowdir,waterAll)
+          water <- rasterize(waterAll,flowdir,field=water_speed)
+          names(water) <- 'WaterSpeed'
+        } 
       } else if (methods::is(waterAll,"SpatRaster")){
         # If water is a raster and it intersects the current grid extent
-
+        
         water <- tryCatch(crop(waterAll,buffer(grid[which(grid[['id']] == i)],
                                                neighbor_distance/max(res(waterAll))),
-                        mask=TRUE, snap = 'out'), 
-                        error = function(x) FALSE)
+                               mask=TRUE, snap = 'out'), 
+                          error = function(x) FALSE)
         if (methods::is(water,'SpatRaster')){
           waterHere <- nlyr(water)
           water <- project(water,z_fix,align=TRUE)
           if (waterHere == 1){
             # If there's only one layer, assume it's speed
             flowdir <- suppressWarnings(importRST(normalizePath(paste0(subdirs[2],"/",i),
-                                               mustWork = FALSE)))
+                                                                mustWork = FALSE)))
             z_fix <- flowdir
             flowdir <- terrain(flowdir,'flowdir')
             
@@ -232,154 +232,145 @@ calculateCosts <- function(tiles = NULL, costFUN = energyCosts, dir = tempdir(),
         flowadj <- as.data.table(adjacent(flowdir,cells(flowdir),
                                           pairs=FALSE,directions = 8),
                                  keep.rownames = TRUE)
-        if (nrow(flowadj) == 0){
-          flowadj <- data.table(Column1 = numeric(0),
-                                Column2 = numeric(0),
-                                Column3 = numeric(0),
-                                Column4 = numeric(0),
-                                Column5 = numeric(0),
-                                Column6 = numeric(0),
-                                Column7 = numeric(0),
-                                Column8 = numeric(0),
-                                Column9 = numeric(0))
-        }
-        
-        names(flowadj) <- c("cell",1:8)
-        flowadj[, cell := cells(flowdir)]
-        flowadj$cell <- getCoords(xyFromCell(flowdir,as.numeric(flowadj$cell)),
-                                  z_fix=z_fix)
-        flowadj[, cell := as.character(cell)]
-        
-        # Lookup table for esri notation vs. different orientations
-        dirConvert <- data.table(esri = c(8,4,2,16,1,32,64,128),
-                                 R0 =   c(1,2,3,4, 5, 6, 7,  8),
-                                 R45=   c(2,3,4,5,6,7,8,1),
-                                 R90=   c(3,4,5,6,7,8,1,2),
-                                 R135=  c(4,5,6,7,8,1,2,3),
-                                 R180=  c(5,6,7,8,1,2,3,4),
-                                 R235=  c(6,7,8,1,2,3,4,5),
-                                 R270=  c(7,8,1,2,3,4,5,6),
-                                 R315=  c(8,1,2,3,4,5,6,7))
-        
-        # Convert from ESRI to matrix index
-        flowdir_rast <- copy(flowdir)
-        flowdir[cells(flowdir)] <- dirConvert$R0[match(
-          flowdir[cells(flowdir)]$flowdir,dirConvert$esri)]
-        dirConvert[,names(dirConvert) := lapply(.SD,as.character)]
-        
-        # Convert flow direction to data.table
-        flowdir <- data.table(cells = cells(flowdir),
-                              flowdir = unlist(flowdir[cells(flowdir)]))
-        names(flowdir) <- c('cell','flowdir')
-        flowdir$cell <- getCoords(xyFromCell(flowdir_rast,
-                                             as.numeric(flowdir$cell)),
-                                  z_fix=z_fix)
-        flowdir[, cell := as.character(cell)]
-        
-        # Combine the adjacency and direction into one table
-        flowadj <- merge(flowadj,flowdir,by='cell')
-        rm(flowdir)
-        
-        # Assign cell names to adjacency list (finally)
-        flowadj[, R0 := .SD[[flowdir]],by='cell'
-        ][, R45 := .SD[[..dirConvert$R45[as.numeric(flowdir)]]],by='cell'
-        ][, R90 := .SD[[..dirConvert$R90[as.numeric(flowdir)]]],by='cell'
-        ][, R135 := .SD[[..dirConvert$R135[as.numeric(flowdir)]]],by='cell'
-        ][, R180 := .SD[[..dirConvert$R180[as.numeric(flowdir)]]],by='cell'
-        ][, R235 := .SD[[..dirConvert$R235[as.numeric(flowdir)]]],by='cell'
-        ][, R270 := .SD[[..dirConvert$R270[as.numeric(flowdir)]]],by='cell'
-        ][, R315 := .SD[[..dirConvert$R315[as.numeric(flowdir)]]],by='cell']
-        
-        # Melt the table from wide to long
-        flowadj <- flowadj[,.(from = cell,R0,R45,R90,R135,R180,R235,R270,R315)]
-        flow <- melt(flowadj,id.vars='from',variable.name='flow_theta',
-                     value.name ='to')
-        
-        # Assign geometric costs
-        flow[flow_theta == "R0",   WaterSpeed := 1
-        ][flow_theta == "R45",  WaterSpeed := sqrt(2)/2
-        ][flow_theta == "R90",  WaterSpeed := 0
-        ][flow_theta == "R135", WaterSpeed := -sqrt(2)/2
-        ][flow_theta == "R180", WaterSpeed := -1
-        ][flow_theta == "R235", WaterSpeed := -sqrt(2)/2
-        ][flow_theta == "R270", WaterSpeed := 0
-        ][flow_theta == "R315", WaterSpeed := sqrt(2)/2
-        ]
-        
-        # Convert cells to coordinate names
-        to <- as.data.table(xyFromCell(flowdir_rast,as.numeric(flow$to)))
-        to[!is.na(y) & !is.na(x), to:= getCoords(.SD,z_fix=..z_fix)]
-        
-        flow$to <-   to$to
-        rm(to)
-        
-        flow[,`:=`(flow_theta=NULL)]
-        
-        flow <- merge(flow,
-                      data.table(from=getCoords(xyFromCell(water,cells(water)),z_fix = z_fix),
-                                 FlowSpeed = unlist(water[cells(water)])), by = 'from')
-        flow[,`:=`(WaterSpeed = WaterSpeed * FlowSpeed, FlowSpeed = NULL)]
-        
-        
-        flow[, (c("x_i","y_i")) := lapply(tstrsplit(from,","),as.numeric)
-        ][, (c("x_f","y_f")) := lapply(tstrsplit(to,","),as.numeric)
-        ][, (c("z_i","z_f","dz"))  := list(z_min,z_min,0)]
-        
-        flow <- stats::na.omit(flow)
-        
-        if (dist == 'proj'){
-          flow[, dl := sqrt((x_f - x_i)^2 + (y_f - y_i)^2)]
-        } else {
-          flow[, c("long_i","lat_i") :=
-                 as.data.table((project(as.matrix(data.table(x=x_i,y=y_i)),
-                                        from = crs(z_fix), to = "+proj=longlat")))
-          ][, c("long_f","lat_f") :=
-              as.data.table((project(as.matrix(data.table(x=x_f,y=y_f)),
-                                     from = crs(z_fix), to = "+proj=longlat")))]
+        if (nrow(flowadj) != 0){
           
-          if (dist == 'karney'){
-            flow[, dl := geosphere::distGeo(data.table(x = long_i, y = lat_i),
-                                            data.table(x = long_f, y = lat_f), 
-                                            a = r, f = f)]
+          names(flowadj) <- c("cell",1:8)
+          flowadj[, cell := cells(flowdir)]
+          flowadj$cell <- getCoords(xyFromCell(flowdir,as.numeric(flowadj$cell)),
+                                    z_fix=z_fix)
+          flowadj[, cell := as.character(cell)]
+          
+          # Lookup table for esri notation vs. different orientations
+          dirConvert <- data.table(esri = c(8,4,2,16,1,32,64,128),
+                                   R0 =   c(1,2,3,4, 5, 6, 7,  8),
+                                   R45=   c(2,3,4,5,6,7,8,1),
+                                   R90=   c(3,4,5,6,7,8,1,2),
+                                   R135=  c(4,5,6,7,8,1,2,3),
+                                   R180=  c(5,6,7,8,1,2,3,4),
+                                   R235=  c(6,7,8,1,2,3,4,5),
+                                   R270=  c(7,8,1,2,3,4,5,6),
+                                   R315=  c(8,1,2,3,4,5,6,7))
+          
+          # Convert from ESRI to matrix index
+          flowdir_rast <- copy(flowdir)
+          flowdir[cells(flowdir)] <- dirConvert$R0[match(
+            flowdir[cells(flowdir)]$flowdir,dirConvert$esri)]
+          dirConvert[,names(dirConvert) := lapply(.SD,as.character)]
+          
+          # Convert flow direction to data.table
+          flowdir <- data.table(cells = cells(flowdir),
+                                flowdir = unlist(flowdir[cells(flowdir)]))
+          names(flowdir) <- c('cell','flowdir')
+          flowdir$cell <- getCoords(xyFromCell(flowdir_rast,
+                                               as.numeric(flowdir$cell)),
+                                    z_fix=z_fix)
+          flowdir[, cell := as.character(cell)]
+          
+          # Combine the adjacency and direction into one table
+          flowadj <- merge(flowadj,flowdir,by='cell')
+          rm(flowdir)
+          
+          # Assign cell names to adjacency list (finally)
+          flowadj[, R0 := .SD[[flowdir]],by='cell'
+          ][, R45 := .SD[[..dirConvert$R45[as.numeric(flowdir)]]],by='cell'
+          ][, R90 := .SD[[..dirConvert$R90[as.numeric(flowdir)]]],by='cell'
+          ][, R135 := .SD[[..dirConvert$R135[as.numeric(flowdir)]]],by='cell'
+          ][, R180 := .SD[[..dirConvert$R180[as.numeric(flowdir)]]],by='cell'
+          ][, R235 := .SD[[..dirConvert$R235[as.numeric(flowdir)]]],by='cell'
+          ][, R270 := .SD[[..dirConvert$R270[as.numeric(flowdir)]]],by='cell'
+          ][, R315 := .SD[[..dirConvert$R315[as.numeric(flowdir)]]],by='cell']
+          
+          # Melt the table from wide to long
+          flowadj <- flowadj[,.(from = cell,R0,R45,R90,R135,R180,R235,R270,R315)]
+          flow <- melt(flowadj,id.vars='from',variable.name='flow_theta',
+                       value.name ='to')
+          
+          # Assign geometric costs
+          flow[flow_theta == "R0",   WaterSpeed := 1
+          ][flow_theta == "R45",  WaterSpeed := sqrt(2)/2
+          ][flow_theta == "R90",  WaterSpeed := 0
+          ][flow_theta == "R135", WaterSpeed := -sqrt(2)/2
+          ][flow_theta == "R180", WaterSpeed := -1
+          ][flow_theta == "R235", WaterSpeed := -sqrt(2)/2
+          ][flow_theta == "R270", WaterSpeed := 0
+          ][flow_theta == "R315", WaterSpeed := sqrt(2)/2
+          ]
+          
+          # Convert cells to coordinate names
+          to <- as.data.table(xyFromCell(flowdir_rast,as.numeric(flow$to)))
+          to[!is.na(y) & !is.na(x), to:= getCoords(.SD,z_fix=..z_fix)]
+          
+          flow$to <-   to$to
+          rm(to)
+          
+          flow[,`:=`(flow_theta=NULL)]
+          
+          flow <- merge(flow,
+                        data.table(from=getCoords(xyFromCell(water,cells(water)),z_fix = z_fix),
+                                   FlowSpeed = unlist(water[cells(water)])), by = 'from')
+          flow[,`:=`(WaterSpeed = WaterSpeed * FlowSpeed, FlowSpeed = NULL)]
+          
+          
+          flow[, (c("x_i","y_i")) := lapply(tstrsplit(from,","),as.numeric)
+          ][, (c("x_f","y_f")) := lapply(tstrsplit(to,","),as.numeric)
+          ][, (c("z_i","z_f","dz"))  := list(z_min,z_min,0)]
+          
+          flow <- stats::na.omit(flow)
+          
+          if (dist == 'proj'){
+            flow[, dl := sqrt((x_f - x_i)^2 + (y_f - y_i)^2)]
+          } else {
+            flow[, c("long_i","lat_i") :=
+                   as.data.table((project(as.matrix(data.table(x=x_i,y=y_i)),
+                                          from = crs(z_fix), to = "+proj=longlat")))
+            ][, c("long_f","lat_f") :=
+                as.data.table((project(as.matrix(data.table(x=x_f,y=y_f)),
+                                       from = crs(z_fix), to = "+proj=longlat")))]
             
-          } else if (dist == 'cosine'){
-            flow[, dl := geosphere::distCosine(data.table(x = long_i, y = lat_i),
-                                               data.table(x = long_f, y = lat_f), 
-                                               r = r)]
-          } else if (dist == 'haversine'){
-            flow[, dl := geosphere::distHaversine(data.table(x = long_i, y = lat_i),
-                                                  data.table(x = long_f, y = lat_f), 
-                                                  r = r)]
-          } else if (dist == 'meeus'){
-            flow[, dl := geosphere::distMeeus(data.table(x = long_i, y = lat_i),
+            if (dist == 'karney'){
+              flow[, dl := geosphere::distGeo(data.table(x = long_i, y = lat_i),
                                               data.table(x = long_f, y = lat_f), 
                                               a = r, f = f)]
-          } else if (dist == 'vincentyEllipsoid'){
-            flow[, dl := geosphere::distVincentyEllipsoid(data.table(x = long_i, y = lat_i),
-                                                      data.table(x = long_f, y = lat_f), 
-                                                      a = r, b = b, f = f)]
-          } else if (dist == 'vincentySphere'){
-            flow[, dl := geosphere::distVincentySphere(data.table(x = long_i, y = lat_i),
-                                                       data.table(x = long_f, y = lat_f), 
-                                                       r = r)]
-          } else{
-            stop("Unknown distance calculation method")
+              
+            } else if (dist == 'cosine'){
+              flow[, dl := geosphere::distCosine(data.table(x = long_i, y = lat_i),
+                                                 data.table(x = long_f, y = lat_f), 
+                                                 r = r)]
+            } else if (dist == 'haversine'){
+              flow[, dl := geosphere::distHaversine(data.table(x = long_i, y = lat_i),
+                                                    data.table(x = long_f, y = lat_f), 
+                                                    r = r)]
+            } else if (dist == 'meeus'){
+              flow[, dl := geosphere::distMeeus(data.table(x = long_i, y = lat_i),
+                                                data.table(x = long_f, y = lat_f), 
+                                                a = r, f = f)]
+            } else if (dist == 'vincentyEllipsoid'){
+              flow[, dl := geosphere::distVincentyEllipsoid(data.table(x = long_i, y = lat_i),
+                                                            data.table(x = long_f, y = lat_f), 
+                                                            a = r, b = b, f = f)]
+            } else if (dist == 'vincentySphere'){
+              flow[, dl := geosphere::distVincentySphere(data.table(x = long_i, y = lat_i),
+                                                         data.table(x = long_f, y = lat_f), 
+                                                         r = r)]
+            } else{
+              stop("Unknown distance calculation method")
+            }
+            flow[, c("long_i","lat_i","long_f","lat_f") := NULL
+            ]
           }
-          flow[, c("long_i","lat_i","long_f","lat_f") := NULL
-          ]
-        }
-        
-        flow[, dr := dl]
-        
-        params$water <- TRUE
-        flow <- cbind(flow,
-                      do.call(costFUN,c(list(flow),params)))
-        flow <- stats::na.omit(flow)
-        
-        if (priority == 'water'){
-          DT <- rbind(flow[,.SD,.SDcols = names(DT)], DT)
-        } else if (priority == 'land'){
-          DT <- rbind(DT, flow[,.SD,.SDcols = names(DT)])
+          
+          flow[, dr := dl]
+          
+          params$water <- TRUE
+          flow <- cbind(flow,
+                        do.call(costFUN,c(list(flow),params)))
+          flow <- stats::na.omit(flow)
+          
+          if (priority == 'water'){
+            DT <- rbind(flow[,.SD,.SDcols = names(DT)], DT)
+          } else if (priority == 'land'){
+            DT <- rbind(DT, flow[,.SD,.SDcols = names(DT)])
+          }
         }
         
         DT <- merge(
@@ -388,7 +379,7 @@ calculateCosts <- function(tiles = NULL, costFUN = energyCosts, dir = tempdir(),
                 dz = fifelse(max(dz,na.rm = TRUE) == z_min, 
                              min(dz,na.rm = TRUE), 
                              max(dz,na.rm = TRUE))), 
-                by = c('from','to')],
+             by = c('from','to')],
           DT[DT[,.I[1],by=c('from','to')]$V1, .SD,
              .SDcols = names(DT)[!(names(DT) %in% c("x_i","y_i","dz"))]],
           by = c('from','to')

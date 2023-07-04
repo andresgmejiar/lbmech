@@ -99,8 +99,7 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
       for (i in seq(1,length(down))){
         tile_name <- as.character(polys[down[i],][[tile_id]])
         if (!verbose){
-          print(paste0("Downloading Tile ",tile_name," (",
-                       i," of ",length(down),")"))
+          cat("\nDownloading Tile ",tile_name)
         }
         if(!('extension' %in% names(polys))){
           extension <- unlist(stringr::str_split(polys[down[i],][[vals]],"\\."))
@@ -187,8 +186,7 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
       zoom <- unique(polys$location)
       for (i in seq(1,length(down))){
         tile_name <- as.character(polys[down[i],][[tile_id]])
-        print(paste0("Downloading Tile ",tile_name," (",
-                     i," of ",length(down),")"))
+        cat("\nDownloading Tile ",tile_name)
         file_path <- normalizePath(paste0(rd,"/",tile_name),mustWork = FALSE)
         clip <- suppressWarnings(rast(elevatr::get_elev_raster(sf::st_as_sf(
           methods::as(polys[down[i],],'Spatial')),z = zoom,src = 'aws')))
@@ -231,7 +229,7 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
         tile_name <- as.character(polys[down[i],][[tile_id]])
         file_path <- normalizePath(paste0(rd,"/",tile_name),mustWork=FALSE)
         if (!verbose){
-          print(paste0("Cropping Tile ",tile_name," (",
+          cat(paste0("Cropping Tile ",tile_name," (",
                        i," of ",length(down),")"))
         }
         # Select the singular tile, and use it to crop the dem.
