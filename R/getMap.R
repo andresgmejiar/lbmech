@@ -229,8 +229,8 @@ getMap <- function(tiles, polys, tile_id = "TILEID", vals = "location",
         tile_name <- as.character(polys[down[i],][[tile_id]])
         file_path <- normalizePath(paste0(rd,"/",tile_name),mustWork=FALSE)
         if (!verbose){
-          cat(paste0("Cropping Tile ",tile_name," (",
-                       i," of ",length(down),")"))
+          cat("Cropping Tile ",tile_name," (",
+                       i," of ",length(down),")")
         }
         # Select the singular tile, and use it to crop the dem.
         # Save it to the above filepath, zip it, and delete the tiff

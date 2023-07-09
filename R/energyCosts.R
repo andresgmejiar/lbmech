@@ -16,8 +16,8 @@
 #' @param v_max The maximum velocity of the animal moving across the landscape,
 #' in meters per second; see \code{\link[lbmech]{getVelocity}}.
 #' @param method A character string for the method that energy costs per
-#' unit stride should be calculated. One of \code{method \%in\% c('kuo','heglund','oscillator')}; 
-#' see references.
+#' unit stride should be calculated. One of \code{method \%in\% 
+#' c('kuo','heglund','pontzer','oscillator')}; see references.
 #' @param time The method by which time costs should be calculated by \code{energyCosts}
 #' should \code{c('dt','dl_t')} not be column names in the input data.table. 
 #' Default is \code{time = timeCosts}.
@@ -29,11 +29,12 @@
 #' @param g The acceleration due to gravity, in meters per second per second.
 #' Default is \code{g = 9.81} m/s^2, as for the surface of planet Earth.
 #' @param l_s The average stride length, in meters. Required for
-#' \code{method =  'kuo'} or \code{'oscillator'}, ignored for \code{'heglund'}
+#' \code{method =  'kuo'}, \code{'pontzer'} or \code{'oscillator'}, 
+#' ignored for \code{'heglund'}
 #' @param L The average leg length. Required for \code{method =  'kuo'},
-#' ignored for \code{'heglund'} and \code{'oscillator'}.
+#' ignored for \code{'heglund'}, \code{'pontzer'} and \code{'oscillator'}.
 #' @param gamma The fractional maximal deviation from average velocity per stride.
-#' Required for \code{method = 'oscillator'}, ignored for \code{'kuo'} and \code{'heglund'}.
+#' Required for \code{method = 'oscillator'}, ignored otherwise
 #' @param water Logical. If \code{FALSE} (the default), movement costs are calculated
 #' as if over land. If \code{water = TRUE}, movement costs are calculated considering
 #' moving water. 
@@ -53,6 +54,10 @@
 #'  pendulum analogy: A dynamic walking perspective." \emph{Human Movement Science}
 #'  26(4):617-656. 
 #'  \url{https://doi.org/10.1016/j.humov.2007.04.003}.
+#'  
+#'  Pontzer, Herman (2016). "A unified theory for the energy cost of legged locomotion"
+#'  \emph{Biology Letters} 12(2):20150935.
+#'  \url{https://doi.org/10.1098/rsbl.2015.0935}
 #'  }
 #' @return For \code{timeCosts}, A data.table object with two columns:
 #'
@@ -161,6 +166,11 @@ energyCosts <- function(DT, method = 'kuo', m = NULL, BMR = NULL, g = 9.81,
       DT[, dK_l := (0.478 * dl_t ^ 1.53 + 0.685 * dl_t + 0.072) * dl_t ^ -1 * dl * ..m]
     } else if (method == 'oscillator'){
       DT[, dK_l := 2 * ..m * dl_t ^2 * ..gamma * dl / ..l_s]
+    } else if (method == 'pontzer'){
+      # Pontzer's cross-bridge method 
+      DT[, dK_l := (8 * ..m^(-0.34) + 
+           100 * (1 + sin(2 * atan(dz/dl) - 74 * 3.14159/180)) * ..m^(-0.12)) * 
+           dl / ..l_s]
     }
     
     ## (3) Finally, calculate the total work and energy

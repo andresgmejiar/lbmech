@@ -43,8 +43,8 @@ as if over land. If \code{water = TRUE}, movement costs are calculated consideri
 moving water.}
 
 \item{method}{A character string for the method that energy costs per
-unit stride should be calculated. One of \code{method \%in\% c('kuo','heglund','oscillator')}; 
-see references.}
+unit stride should be calculated. One of \code{method \%in\% 
+c('kuo','heglund','pontzer','oscillator')}; see references.}
 
 \item{m}{The mass of the animal moving across the landscape, in kilograms.}
 
@@ -58,13 +58,14 @@ Default is \code{g = 9.81} m/s^2, as for the surface of planet Earth.}
 the landscape. Default is \code{epsilon = 0.2}.}
 
 \item{l_s}{The average stride length, in meters. Required for
-\code{method =  'kuo'} or \code{'oscillator'}, ignored for \code{'heglund'}}
+\code{method =  'kuo'}, \code{'pontzer'} or \code{'oscillator'}, 
+ignored for \code{'heglund'}}
 
 \item{L}{The average leg length. Required for \code{method =  'kuo'},
-ignored for \code{'heglund'} and \code{'oscillator'}.}
+ignored for \code{'heglund'}, \code{'pontzer'} and \code{'oscillator'}.}
 
 \item{gamma}{The fractional maximal deviation from average velocity per stride.
-Required for \code{method = 'oscillator'}, ignored for \code{'kuo'} and \code{'heglund'}.}
+Required for \code{method = 'oscillator'}, ignored otherwise}
 
 \item{time}{The method by which time costs should be calculated by \code{energyCosts}
 should \code{c('dt','dl_t')} not be column names in the input data.table. 
@@ -156,5 +157,9 @@ L = 0.8)
  pendulum analogy: A dynamic walking perspective." \emph{Human Movement Science}
  26(4):617-656. 
  \url{https://doi.org/10.1016/j.humov.2007.04.003}.
+ 
+ Pontzer, Herman (2016). "A unified theory for the energy cost of legged locomotion"
+ \emph{Biology Letters} 12(2):20150935.
+ \url{https://doi.org/10.1098/rsbl.2015.0935}
  }
 }
