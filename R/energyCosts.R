@@ -174,9 +174,14 @@ energyCosts <- function(DT, method = 'kuo', m = NULL, BMR = NULL, g = 9.81,
     }
     
     ## (3) Finally, calculate the total work and energy
+    
+    if (method != 'pontzer'){
     DT[, dW_l := (dU_l + dK_l) / ..epsilon
     ][, dE_l := dW_l + ..BMR * dt][]
-    
+    } else {
+      DT[, dW_l := (dK_l) / ..epsilon
+      ][, dE_l := dW_l + ..BMR * dt][]
+    }
     return(DT[,.(dt,dU_l, dK_l, dW_l, dE_l)])
   } else {
     DT[, dW_l := ..row_work * dt
