@@ -29,11 +29,11 @@
 #' @references 
 #' Clementi, E., Aydogdu A., Goglio, A. C., Pistoia J., Escudier R., Drudi M., Grandi A., et al. (2021). 
 #' Mediterranean Sea Physics Analysis and Forecast (CMEMS MED-Currents, EAS6 System). 
-#' \emph{Copernicus Marine Service}. \url{https://doi.org/10.25423/CMCC/MEDSEA_ANALYSISFORECAST_PHY_006_013_EAS7}.
+#' \emph{Copernicus Marine Service}. \doi{10.25423/CMCC/MEDSEA_ANALYSISFORECAST_PHY_006_013_EAS7}.
 #' 
 #' Lera I., Perez T., Guerrero C., Eguiluz V. M., Juiz C. (2017). 
 #' Analysing human mobility patterns of hiking activities through complex network theory. 
-#' \emph{PLoS ONE} 12(5): e0177712. \url{https://doi.org/10.1371/journal.pone.0177712}
+#' \emph{PLoS ONE} 12(5): e0177712. \doi{10.1371/journal.pone.0177712}
 #' @examples 
 #' # Import ocean current data for the Balearic Islands
 #' 

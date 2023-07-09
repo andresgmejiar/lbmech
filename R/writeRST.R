@@ -32,8 +32,11 @@
 #' dem <- rast(dem)
 #' ext(dem) <- c(10000, 20000, 30000, 40000)
 #' crs(dem) <- "+proj=lcc +lat_1=48 +lat_2=33 +lon_0=-100 +datum=WGS84"
-#' writeRST(dem, 'DEM.fst')
-#' importRST('DEM.fst')
+#' 
+#' dir <- tempdir()
+#' 
+#' writeRST(dem, paste0(dir,'/DEM.fst'))
+#' importRST(paste0(dir,'/DEM.fst'))
 NULL
 
 #' @rdname writeRST

@@ -4,7 +4,7 @@ Title: A Package to Study the Mechanics of Landscape and Behavior
 Version: 0.5.1
 Author: Andres G. Mejia Ramon
 Maintainer: Andres G. Mejia Ramon <Andres.Mejia@OIST.jp>
-Description: A geospatial package to study the adaptive mechanics of landscape and behavior, including at present: (1) energetic and efficient least-cost analysis; (2) local indicators of dispersion; and (3) interpolation of agricultural productivity data 
+Description: A geospatial package to study the adaptive mechanics of landscape and behavior, including at present: (1) energetic and efficient least-cost analysis; (2) local indicators of dispersion; and (3) interpolation of agricultural productivity data. 
 License: CC BY-NC 4.0
 Encoding: UTF-8
 LazyData: true
