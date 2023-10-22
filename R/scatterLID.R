@@ -18,6 +18,10 @@
 #' @param y.lim One of \code{NULL} to determine the y-range automatically (the default), 
 #' a numeric vector of length two providing the y boundaries, or a function that accepts
 #' the automatic boundaries and returns new limits (see \code{\link[ggplot2]{scale_y_continuous}}).
+#' @param key Logical. Should a color key be printed? Default is \code{Key = TRUE}. Set as 
+#' \code{FALSE} if you wish to further manipulate the ggplot object
+#' @param only.key Logical. If \code{only.key = TRUE}, only a color key will be output and all
+#' other parameters will be ignored. 
 #' @return A ggplot object with two elements---the LID Scatter plot and its scale.
 #' @examples 
 #' 
@@ -44,62 +48,71 @@
 #' # Plot the inferences
 #' scatterLID(lid, inference)
 #' @export
-scatterLID <- function(lid, inference, log.scale = FALSE, x.lim = NULL, y.lim = NULL){
+scatterLID <- function(lid = NULL, inference = NULL, log.scale = FALSE, key = TRUE, 
+                       only.key = FALSE, x.lim = NULL, y.lim = NULL){
   # CRAN Check silencing bit
   G_Gi=G_NGi=Class=x=y=NULL
   
-# lid.cols is an internal variable
+  # lid.cols is an internal variable
+  
 
-# Create a color assignment function
-colvect <- lid.cols$Color
-names(colvect) <- lid.cols$Class
-
-# Perform a log transformation if needed
-if (!log.scale){
-xlab <- bquote("Inequality Within Groups (J "["G"]^.(lid$index) * " )")
-ylab <- bquote("Inequality Across Groups (J "["NG"]^.(lid$index) *" )")
-FUN <- function(x) x
-} else if (log.scale){
-  xlab <- bquote("Inequality Within Groups (log"["10"] * "1 + J "["G"]^.(lid$index) * " )")
-  ylab <- bquote("Inequality Across Groups (log"["10"] *"1 + J "["NG"]^.(lid$index) * " )")
-FUN <- function(x) log(1 + x, 10)
-}
-
-# LID plot, transforming the values if needed
-gglid <- ggplot2::ggplot(cbind(lid$local,inference$local), ggplot2::aes(x = FUN(G_Gi),
-                                                      y = FUN(G_NGi),
-                                                      color = Class)) + 
-  ggplot2::geom_point() + 
-  ggplot2::scale_color_manual(values = colvect) + 
-  ggplot2::ggtitle(paste0("Local Indicators of Dispersion\n",names(lid$index)," Scatterplot")) +
-  ggplot2::theme(legend.position = 'none',
-        plot.title = ggplot2::element_text(hjust = 0.5)) + 
-  ggplot2::scale_x_continuous(xlab, limits = x.lim) +
-  ggplot2::scale_y_continuous(ylab, limits = y.lim)
-
-# Scale is just a tile form of the lid.cols variable
-ggcolors <- ggplot2::ggplot(lid.cols, ggplot2::aes(fill = Class, x = x, y = y)) + 
-  ggplot2::geom_tile() + 
-  ggplot2::theme_bw() + 
-  ggplot2::theme(legend.position = 'none',
-        plot.title = ggplot2::element_text(hjust = 0.5, size = 12),
-        axis.text = ggplot2::element_text(angle=45,size = 8),
-        axis.title = ggplot2::element_text(size = 10)) + 
-  ggplot2::scale_fill_manual(values = colvect) +
-  ggplot2::scale_x_continuous("Local Inequality",
-                     expand=c(0,0),
-                     breaks = c(-1,0,1), 
-                     labels = c('-1' = 'Low', '0' = 'Avg.', '1' = 'High')) +
-  ggplot2::scale_y_continuous("Global Inequality", 
-                     expand=c(0,0),
-                     breaks = c(-1,0,1), 
-                     labels = c('-1' = 'Low', '0' = 'Avg.', '1' = 'High'),
-                     position = 'right') + 
-  ggplot2::ggtitle("Significance") + 
-  ggplot2::coord_equal()
-
-# Use cowplot to arrange the grid
-return(cowplot::plot_grid(gglid,ggcolors,ncol=2,rel_widths = c(0.8,0.2)))
+    # Create a color assignment function
+    colvect <- lid.cols$Color
+    names(colvect) <- lid.cols$Class
+    if (!only.key){
+        
+    # Perform a log transformation if needed
+    if (!log.scale){
+      xlab <- bquote("Inequality Within Groups (J "["G"]^.(lid$index) * " )")
+      ylab <- bquote("Inequality Across Groups (J "["NG"]^.(lid$index) *" )")
+      FUN <- function(x) x
+    } else if (log.scale){
+      xlab <- bquote("Inequality Within Groups (log"["10"] * "1 + J "["G"]^.(lid$index) * " )")
+      ylab <- bquote("Inequality Across Groups (log"["10"] *"1 + J "["NG"]^.(lid$index) * " )")
+      FUN <- function(x) log(1 + x, 10)
+    }
+    
+    
+    # LID plot, transforming the values if needed
+    gglid <- ggplot2::ggplot(cbind(lid$local,inference$local), ggplot2::aes(x = FUN(G_Gi),
+                                                                            y = FUN(G_NGi),
+                                                                            color = Class)) + 
+      ggplot2::geom_point() + 
+      ggplot2::scale_color_manual(values = colvect) + 
+      ggplot2::ggtitle(paste0("Local Indicators of Dispersion\n",names(lid$index)," Scatterplot")) +
+      ggplot2::theme(legend.position = 'none',
+                     plot.title = ggplot2::element_text(hjust = 0.5)) + 
+      ggplot2::scale_x_continuous(xlab, limits = x.lim) +
+      ggplot2::scale_y_continuous(ylab, limits = y.lim)
+  } else key <- TRUE
+  
+  if (key){
+    # Scale is just a tile form of the lid.cols variable
+    ggcolors <- ggplot2::ggplot(lid.cols, ggplot2::aes(fill = Class, x = x, y = y)) + 
+      ggplot2::geom_tile() + 
+      ggplot2::theme_bw() + 
+      ggplot2::theme(legend.position = 'none',
+                     plot.title = ggplot2::element_text(hjust = 0.5, size = 12),
+                     axis.text = ggplot2::element_text(angle=45,size = 8),
+                     axis.title = ggplot2::element_text(size = 10)) + 
+      ggplot2::scale_fill_manual(values = colvect) +
+      ggplot2::scale_x_continuous("Local Inequality",
+                                  expand=c(0,0),
+                                  breaks = c(-1,0,1), 
+                                  labels = c('-1' = 'Low', '0' = 'Avg.', '1' = 'High')) +
+      ggplot2::scale_y_continuous("Global Inequality", 
+                                  expand=c(0,0),
+                                  breaks = c(-1,0,1), 
+                                  labels = c('-1' = 'Low', '0' = 'Avg.', '1' = 'High'),
+                                  position = 'right') + 
+      ggplot2::ggtitle("Significance") + 
+      ggplot2::coord_equal()
+    
+    # Use cowplot to arrange the grid
+    if (!only.key) {
+      return(cowplot::plot_grid(gglid,ggcolors,ncol=2,rel_widths = c(0.8,0.2)))
+    } else return(ggcolors)
+  } else return(gglid)  
 }
 
 #' @rdname scatterLID

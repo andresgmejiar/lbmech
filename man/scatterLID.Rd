@@ -5,7 +5,15 @@
 \alias{colorLID}
 \title{Local Indicators of Dispersion Scatterplot}
 \usage{
-scatterLID(lid, inference, log.scale = FALSE, x.lim = NULL, y.lim = NULL)
+scatterLID(
+  lid = NULL,
+  inference = NULL,
+  log.scale = FALSE,
+  key = TRUE,
+  only.key = FALSE,
+  x.lim = NULL,
+  y.lim = NULL
+)
 
 colorLID(x = NULL, table = FALSE)
 }
@@ -16,6 +24,12 @@ colorLID(x = NULL, table = FALSE)
 
 \item{log.scale}{Logical. Should the axes be log-transformed? Default is \code{FALSE}.
 If \code{TRUE}, log transformation is \code{log(1+x,10)}.}
+
+\item{key}{Logical. Should a color key be printed? Default is \code{Key = TRUE}. Set as 
+\code{FALSE} if you wish to further manipulate the ggplot object}
+
+\item{only.key}{Logical. If \code{only.key = TRUE}, only a color key will be output and all
+other parameters will be ignored.}
 
 \item{x.lim}{One of \code{NULL} to determine the x-range automatically (the default), 
 a numeric vector of length two providing the x boundaries, or a function that accepts
