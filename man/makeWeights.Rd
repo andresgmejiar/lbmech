@@ -2,11 +2,12 @@
 % Please edit documentation in R/makeWeights.R
 \name{makeWeights}
 \alias{makeWeights}
-\title{Calculate spatial weights matrices.}
+\title{Calculate weights matrices.}
 \usage{
 makeWeights(
   x,
-  bw,
+  ID = NULL,
+  bw = NULL,
   mode = "adaptive",
   weighting = "membership",
   FUN = NULL,
@@ -18,51 +19,74 @@ makeWeights(
 )
 }
 \arguments{
-\item{x}{A matrix or distance object representing pairwise distances. The
-distances need not be symmetrical.}
+\item{x}{A vector representing group membership, or a matrix/distance object 
+representing pairwise distances. The distances need not be symmetrical.}
+
+\item{ID}{A vector given the observation ID names. Default is 
+\code{ID = 1:length(x)}. Ignored if \code{x} is a matrix or distance object.}
 
 \item{bw}{A number representing the bandwidth within neighbors are considered.
-If \code{mode = 'adaptive'}, \code{bw} is the number of nearest neighbors. If \code{mode = 'fixed'},
-\code{bw} is the radius of the window in the map units.}
+If \code{mode = 'adaptive'}, \code{bw} is the number of nearest neighbors. 
+If \code{mode = 'fixed'}, \code{bw} is the radius of the window in the map units.
+Ignored if \code{x} is a vector, required otherwise.}
 
 \item{mode}{One of \code{'adaptive'}, which considers a \code{bw} number of nearest 
-neighbors; or \code{'fixed'}, which considers a fixed bandwidth window of radius \code{bw}.}
+neighbors; or \code{'fixed'}, which considers a fixed bandwidth window of radius \code{bw}.
+Ignored if \code{x} is a vector.}
 
 \item{weighting}{One of \code{'membership'}, which considers binary membership 
 such that neighbors are weighted 1 and non-neighbors 0; \code{'distance'} which 
 weighs neighbors according to \code{FUN} with the raw distance matrix providing the
 distance; or \code{'rank'} which uses the rank-distance (i.e. 1 for nearest neighbor,
-2 for second nearest...) as the distance variable.}
+2 for second nearest...) as the distance variable. Ignored if \code{x} is a vector.}
 
 \item{FUN}{The distance function. Default is \code{NULL} for \code{'membership'}, and
-\code{function(x) 1/(offset + x)} otherwise.}
+\code{function(x) 1/(offset + x)} otherwise. Ignored if \code{x} is a vector.}
 
 \item{offset}{What value is added to the denominator to prevent singularities from arising
 (e.g. whenever the value is 1/0)? Larger values imply smaller distance-decay. 
-Default is \code{offset = 0}.}
+Default is \code{offset = 0}. Ignored if \code{x} is a vector.}
 
 \item{inf.val}{When singularities arise, (i.e. whenever the value is 1/0), by what value are
-they replaced? Default is the \code{FUN} of the lowest non-\code{minval} value.}
+they replaced? Default is the \code{FUN} of the lowest non-\code{minval} value.
+Ignored if \code{x} is a vector.}
 
 \item{minval}{When distances are raw, what is the minimum allowable distance?
-Default is \code{-Inf}.}
+Default is \code{-Inf}. Ignored if \code{x} is a vector.}
 
 \item{row.stand}{Logical or \code{'fuzzy'}. If \code{TRUE} (the default), rows are standardized such 
 that they sum to one. If \code{'fuzzy'}, rows are standardized as a proportion of the 
-largest value.}
+largest value. If \code{x} is a vector, \code{row.stand} must be logical.}
 
 \item{clear.mem}{Logical. Should \code{\link[base]{gc}} be run in the middle of the 
-calculation? Default is \code{clear.mem} but set as \code{TRUE} if memory limits are a concern.}
+calculation? Default is \code{clear.mem} but set as \code{TRUE} if memory limits are a concern. 
+Ignored if \code{x} is a vector.}
 }
 \value{
 A matrix of dimensions \code{length(x) x length(x)}.
 }
 \description{
-Given a distance matrix (symmetrical or not) and weighting function, 
+Given a a description of relationships,  
 calculate a spatial weights matrix with various ways of handling row-sums
+}
+\details{
+The description of relationships can either be a vector describing to which
+group an observation belongs, or a distance matrix and associated decay function.
 }
 \examples{
 
+# Example 1: Calculate group-based weights
+# Generate dummy group names
+groups <- 1:4
+
+# Create 10 dummy values assigned to those groups
+x <- sample(groups, 10, replace = TRUE)
+
+# Create group membership weights matrix
+weights <- makeWeights(x)
+
+
+# Example 2: Calculate distance-based weights 
 # Generate dummy observations
 x <- runif(10, 0, 100)
 
