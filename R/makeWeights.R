@@ -6,7 +6,7 @@
 #' @title Calculate weights matrices.
 #' @param x A vector representing group membership, or a matrix/distance object 
 #' representing pairwise distances. The distances need not be symmetrical.
-#' @param ID A vector given the observation ID names. Default is 
+#' @param ID A vector given the unique observation ID names. Default is 
 #' \code{ID = 1:length(x)}. Ignored if \code{x} is a matrix or distance object.
 #' @param bw A number representing the bandwidth within neighbors are considered.
 #' If \code{mode = 'adaptive'}, \code{bw} is the number of nearest neighbors. 
@@ -34,8 +34,8 @@
 #' that they sum to one. If \code{'fuzzy'}, rows are standardized as a proportion of the 
 #' largest value. If \code{x} is a vector, \code{row.stand} must be logical. 
 #' @param clear.mem Logical. Should \code{\link[base]{gc}} be run in the middle of the 
-#' calculation? Default is \code{clear.mem} but set as \code{TRUE} if memory limits are a concern. 
-#' Ignored if \code{x} is a vector.
+#' calculation? Default is \code{clear.mem == FALSE} but set as \code{TRUE} if 
+#' memory limits are a concern. Ignored if \code{x} is a vector.
 #' @importFrom data.table as.data.table
 #' @importFrom data.table set
 #' @importFrom data.table CJ
@@ -71,12 +71,16 @@ makeWeights <- function(x, ID = NULL, bw = NULL,
                         mode = 'adaptive', weighting = 'membership', 
                         FUN = NULL, offset = 0, inf.val = NA, minval = -Inf, 
                         row.stand = FALSE, clear.mem = FALSE) {
+  # First do group membership vectors, then do distance matrices 
   if (is.vector(x)){
     # Deal with IDs. If not provided create them. If they are, check to make
     # sure they're the same length as x
     if (is.null(ID)) ID <- 1:length(x)
     if (length(x) != length(ID)){
       stop("'x' and 'index' must be the same length")
+    }
+    if (length(x) != length(unique(ID))){
+      stop("'ID' vector most contain all unique IDs")
     }
     # To assign group values, cross join values and indexes on themselves,
     # then wherever i == j, assign 1 otherwise 0
