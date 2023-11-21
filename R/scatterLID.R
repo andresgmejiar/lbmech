@@ -80,6 +80,7 @@ scatterLID <- function(lid = NULL, inference = NULL, log.scale = FALSE, key = TR
       ggplot2::geom_point() + 
       ggplot2::scale_color_manual(values = colvect) + 
       ggplot2::ggtitle(paste0("Local Indicators of Dispersion\n",names(lid$index)," Scatterplot")) +
+      ggplot2::theme_dark() + 
       ggplot2::theme(legend.position = 'none',
                      plot.title = ggplot2::element_text(hjust = 0.5)) + 
       ggplot2::scale_x_continuous(xlab, limits = x.lim) +
