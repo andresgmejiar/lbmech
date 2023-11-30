@@ -48,10 +48,12 @@
 #' inequality, and Local High, Average, or Low for within-group inequality based on
 #' the significance according to the delta-G statistic in the \code{$stats} data.table. 
 #' 
-#' (2) \code{$global} A list with three entries, \code{$G_G} for the group component of the 
-#' global inequality, \code{$G_NG} for the nongroup, and \code{$G} for the total. Each entry
-#' itself contains two entries, \code{$delta}, representing the delta-G statistic, and 
-#' \code{$p}, representing its p-value. 
+#' (2) \code{$global} A list with four entries, \code{$G_G} for the group component of the 
+#' global inequality, \code{$G_NG} for the nongroup, \code{$G} for the total,
+#' and $Class, containing the significance class for the global dataset. Each 
+#' of the first three entries themselves contain three entriesL
+#' \code{$delta}, representing the delta-G statistic, \code{$p}, representing its p-value,
+#' and $Class, containing the group/non-group class
 #' 
 #' (3) \code{$stats} A data.table containing the number of permutations a randomly-calculated
 #' \code{$G_Gi}, \code{$G_NGi}, or \code{$G_i} was above or below the real value
@@ -182,8 +184,9 @@ inferLID <- function(lid, w, ntrials = 999, alpha = 0.05,
   
   # Global p values are based on how extreme the permuted global value
   # is relative to the actual one
-  globalp <- ptable[,.(G_Gi = mean(G_Gi), G_NGi = mean(G_NGi), 
-                       G_i = mean(G_i)),by='Trial'
+  globalp <- ptable[,.(G_Gi = average(G_Gi, w = x$n), 
+                       G_NGi = average(G_NGi, w = x$n), 
+                       G_i = average(G_i, w = x$n)),by='Trial'
   ][, GroupClass := fifelse(agg$G_G > G_Gi,'High','Low')
   ][, NonGroupClass := fifelse(agg$G_NG > G_NGi,'High','Low')
   ][, IndexClass := fifelse(agg$G < G_i,'High','Low')
@@ -200,13 +203,52 @@ inferLID <- function(lid, w, ntrials = 999, alpha = 0.05,
   ][,p  := 1 - (1+N)/(1+sum(N))][]
   
   # Add the p values to a list
-  globalp <- list(G_G = list(delta = agg$G_G - mean(globalp$G_Gi,na.rm=TRUE),
+  globalp <- list(G_G = list(delta = agg$G_G - average(globalp$G_Gi, w = x$n, na.rm=TRUE),
                              p = min(groupp$p)),
-                  G_NG = list(delta = agg$G_NG - mean(globalp$G_NGi,na.rm=TRUE),
+                  G_NG = list(delta = agg$G_NG - average(globalp$G_NGi, w = x$n, na.rm=TRUE),
                               p = min(nongroupp$p)),
-                  G = list(delta = agg$G - mean(globalp$G_i,na.rm=TRUE),
+                  G = list(delta = agg$G - average(globalp$G_i, w = x$n, na.rm=TRUE),
                            p = min(indexp$p)))
+
+  # Calculate significance classes for the complete dataset
+  # Within-group is straight-forward
+  if (!is.na(agg$G_G)){
+  if (globalp$G_G$p > alpha){
+    globalp$G_G$Class <- 'Local Average'
+  } else if (globalp$G_G$delta > 0) {
+    globalp$G_G$Class <- 'Local High'
+  } else {
+    globalp$G_G$Class <- 'Local Low'
+  }
+  } else {
+    globalp$G_G$Class <- 'Local NaN'
+  }
   
+  # Across group is again a bit complicated, and once again depends on whether
+  # the self is included in the comparisons. 
+  if (!is.na(agg$G_NG)){
+  if (globalp$G_NG$p > alpha){
+    globalp$G_NG$Class <- 'Global Average'
+  } else if ((standard != 'self' & expect != 'self') | 
+             ((standard == 'matrix' | expect == 'matrix') & ng.invert)){
+    if (globalp$G_NG$delta > 0) {
+      globalp$G_NG$Class <- 'Global Low'
+    } else {
+      globalp$G_NG$Class <- 'Global High'
+    }
+  } else if ((standard == 'self' | expect == 'self') | 
+             ((standard == 'matrix' | expect == 'matrix') & !ng.invert)){
+    if (globalp$G_NG$delta > 0) {
+      globalp$G_NG$Class <- 'Global High'
+    } else {
+      globalp$G_NG$Class <- 'Global Low'
+    }
+  }
+  } else {
+    globalp$G_NG$Class <- 'Global NaN'
+  }
+   globalp$Class <- paste0(globalp$G_G$Class,"-",globalp$G_NG$Class)
+   
   # Add only the significant observations to a new data.table;
   # if an observation is not included for a particular group/nongroup group,
   # call it 'average'
