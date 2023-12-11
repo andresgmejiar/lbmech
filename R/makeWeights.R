@@ -29,7 +29,10 @@
 #' (e.g. whenever the value is 1/0)? Larger values imply smaller distance-decay. 
 #' Default is \code{offset = 0}. Ignored if \code{x} is a vector.
 #' @param minval When distances are raw, what is the minimum allowable distance?
-#' Default is \code{-Inf}. Ignored if \code{x} is a vector.
+#' Default is \code{0}. Ignored if \code{x}. Use this if you don't want to offset values otherwise. 
+#' @param def.neigh Numeric. At what distance (in the map units) are observations definitely neighbors?
+#' All distances are subtracted by this value, and all resulting distances less than zero are reassigned
+#' to \code{minval}.
 #' @param row.stand Logical or \code{'fuzzy'}. If \code{TRUE} (the default), rows are standardized such 
 #' that they sum to one. If \code{'fuzzy'}, rows are standardized as a proportion of the 
 #' largest value. If \code{x} is a vector, \code{row.stand} must be logical. 
@@ -69,8 +72,8 @@
 #' @export                      
 makeWeights <- function(x, ID = NULL, bw = NULL,
                         mode = 'adaptive', weighting = 'membership', 
-                        FUN = NULL, offset = 0, inf.val = NA, minval = -Inf, 
-                        row.stand = FALSE, clear.mem = FALSE) {
+                        FUN = NULL, offset = 0, inf.val = NA, minval = 0, 
+                        def.neigh = 0, row.stand = FALSE, clear.mem = FALSE) {
   # First do group membership vectors, then do distance matrices 
   if (is.vector(x)){
     # Deal with IDs. If not provided create them. If they are, check to make
@@ -114,7 +117,13 @@ makeWeights <- function(x, ID = NULL, bw = NULL,
     
     # Coerce inputs to matrix
     x <- as.matrix(x)
-    if (minval != -Inf) x[x <= minval] <- minval
+    if (minval != 0) x[x <= minval] <- minval
+    
+    # Adjust based on definite neighbor value
+    if (def.neigh > 0) {
+      x <- x - def.neigh
+      x[x < 0] <- minval
+    }
     
     # x <- as.data.table(x)
     # names(x) <- as.character(1:nrow(x))
@@ -122,7 +131,7 @@ makeWeights <- function(x, ID = NULL, bw = NULL,
     # Deal with group membership
     if (mode == 'adaptive'){
       # Convert distances to ranks of distances; need for both
-      y <- matrixStats::colRanks(x)
+      y <- matrixStats::colRanks(x, ties.method = "min")
       # Remove observations with rank lower than bw; keep only obs within bw
       if (weighting == 'rank'){
         x <- y
@@ -136,7 +145,7 @@ makeWeights <- function(x, ID = NULL, bw = NULL,
     } else if (mode == 'fixed'){
       if (weighting == 'rank'){
         # Convert distances to ranks of distances; only need for rank
-        y <- matrixStats::colRanks(x)
+        y <- matrixStats::colRanks(x, ties.method = "min")
         x[x >= bw] <- NA
         x <- y * x/x
         rm(y)
@@ -155,25 +164,29 @@ makeWeights <- function(x, ID = NULL, bw = NULL,
       x <- FUN(x)
       if (is.null(inf.val)){
         # Replace infinites
-        inf.val <-  FUN(min(x[x > minval],na.rm=TRUE))
+        if (def.neigh > 0){
+          inf.val <- 1/def.neigh
+        } else {
+          inf.val <-  FUN(min(x[x > minval],na.rm=TRUE))
+        }
+        x[is.infinite(x)] <- inf.val
+        
+      } 
+      if (clear.mem) gc()
+      if (row.stand == TRUE){
+        # Traditional Row standardization, where all rows sum to one
+        x <- x/rowSums(x,na.rm=TRUE)
       }
-      x[is.infinite(x)] <- inf.val
       
-    } 
-    if (clear.mem) gc()
-    if (row.stand == TRUE){
-      # Traditional Row standardization, where all rows sum to one
-      x <- x/rowSums(x,na.rm=TRUE)
-    }
-    
-    if (row.stand == 'fuzzy'){
-      # Each row has at least one neighbor, with the remainder being a fraction
-      # of the maximum
+      if (row.stand == 'fuzzy'){
+        # Each row has at least one neighbor, with the remainder being a fraction
+        # of the maximum
+        x[is.na(x)] <- 0
+        x <- t(apply(x,1,scales::rescale,to=c(0,1)))
+      }
       x[is.na(x)] <- 0
-      x <- t(apply(x,1,scales::rescale,to=c(0,1)))
+      gc()
+      return(x)
     }
-    x[is.na(x)] <- 0
-    gc()
-    return(x)
   }
-}
+  
