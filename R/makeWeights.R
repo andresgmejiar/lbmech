@@ -184,9 +184,9 @@ makeWeights <- function(x, ID = NULL, bw = NULL,
         x[is.na(x)] <- 0
         x <- t(apply(x,1,scales::rescale,to=c(0,1)))
       }
-      x[is.na(x)] <- 0
-      gc()
-      return(x)
     }
+    x[is.na(x)] <- 0
+    gc()
+    return(x)
   }
-  
+}
