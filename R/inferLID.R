@@ -203,11 +203,11 @@ inferLID <- function(lid, w, ntrials = 999, alpha = 0.05,
   ][,p  := 1 - (1+N)/(1+sum(N))][]
   
   # Add the p values to a list
-  globalp <- list(G_G = list(delta = agg$G_G - average(globalp$G_Gi, w = x$n, na.rm=TRUE),
+  globalp <- list(G_G = list(delta = agg$G_G - mean(globalp$G_Gi),
                              p = min(groupp$p)),
-                  G_NG = list(delta = agg$G_NG - average(globalp$G_NGi, w = x$n, na.rm=TRUE),
+                  G_NG = list(delta = agg$G_NG - mean(globalp$G_NGi),
                               p = min(nongroupp$p)),
-                  G = list(delta = agg$G - average(globalp$G_i, w = x$n, na.rm=TRUE),
+                  G = list(delta = agg$G - mean(globalp$G_i),
                            p = min(indexp$p)))
 
   # Calculate significance classes for the complete dataset

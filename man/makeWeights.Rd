@@ -13,7 +13,8 @@ makeWeights(
   FUN = NULL,
   offset = 0,
   inf.val = NA,
-  minval = -Inf,
+  minval = 0,
+  def.neigh = 0,
   row.stand = FALSE,
   clear.mem = FALSE
 )
@@ -22,7 +23,7 @@ makeWeights(
 \item{x}{A vector representing group membership, or a matrix/distance object 
 representing pairwise distances. The distances need not be symmetrical.}
 
-\item{ID}{A vector given the observation ID names. Default is 
+\item{ID}{A vector given the unique observation ID names. Default is 
 \code{ID = 1:length(x)}. Ignored if \code{x} is a matrix or distance object.}
 
 \item{bw}{A number representing the bandwidth within neighbors are considered.
@@ -52,15 +53,19 @@ they replaced? Default is the \code{FUN} of the lowest non-\code{minval} value.
 Ignored if \code{x} is a vector.}
 
 \item{minval}{When distances are raw, what is the minimum allowable distance?
-Default is \code{-Inf}. Ignored if \code{x} is a vector.}
+Default is \code{0}. Ignored if \code{x}. Use this if you don't want to offset values otherwise.}
+
+\item{def.neigh}{Numeric. At what distance (in the map units) are observations definitely neighbors?
+All distances are subtracted by this value, and all resulting distances less than zero are reassigned
+to \code{minval}.}
 
 \item{row.stand}{Logical or \code{'fuzzy'}. If \code{TRUE} (the default), rows are standardized such 
 that they sum to one. If \code{'fuzzy'}, rows are standardized as a proportion of the 
 largest value. If \code{x} is a vector, \code{row.stand} must be logical.}
 
 \item{clear.mem}{Logical. Should \code{\link[base]{gc}} be run in the middle of the 
-calculation? Default is \code{clear.mem} but set as \code{TRUE} if memory limits are a concern. 
-Ignored if \code{x} is a vector.}
+calculation? Default is \code{clear.mem == FALSE} but set as \code{TRUE} if 
+memory limits are a concern. Ignored if \code{x} is a vector.}
 }
 \value{
 A matrix of dimensions \code{length(x) x length(x)}.

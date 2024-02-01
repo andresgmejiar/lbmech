@@ -67,10 +67,12 @@ falls in one of nine categories: Global High, Average, or Low for between-group
 inequality, and Local High, Average, or Low for within-group inequality based on
 the significance according to the delta-G statistic in the \code{$stats} data.table. 
 
-(2) \code{$global} A list with three entries, \code{$G_G} for the group component of the 
-global inequality, \code{$G_NG} for the nongroup, and \code{$G} for the total. Each entry
-itself contains two entries, \code{$delta}, representing the delta-G statistic, and 
-\code{$p}, representing its p-value. 
+(2) \code{$global} A list with four entries, \code{$G_G} for the group component of the 
+global inequality, \code{$G_NG} for the nongroup, \code{$G} for the total,
+and $Class, containing the significance class for the global dataset. Each 
+of the first three entries themselves contain three entriesL
+\code{$delta}, representing the delta-G statistic, \code{$p}, representing its p-value,
+and $Class, containing the group/non-group class
 
 (3) \code{$stats} A data.table containing the number of permutations a randomly-calculated
 \code{$G_Gi}, \code{$G_NGi}, or \code{$G_i} was above or below the real value
