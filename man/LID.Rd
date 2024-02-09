@@ -86,14 +86,14 @@ A list with the following entries:
 
 (1) \code{$index} A named character string with the code of the index, named with its name
 
-(2) \code{$local} A data.table, with three columns: \code{G_Gi}, the local group dispersion
-index; \code{G_NGi}, the local non-group dispersion index; and \code{G_i}, the local
+(2) \code{$local} A data.table, with three columns: \code{J_Gi}, the local group dispersion
+index; \code{J_NGi}, the local non-group dispersion index; and \code{J_i}, the local
 total dispersion index. Rows are in the same order as the input vector. This data.table
 also contains the chosen expectations and standards as hidden attributes to be used by
 \code{\link[lbmech]{inferLID}}.
  
-(3) \code{$global} A list with three entries: \code{$G_G}, the global group dispersion index;
-\code{$G_NG}, the global nongroup dispersion index; and \code{$G}, the global
+(3) \code{$global} A list with three entries: \code{$J_G}, the global group dispersion index;
+\code{$J_NG}, the global nongroup dispersion index; and \code{$J}, the global
 total dispersion index. 
 
 (4) \code{$canonical} The canonical Gini or Inoua index, if \code{canonical = TRUE} and 

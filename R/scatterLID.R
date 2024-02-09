@@ -51,7 +51,7 @@
 scatterLID <- function(lid = NULL, inference = NULL, log.scale = FALSE, key = TRUE, 
                        only.key = FALSE, x.lim = NULL, y.lim = NULL){
   # CRAN Check silencing bit
-  G_Gi=G_NGi=Class=x=y=NULL
+  J_Gi=J_NGi=Class=x=y=NULL
   
   # lid.cols is an internal variable
   
@@ -63,19 +63,19 @@ scatterLID <- function(lid = NULL, inference = NULL, log.scale = FALSE, key = TR
         
     # Perform a log transformation if needed
     if (!log.scale){
-      xlab <- bquote("Inequality Within Groups (J "["G"]^.(lid$index) * " )")
-      ylab <- bquote("Inequality Across Groups (J "["NG"]^.(lid$index) *" )")
+      xlab <- bquote("In-group Inequality (J "["G"]^.(lid$index) * " )")
+      ylab <- bquote("Out-group Inequality (J "["NG"]^.(lid$index) *" )")
       FUN <- function(x) x
     } else if (log.scale){
-      xlab <- bquote("Inequality Within Groups (log"["10"] * "1 + J "["G"]^.(lid$index) * " )")
-      ylab <- bquote("Inequality Across Groups (log"["10"] *"1 + J "["NG"]^.(lid$index) * " )")
+      xlab <- bquote("In-group Inequality (log"["10"] * "1 + J "["G"]^.(lid$index) * " )")
+      ylab <- bquote("Out-group Inequality (log"["10"] *"1 + J "["NG"]^.(lid$index) * " )")
       FUN <- function(x) log(1 + x, 10)
     }
     
     
     # LID plot, transforming the values if needed
-    gglid <- ggplot2::ggplot(cbind(lid$local,inference$local), ggplot2::aes(x = FUN(G_Gi),
-                                                                            y = FUN(G_NGi),
+    gglid <- ggplot2::ggplot(cbind(lid$local,inference$local), ggplot2::aes(x = FUN(J_Gi),
+                                                                            y = FUN(J_NGi),
                                                                             color = Class)) + 
       ggplot2::geom_point() + 
       ggplot2::scale_color_manual(values = colvect) + 
@@ -97,11 +97,11 @@ scatterLID <- function(lid = NULL, inference = NULL, log.scale = FALSE, key = TR
                      axis.text = ggplot2::element_text(angle=45,size = 8),
                      axis.title = ggplot2::element_text(size = 10)) + 
       ggplot2::scale_fill_manual(values = colvect) +
-      ggplot2::scale_x_continuous("Local Inequality",
+      ggplot2::scale_x_continuous("In-group Inequality",
                                   expand=c(0,0),
                                   breaks = c(-1,0,1), 
                                   labels = c('-1' = 'Low', '0' = 'Avg.', '1' = 'High')) +
-      ggplot2::scale_y_continuous("Global Inequality", 
+      ggplot2::scale_y_continuous("Out-group Inequality", 
                                   expand=c(0,0),
                                   breaks = c(-1,0,1), 
                                   labels = c('-1' = 'Low', '0' = 'Avg.', '1' = 'High'),

@@ -23,10 +23,10 @@
 #' @export
 incrementalPlot<- function(inc){
   # This bit to silence CRAN check warnings
-  bw=delta_G_NG=NG_Class=NULL
+  bw=delta_J_NG=NG_Class=NULL
   
   # Line plot with vertical lines at each extrema
-  gg <- ggplot2::ggplot(inc$stats, ggplot2::aes(x=bw,y=delta_G_NG, color = NG_Class)) + 
+  gg <- ggplot2::ggplot(inc$stats, ggplot2::aes(x=bw,y=delta_J_NG, color = NG_Class)) + 
     ggplot2::geom_vline(data = data.table(bw = inc$bw), 
                         ggplot2::aes(xintercept = bw), 
                         linetype = 'dashed', 
@@ -38,7 +38,7 @@ incrementalPlot<- function(inc){
     ggplot2::geom_line(ggplot2::aes(color = 'black')) +
     ggplot2::scale_y_continuous(expression(paste(delta, J[NG]))) + 
     ggplot2::scale_x_continuous("Bandwidth") + 
-    ggplot2::ggtitle(paste0("Between-Group ",
+    ggplot2::ggtitle(paste0("Out-group ",
                    stringr::str_extract(names(inc$index),
                                         "[A-Za-z\\-]+"),
                    " Inequality\n Difference at Incremental Bandwidths")) + 

@@ -2,15 +2,15 @@
 
 ### Colors for the LID plots
 lid.cols <-  data.table::data.table(
-  Class = c("Local Average-Global High",
-            "Local High-Global High",
-            "Local High-Global Average",
-            "Local High-Global Low",
-            "Local Average-Global Low",
-            "Local Low-Global Low",
-            "Local Low-Global Average",
-            "Local Low-Global High",
-            "Local Average-Global Average"),
+  Class = c("In-group Average, Out-group High",
+            "In-group High, Out-group High",
+            "In-group High, Out-group Average",
+            "In-group High, Out-group Low",
+            "In-group Average, Out-group Low",
+            "In-group Low, Out-group Low",
+            "In-group Low, Out-group Average",
+            "In-group Low, Out-group High",
+            "In-group Average, Out-group Average"),
   Color = c("#FF00FF", "#FF0000", "#FF9F00", 
                      "#FFFD9C", "#ade567", "#63FFD5", 
                      "#0080FF", "#4B0076", "#FFFFFF"),
@@ -34,9 +34,6 @@ baleares.places <- data.table::fread("data-raw/baleares_places.csv")
 baleares.currents <- terra::rast("data-raw/Ocean_Currents.nc")
 baleares.currents <- writeRST(baleares.currents,object=TRUE)
 
-
-
 ### Export objects
-
 usethis::use_data(lid.cols, baleares.places, baleares.currents,
                   overwrite = TRUE, internal = TRUE)

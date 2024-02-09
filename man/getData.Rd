@@ -25,6 +25,12 @@ Various, depending on \code{data} selection:
 of which 15,371 can be successfully imported using importGPX. 
 
 \code{data = 'baleares-places'} imports a SpatVector with twelve points.
+
+\code{data = 'gdp'} imports a data.table with seven columns for Year, Country Code, Country Name, the UN's GDP estimate, the World Bank's GDP estimate, the average GDP estimate, and the UN's GNI estimate.
+
+\code{data = 'population'} imports a data.table with three columns for the Country Code, Year, and Population estimate. 
+
+\code{data = 'trade'} imports a data.table with seven columns. The country codes and names for the nation from which and to which trade is conducted, and the total value of the services and goods exchanged.
 }
 \description{
 Access various datasets used in vignettes and studies associated with the broader \code{lbmech} project
@@ -37,9 +43,15 @@ An internet connection is \strong{not} needed, and parameters \code{name} and \c
 \code{data = 'baleares-gps'} downloads GPS tracks for human hikes in the Balearic Islands
 in GPX format from \url{https://osf.io/77n9t/}. See Lera et al. (2017).
 The \code{name} parameter will define the folder name in the \code{dir} directory to which the \code{.gpx} files are saved. Default \code{name = 'gpx'}.
-\code{getData} will \strong{not} import these tracks, for that, use \code{\link[lbmech]{importGPX}}.  An internet connection is needed.
+\code{getData} will \strong{not} import these tracks, for that, use \code{\link[lbmech]{importGPX}}.  An internet connection is required
  
-\code{data = 'baleares-places'} imports a SpatVector with twelve locations on Mallorca, Menorca, and Cabrera in the Balearic Islands.
+\code{data = 'baleares-places'} imports a SpatVector with twelve locations on Mallorca, Menorca, and Cabrera in the Balearic Islands. See Clementi et al. (2021). 
+ 
+\code{data = 'gdp'} downloads country GDP estimates since 1970 from the World Bank and United Nations. An internet connection is required. 
+ 
+\code{data = 'population'} downloads country population estimates since 1950 from the United Nations. An internet connection is required.
+
+\code{data = 'trade'} downloads nation-wise bilateral trade data in goods and services. Trade in goods from the OECD, and trade in services from the WTO and OECD. An internet connection is required.
 }
 \examples{
 # Import ocean current data for the Balearic Islands
@@ -54,4 +66,17 @@ Mediterranean Sea Physics Analysis and Forecast (CMEMS MED-Currents, EAS6 System
 Lera I., Perez T., Guerrero C., Eguiluz V. M., Juiz C. (2017). 
 Analysing human mobility patterns of hiking activities through complex network theory. 
 \emph{PLoS ONE} 12(5): e0177712. \doi{10.1371/journal.pone.0177712}
+
+Organization for Economic Co-Operation and Development (2022). 
+Bilateral Trade Database by Industry and End-Use (BTDIxE). \url{https://www.oecd.org/sti/ind/bilateraltradeingoodsbyindustryandend-usecategory.htm}
+
+United Nations (2022).
+UNData. \url{https://data.un.org/}
+
+World Bank (2022).
+World Bank DataBank. \url{https://databank.worldbank.org/}
+
+World Trade Organization, Organization for Economic Co-Operation and Development. (2023).
+WTO-OECD Balanced Trade in Services Dataset (BaTiS) — BPM6.
+\url{https://www.wto.org/english/res_e/statis_e/trade_datasets_e.htm#BaTis6}
 }

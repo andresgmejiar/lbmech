@@ -44,19 +44,19 @@
 #' @return A list with the following entries:
 #' 
 #' (1) \code{$local} A data.table with one column, indicating whether an observation is
-#' falls in one of nine categories: Global High, Average, or Low for between-group
-#' inequality, and Local High, Average, or Low for within-group inequality based on
-#' the significance according to the delta-G statistic in the \code{$stats} data.table. 
+#' falls in one of nine categories: Out-group High, Average, or Low for between-group
+#' inequality, and In-group High, Average, or Low for within-group inequality based on
+#' the significance according to the delta-J statistic in the \code{$stats} data.table. 
 #' 
-#' (2) \code{$global} A list with four entries, \code{$G_G} for the group component of the 
-#' global inequality, \code{$G_NG} for the nongroup, \code{$G} for the total,
+#' (2) \code{$global} A list with four entries, \code{$J_G} for the group component of the 
+#' global inequality, \code{$J_NG} for the nongroup, \code{$J} for the total,
 #' and $Class, containing the significance class for the global dataset. Each 
 #' of the first three entries themselves contain three entriesL
-#' \code{$delta}, representing the delta-G statistic, \code{$p}, representing its p-value,
+#' \code{$delta}, representing the delta-J statistic, \code{$p}, representing its p-value,
 #' and $Class, containing the group/non-group class
 #' 
 #' (3) \code{$stats} A data.table containing the number of permutations a randomly-calculated
-#' \code{$G_Gi}, \code{$G_NGi}, or \code{$G_i} was above or below the real value
+#' \code{$J_Gi}, \code{$J_NGi}, or \code{$J_i} was above or below the real value
 #' @examples 
 #' 
 #' # Generate dummy observations
@@ -85,7 +85,7 @@ inferLID <- function(lid, w, ntrials = 999, alpha = 0.05,
                      max.cross =.Machine$integer.max, pb = TRUE,
                      clear.mem = FALSE){
   # This bit to silence CRAN warnings
-  Trial=..xrand=id=G_Gi=G_NGi=G_i=n=GroupClass=dGini_MC=dGini=NULL
+  Trial=..xrand=id=J_Gi=J_NGi=J_i=n=GroupClass=dGini_MC=dGini=NULL
   NonGroupClass=dNonGroup_MC=dNonGroup=.N=p=N=IndexClass=Class=NULL
   
   # Extract the values from the lid list object
@@ -145,17 +145,17 @@ inferLID <- function(lid, w, ntrials = 999, alpha = 0.05,
   }
   
   # Significance for within-group inequality is defined based on the 
-  # delta-G_Gi statistic, which is simply the group component minus the non-group
+  # delta-J_Gi statistic, which is simply the group component minus the non-group
   # component
-  group <-  merge(ptable[,.(id, dGini_MC = G_Gi - G_NGi)], 
-                  x[,.(id, dGini = G_Gi - G_NGi)],
+  group <-  merge(ptable[,.(id, dGini_MC = J_Gi - J_NGi)], 
+                  x[,.(id, dGini = J_Gi - J_NGi)],
                   allow.cartesian=TRUE)
   
   # Significance for between-group inequality is defined based on the 
-  # delta-G_NGi statistic, which is simply the non-group component minus the mean
+  # delta-J_NGi statistic, which is simply the non-group component minus the mean
   # total inequality
-  nongroup <- merge(ptable[,.(id, dNonGroup_MC = G_NGi - sum(G_i * n,na.rm=TRUE)/sum(n,na.rm=TRUE)),by='Trial'],
-                    x[,.(id, dNonGroup = G_NGi - sum(G_i*n,na.rm=TRUE)/sum(n,na.rm = TRUE))],
+  nongroup <- merge(ptable[,.(id, dNonGroup_MC = J_NGi - sum(J_i * n,na.rm=TRUE)/sum(n,na.rm=TRUE)),by='Trial'],
+                    x[,.(id, dNonGroup = J_NGi - sum(J_i*n,na.rm=TRUE)/sum(n,na.rm = TRUE))],
                     allow.cartesian=TRUE)
   
   # Combine into one table
@@ -163,16 +163,16 @@ inferLID <- function(lid, w, ntrials = 999, alpha = 0.05,
   
   # The within-group class is easy to infer, a higher value always means higher
   # inequality
-  gini[, GroupClass := fifelse(dGini_MC > dGini, 'Local Low','Local High')]
+  gini[, GroupClass := fifelse(dGini_MC > dGini, 'In-group Low','In-group High')]
   
   # The between group is a bit more difficult, and generally depends on whether
   # the self is being included in the non-group, or whether it's being excluded
   if ((standard != 'self' & expect != 'self') | 
       ((standard == 'matrix' | expect == 'matrix') & ng.invert)){
-    gini[, NonGroupClass := fifelse(dNonGroup_MC > dNonGroup, 'Global High','Global Low')]
+    gini[, NonGroupClass := fifelse(dNonGroup_MC > dNonGroup, 'Out-group High','Out-group Low')]
   } else if ((standard == 'self' | expect == 'self') | 
              ((standard == 'matrix' | expect == 'matrix') & !ng.invert)){
-    gini[, NonGroupClass := fifelse(dNonGroup_MC > dNonGroup, 'Global Low','Global High')]  
+    gini[, NonGroupClass := fifelse(dNonGroup_MC > dNonGroup, 'Out-group Low','Out-group High')]  
   }
   
   # Calculate p values
@@ -182,14 +182,14 @@ inferLID <- function(lid, w, ntrials = 999, alpha = 0.05,
   nongroupInference <- gini[,.N,by=c('id',"NonGroupClass")
   ][,p  := 1 - (1+N)/(1+sum(N)),by='id'][]
   
-  # Global p values are based on how extreme the permuted global value
+  # Out-group p values are based on how extreme the permuted global value
   # is relative to the actual one
-  globalp <- ptable[,.(G_Gi = average(G_Gi, w = x$n), 
-                       G_NGi = average(G_NGi, w = x$n), 
-                       G_i = average(G_i, w = x$n)),by='Trial'
-  ][, GroupClass := fifelse(agg$G_G > G_Gi,'High','Low')
-  ][, NonGroupClass := fifelse(agg$G_NG > G_NGi,'High','Low')
-  ][, IndexClass := fifelse(agg$G < G_i,'High','Low')
+  globalp <- ptable[,.(J_Gi = average(J_Gi, w = x$n), 
+                       J_NGi = average(J_NGi, w = x$n), 
+                       J_i = average(J_i, w = x$n)),by='Trial'
+  ][, GroupClass := fifelse(agg$J_G > J_Gi,'High','Low')
+  ][, NonGroupClass := fifelse(agg$J_NG > J_NGi,'High','Low')
+  ][, IndexClass := fifelse(agg$J < J_i,'High','Low')
   ]
   rm(ptable)
   # Calculate p values
@@ -203,51 +203,51 @@ inferLID <- function(lid, w, ntrials = 999, alpha = 0.05,
   ][,p  := 1 - (1+N)/(1+sum(N))][]
   
   # Add the p values to a list
-  globalp <- list(G_G = list(delta = agg$G_G - mean(globalp$G_Gi),
+  globalp <- list(J_G = list(delta = agg$J_G - mean(globalp$J_Gi),
                              p = min(groupp$p)),
-                  G_NG = list(delta = agg$G_NG - mean(globalp$G_NGi),
+                  J_NG = list(delta = agg$J_NG - mean(globalp$J_NGi),
                               p = min(nongroupp$p)),
-                  G = list(delta = agg$G - mean(globalp$G_i),
+                  J = list(delta = agg$J - mean(globalp$J_i),
                            p = min(indexp$p)))
 
   # Calculate significance classes for the complete dataset
   # Within-group is straight-forward
-  if (!is.na(agg$G_G)){
-  if (globalp$G_G$p > alpha){
-    globalp$G_G$Class <- 'Local Average'
-  } else if (globalp$G_G$delta > 0) {
-    globalp$G_G$Class <- 'Local High'
+  if (!is.na(agg$J_G)){
+  if (globalp$J_G$p > alpha){
+    globalp$J_G$Class <- 'In-group Average'
+  } else if (globalp$J_G$delta > 0) {
+    globalp$J_G$Class <- 'In-group High'
   } else {
-    globalp$G_G$Class <- 'Local Low'
+    globalp$J_G$Class <- 'In-group Low'
   }
   } else {
-    globalp$G_G$Class <- 'Local NaN'
+    globalp$J_G$Class <- 'In-group NaN'
   }
   
   # Across group is again a bit complicated, and once again depends on whether
   # the self is included in the comparisons. 
-  if (!is.na(agg$G_NG)){
-  if (globalp$G_NG$p > alpha){
-    globalp$G_NG$Class <- 'Global Average'
+  if (!is.na(agg$J_NG)){
+  if (globalp$J_NG$p > alpha){
+    globalp$J_NG$Class <- 'Out-group Average'
   } else if ((standard != 'self' & expect != 'self') | 
              ((standard == 'matrix' | expect == 'matrix') & ng.invert)){
-    if (globalp$G_NG$delta > 0) {
-      globalp$G_NG$Class <- 'Global Low'
+    if (globalp$J_NG$delta > 0) {
+      globalp$J_NG$Class <- 'Out-group Low'
     } else {
-      globalp$G_NG$Class <- 'Global High'
+      globalp$J_NG$Class <- 'Out-group High'
     }
   } else if ((standard == 'self' | expect == 'self') | 
              ((standard == 'matrix' | expect == 'matrix') & !ng.invert)){
-    if (globalp$G_NG$delta > 0) {
-      globalp$G_NG$Class <- 'Global High'
+    if (globalp$J_NG$delta > 0) {
+      globalp$J_NG$Class <- 'Out-group High'
     } else {
-      globalp$G_NG$Class <- 'Global Low'
+      globalp$J_NG$Class <- 'Out-group Low'
     }
   }
   } else {
-    globalp$G_NG$Class <- 'Global NaN'
+    globalp$J_NG$Class <- 'Out-group NaN'
   }
-   globalp$Class <- paste0(globalp$G_G$Class,"-",globalp$G_NG$Class)
+   globalp$Class <- paste0(globalp$J_G$Class,", ",globalp$J_NG$Class)
    
   # Add only the significant observations to a new data.table;
   # if an observation is not included for a particular group/nongroup group,
@@ -256,9 +256,9 @@ inferLID <- function(lid, w, ntrials = 999, alpha = 0.05,
                      groupInference[p < alpha, .(id,GroupClass)],
                      all=TRUE,by='id'),
                nongroupInference[p < alpha, .(id,NonGroupClass)],
-               all=TRUE,by='id')[is.na(GroupClass), GroupClass := 'Local Average'
-               ][is.na(NonGroupClass), NonGroupClass := 'Global Average'
-               ][, Class := paste(GroupClass,NonGroupClass,sep='-')
+               all=TRUE,by='id')[is.na(GroupClass), GroupClass := 'In-group Average'
+               ][is.na(NonGroupClass), NonGroupClass := 'Out-group Average'
+               ][, Class := paste(GroupClass,NonGroupClass,sep=', ')
                ][]
   
   # Return to the original order since it tends to get shuffled

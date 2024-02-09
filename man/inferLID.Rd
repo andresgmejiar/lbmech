@@ -63,19 +63,19 @@ calculation? Default is \code{clear.mem} but set as \code{TRUE} if memory limits
 A list with the following entries:
 
 (1) \code{$local} A data.table with one column, indicating whether an observation is
-falls in one of nine categories: Global High, Average, or Low for between-group
-inequality, and Local High, Average, or Low for within-group inequality based on
-the significance according to the delta-G statistic in the \code{$stats} data.table. 
+falls in one of nine categories: Out-group High, Average, or Low for between-group
+inequality, and In-group High, Average, or Low for within-group inequality based on
+the significance according to the delta-J statistic in the \code{$stats} data.table. 
 
-(2) \code{$global} A list with four entries, \code{$G_G} for the group component of the 
-global inequality, \code{$G_NG} for the nongroup, \code{$G} for the total,
+(2) \code{$global} A list with four entries, \code{$J_G} for the group component of the 
+global inequality, \code{$J_NG} for the nongroup, \code{$J} for the total,
 and $Class, containing the significance class for the global dataset. Each 
 of the first three entries themselves contain three entriesL
-\code{$delta}, representing the delta-G statistic, \code{$p}, representing its p-value,
+\code{$delta}, representing the delta-J statistic, \code{$p}, representing its p-value,
 and $Class, containing the group/non-group class
 
 (3) \code{$stats} A data.table containing the number of permutations a randomly-calculated
-\code{$G_Gi}, \code{$G_NGi}, or \code{$G_i} was above or below the real value
+\code{$J_Gi}, \code{$J_NGi}, or \code{$J_i} was above or below the real value
 }
 \description{
 Infer whether there exists more or less within- and between-group

@@ -85,7 +85,7 @@ incrementalLID <- function(x, dist, bws, n = rep(1,length(x)),
                            max.cross = .Machine$integer.max, pb = TRUE,
                            ...){
   # This bit to silence CRAN warnings
-  delta_G_NG=dt_plus=dt_minus=d2t=NG_Class=`p G_NG`=NULL
+  delta_J_NG=dt_plus=dt_minus=d2t=NG_Class=`p J_NG`=NULL
   
   # Generate table to which values will be appended
   outTable <- data.table()
@@ -104,12 +104,12 @@ incrementalLID <- function(x, dist, bws, n = rep(1,length(x)),
     if (is.null(standard)) stand <- attributes(lid$local)$standard
     if (is.null(expect)) expct <- attributes(lid$local)$expectation
     
-    # Get the local values and calculate the delta-G statistic for the global
+    # Get the local values and calculate the delta-J statistic for the global
     local <- lid$local
     
-    vals <- c("delta_G_G" = sum((lid$local$G_Gi - lid$local$G_NGi) * lid$local$n)/sum(lid$local$n),
-              "delta_G_NG"= sum((lid$local$G_NGi - lid$global$G) * lid$local$n)/sum(lid$local$n),
-              "delta_G"  =  sum((lid$local$G_i - lid$global$G) * lid$local$n)/sum(lid$local$n))
+    vals <- c("delta_J_G" = sum((lid$local$J_Gi - lid$local$J_NGi) * lid$local$n)/sum(lid$local$n),
+              "delta_J_NG"= sum((lid$local$J_NGi - lid$global$J) * lid$local$n)/sum(lid$local$n),
+              "delta_J"  =  sum((lid$local$J_i - lid$global$J) * lid$local$n)/sum(lid$local$n))
     
     # Perform the inference for the bandwidth 
     invisible(utils::capture.output(
@@ -122,7 +122,7 @@ incrementalLID <- function(x, dist, bws, n = rep(1,length(x)),
     
     # P values come from the global statistic
     ps <- as.data.table(inference$global)[2]
-    setnames(ps,names(ps), c("p G_G","p G_NG","p G"))
+    setnames(ps,names(ps), c("p J_G","p J_NG","p J"))
     
     # Append p values to table
     outTable <- rbind(outTable,
@@ -134,25 +134,25 @@ incrementalLID <- function(x, dist, bws, n = rep(1,length(x)),
   outTable[, names(outTable) := lapply(.SD,as.numeric)]
   
   # Calculate second time derivative (ish)
-  outTable[, `:=`(dt_minus = shift(delta_G_NG) -delta_G_NG , dt_plus = shift(delta_G_NG,type='lead') - delta_G_NG)
+  outTable[, `:=`(dt_minus = shift(delta_J_NG) -delta_J_NG , dt_plus = shift(delta_J_NG,type='lead') - delta_J_NG)
   ][, `:=`(dt_plus = dt_plus/abs(dt_plus), dt_minus = dt_minus/abs(dt_minus))
   ][, d2t := dt_plus + dt_minus]
   
   # Identify significant peaks
-  outTable[, NG_Class := fifelse(`p G_NG` < alpha, "Significant","Not Significant")]
+  outTable[, NG_Class := fifelse(`p J_NG` < alpha, "Significant","Not Significant")]
   if ((stand != 'self' & expct != 'self') | 
       ((stand == 'matrix' | expct == 'matrix') & ng.invert)){
     bw <- outTable[d2t == 2 & NG_Class == 'Significant', ]$bw
     if (length(bw) == 0){
-      bw <- outTable[which(delta_G_NG == outTable[NG_Class == 'Significant',
-                                                  min(delta_G_NG,na.rm = TRUE)]),bw]
+      bw <- outTable[which(delta_J_NG == outTable[NG_Class == 'Significant',
+                                                  min(delta_J_NG,na.rm = TRUE)]),bw]
     }
   } else if ((stand == 'self' | expct == 'self') | 
              ((stand == 'matrix' | expct == 'matrix') & !ng.invert)){
     bw <- outTable[d2t == -2  & NG_Class == 'Significant',]$bw
     if (length(bw) == 0){
-      bw <- outTable[which(delta_G_NG == outTable[NG_Class == 'Significant',
-                                                  max(delta_G_NG,na.rm = TRUE)]),bw] 
+      bw <- outTable[which(delta_J_NG == outTable[NG_Class == 'Significant',
+                                                  max(delta_J_NG,na.rm = TRUE)]),bw] 
     }
   }
   
