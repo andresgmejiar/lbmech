@@ -21,6 +21,9 @@
 #' @param expect The expectations matrix with dimensions \code{length(x) x length(x)} used 
 #' when calculating \code{lid}. Ignored if none had been originally provided, otherwise
 #' required. 
+#' @param multicore Should multithreading be used? Default is \code{FALSE}.
+#' @param ncores If \code{multicore = TRUE}, how many cores should be used? Default
+#' is \code{ncores = parallel::detectCores() - 1}.
 #' @param var.stand Logical. Should the standards be permuted if a matrix was 
 #' provided? Default is \code{FALSE}.
 #' @param var.exp Logical. Should the expectations be permuted if a matrix was
@@ -41,6 +44,7 @@
 #' @importFrom data.table fifelse
 #' @importFrom data.table data.table
 #' @importFrom data.table as.data.table
+#' @importFrom data.table copy
 #' @return A list with the following entries:
 #' 
 #' (1) \code{$local} A data.table with one column, indicating whether an observation is
@@ -81,6 +85,7 @@
 #' @export
 inferLID <- function(lid, w, ntrials = 999, alpha = 0.05,
                      standard = NULL, expect = NULL, 
+                     multicore = FALSE, ncores = parallel::detectCores() - 1,
                      var.stand = FALSE, var.exp = FALSE, ng.invert = TRUE,
                      max.cross =.Machine$integer.max, pb = TRUE,
                      clear.mem = FALSE){
@@ -89,7 +94,7 @@ inferLID <- function(lid, w, ntrials = 999, alpha = 0.05,
   NonGroupClass=dNonGroup_MC=dNonGroup=.N=p=N=IndexClass=Class=NULL
   
   # Extract the values from the lid list object
-  x <- as.data.table(lid$local)
+  x <- copy(as.data.table(lid$local))
   x$id <- 1:nrow(x)
   agg <- lid$global 
   index <- attributes(lid$local)$`function`
@@ -111,6 +116,7 @@ inferLID <- function(lid, w, ntrials = 999, alpha = 0.05,
   ptable <- data.table(Trial = rep(1:ntrials,each=nrow(x)))
   if (pb) pb1 <- txtProgressBar(min=0,max=ntrials+1,style=3)
   
+  if (!multicore){
   for (i in 1:ntrials){
     if (pb) setTxtProgressBar(pb1,i)
     
@@ -140,6 +146,68 @@ inferLID <- function(lid, w, ntrials = 999, alpha = 0.05,
     ptable[Trial == i, names(xrand) := ..xrand]
     if (clear.mem){
       rm(xrand)
+      gc()
+    }
+  }
+  } else {
+    # Activate the parallel cores
+    cl <- parallel::makeCluster(ncores)
+    
+    # Same loop as above, but as a function
+    perm_function <- function(i) {
+      if (var.stand) {
+        standard <- sample(standard)
+      }
+      if (var.exp) {
+        expect <- sample(expect)
+      }
+      
+      # Assume w is defined elsewhere or passed as an argument
+      w_mod <- w
+      w_mod[w] <- stats::ave(w[w], row(w)[w], FUN = sample)
+      
+      # Assuming x is defined in your global environment and visible here
+      xrand <- data.table(id = x$id,
+                          LID(x$var, w = w_mod, n = x$n, index = index, mle = mle,
+                              standard = standard, expect = expect, max.cross = max.cross,
+                              clear.mem = clear.mem)$local)
+      
+      if (clear.mem) {
+        gc()  # Garbage collection if necessary
+      }
+      return(xrand)
+    }
+    
+    # Send the variables to the cores
+    parallel::clusterEvalQ(cl, {
+      library(data.table)
+    })
+    parallel::clusterExport(cl, c("x", "w", 
+                        "var.stand", "var.exp",
+                        "standard", "expect", 
+                        "index", "mle", 
+                        "max.cross", "clear.mem"),
+                        envir=environment())
+    
+    
+    
+    # Create a table to which we'll add the statistics for each permutation
+    ptable <- data.table(Trial = rep(1:ntrials, each = nrow(x)))
+    
+    # Perform parallel computation
+    results <- parallel::parLapply(cl, 1:ntrials, perm_function)
+    
+    # Combining results into the ptable
+    for (i in seq_along(results)) {
+      ptable[Trial == i, names(results[[i]]) := results[[i]]]
+    }
+    
+    # Stop the cluster
+    parallel::stopCluster(cl)
+    
+    # Optional: Cleanup if clear.mem is TRUE
+    if (clear.mem) {
+      rm(results)
       gc()
     }
   }

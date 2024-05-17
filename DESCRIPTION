@@ -31,7 +31,8 @@ Imports:
         ggplot2,
         cowplot,
         leaflet,
-        archive
+        archive,
+        parallel
 Depends:
     terra,
     data.table,
