@@ -25,13 +25,21 @@
 #' weighs neighbors according to \code{FUN} with the raw distance matrix providing the
 #' distance; or \code{'rank'} which uses the rank-distance (i.e. 1 for nearest neighbor,
 #' 2 for second nearest...) as the distance variable.
-#' @param FUN The distance function. Default is \code{NULL} for \code{membership}, and
-#' \code{function(x) 1/x} otherwise. 
-#' @param inf.val When singularities arise (e.g. whenever the value is 1/0 or 
-#' \code{Inf}, what is the value by which they are replaced? Default \code{NULL} uses the
-#' value of the smallest neighbor pair from the entire dataset. 
+#' @param FUN The distance function. Default is \code{NULL} for \code{'membership'}, and
+#' \code{function(x) offset/(offset + x)} otherwise. Ignored if \code{x} is a vector.
+#' @param inf.val When singularities arise, (i.e. whenever the value is 1/0), by what value are
+#' they replaced? Default is the \code{FUN} of the lowest non-\code{minval} value.
+#' Ignored if \code{x} is a vector.
+#' @param def.neigh Numeric. At what distance (in the map units) are observations definitely neighbors?
+#' All distances are subtracted by this value, and all resulting distances less than zero are reassigned
+#' to \code{minval}. 
+#' @param offset What value is added to the denominator to prevent singularities from arising
+#' (e.g. whenever the value is 1/0)? Larger values imply smaller distance-decay. This should be
+#' a numeric of length one or \code{length(def.neigh)}. Alternatively, \code{offset} can be expressed
+#' as a function of \code{def.neigh}. Default is \code{offset = function(x) 2 * x}. 
+#' Default is \code{offset = 0}. Ignored if \code{x} is a vector.
 #' @param minval When distances are raw, what is the minimum allowable distance?
-#' Default is 50. 
+#' Default is \code{0}. Ignored if \code{x}. Use this if you don't want to offset values otherwise. 
 #' @param row.stand Logical or \code{'fuzzy'}. If \code{TRUE} (the default), rows are standardized such 
 #' that they sum to one. If \code{'fuzzy'}, rows are standardized as a proportion of the 
 #' largest value. 
@@ -77,7 +85,8 @@
 #' inc <- incrementalLID(x, dist = dists, bws = bws, index = 'gini', type = 'local',
 #'                       weighting = 'distance', FUN = function(x) 1/x^2, minval = 1)
 #' @export
-incrementalLID <- function(x, dist, bws, n = rep(1,length(x)),
+incrementalLID <- function(x, dist, bws = Inf, def.neigh = 0, 
+                           offset = function(x) 2 * x, n = rep(1,length(x)),
                            ntrials = 50, alpha = 0.05, standard = NULL, expect = NULL,
                            mode = 'adaptive', weighting = 'membership', FUN = NULL,
                            inf.val = NULL, row.stand = 'fuzzy', minval = 50,
@@ -87,16 +96,46 @@ incrementalLID <- function(x, dist, bws, n = rep(1,length(x)),
   # This bit to silence CRAN warnings
   delta_J_NG=dt_plus=dt_minus=d2t=NG_Class=`p J_NG`=NULL
   
+  if (class(offset) == 'function'){
+    offset = offset(def.neigh)
+  } else {
+    offset = rep(offset,length(def.neigh))
+  }
+  
+  if (mode == 'membership' & sum(is.infinite(bws)) > 0) {
+    stop("argument 'bw' is has infinities")
+  } 
+  
+  if (length(bws) != length(def.neigh)){
+    if (length(bws) == 1 & length(def.neigh) != 1) {
+      bws <- rep(bws, length(def.neigh))
+      dominant = 'def.neigh'
+    } else if (length(bws) != 1 & length(def.neigh) == 1){
+      def.neigh <- rep(def.neigh, length(bws))
+      dominant = 'bws'
+    } else {
+      stop("'bws' and 'def.neigh' must either be of equal length, or at most one may have length 1.")
+    }
+  } else {
+    dominant = 'both'
+  }
+  
   # Generate table to which values will be appended
   outTable <- data.table()
   if (pb) pb1 <- txtProgressBar(min = 0, max = length(bws),style = 3)
   i = 0
-  for (bw in bws){
+  
+  
+  
+  for (i in 1:length(bws)){
     if (pb) setTxtProgressBar(pb1,i)
     # Make the weights for a given bandwidth
-    weights <- makeWeights(dist, bw = bw, mode = mode, weighting = weighting, 
-                           FUN = FUN, inf.val = inf.val, row.stand = row.stand,
-                           minval = minval)
+    
+    weights <- makeWeights(dist, bw = bws[i], mode = mode, weighting = weighting, 
+                           FUN = FUN, offset = offset[i], def.neigh = def.neigh[i], inf.val = inf.val,
+                           row.stand = row.stand, minval = minval)
+    
+    
     
     # Calculate the LID for the given bandwidth
     lid <- LID(x = x, n = n, w = weights, standard = standard, expect = expect,
@@ -113,53 +152,82 @@ incrementalLID <- function(x, dist, bws, n = rep(1,length(x)),
     
     # Perform the inference for the bandwidth 
     invisible(utils::capture.output(
-      inference <- inferLID(lid, w = weights, ntrials = ntrials, alpha = alpha,
-                            standard = standard, expect = expect, 
-                            var.stand = var.stand, var.exp = var.exp, 
-                            ng.invert = ng.invert,
-                            max.cross = max.cross)
+      {inference <- inferLID(lid, w = weights, ntrials = ntrials, alpha = alpha,
+                             standard = standard, expect = expect, 
+                             var.stand = var.stand, var.exp = var.exp, 
+                             ng.invert = ng.invert,
+                             max.cross = max.cross)
+      }
     ))
     
     # P values come from the global statistic
-    ps <- as.data.table(inference$global)[2]
-    setnames(ps,names(ps), c("p J_G","p J_NG","p J"))
+    suppressWarnings(ps <- as.data.table(inference$global)[2])
+    setnames(ps,names(ps)[1:3], c("p J_G","p J_NG","p J"))
     
     # Append p values to table
     outTable <- rbind(outTable,
-                      as.data.table(c(bw = bw,vals,ps)))
+                      as.data.table(c(bw = bws[i],def.neigh = def.neigh[i],
+                                      offset = offset[i], vals,ps)))
+    
     i <- i + 1
   }
   
-  
   outTable[, names(outTable) := lapply(.SD,as.numeric)]
   
-  # Calculate second time derivative (ish)
+  # Calculate second derivative (ish)
   outTable[, `:=`(dt_minus = shift(delta_J_NG) -delta_J_NG , dt_plus = shift(delta_J_NG,type='lead') - delta_J_NG)
   ][, `:=`(dt_plus = dt_plus/abs(dt_plus), dt_minus = dt_minus/abs(dt_minus))
   ][, d2t := dt_plus + dt_minus]
   
   # Identify significant peaks
   outTable[, NG_Class := fifelse(`p J_NG` < alpha, "Significant","Not Significant")]
+  
+  
   if ((stand != 'self' & expct != 'self') | 
       ((stand == 'matrix' | expct == 'matrix') & ng.invert)){
-    bw <- outTable[d2t == 2 & NG_Class == 'Significant', ]$bw
-    if (length(bw) == 0){
+    if (dominant == 'bw') {
+      bw <- outTable[d2t == 2 & NG_Class == 'Significant', ]$bw
+    } else if (dominant == 'def.neigh'){
+      def.neigh <- outTable[d2t == 2 & NG_Class == 'Significant', ]$def.neigh
+    }
+    
+    if (dominant == 'bw' & length(bw) == 0){
       bw <- outTable[which(delta_J_NG == outTable[NG_Class == 'Significant',
                                                   min(delta_J_NG,na.rm = TRUE)]),bw]
+    } 
+    if (dominant == 'def.neigh' & length(def.neigh) == 0){
+      def.neigh <- outTable[which(delta_J_NG == outTable[NG_Class == 'Significant',
+                                                         min(delta_J_NG,na.rm = TRUE)]),def.neigh]
     }
   } else if ((stand == 'self' | expct == 'self') | 
              ((stand == 'matrix' | expct == 'matrix') & !ng.invert)){
-    bw <- outTable[d2t == -2  & NG_Class == 'Significant',]$bw
-    if (length(bw) == 0){
+    if (dominant == 'bw'){
+      bw <- outTable[d2t == -2  & NG_Class == 'Significant',]$bw
+    } else if (dominant == 'def.neigh'){
+      def.neigh <- outTable[d2t == -2 & NG_Class == 'Significant', ]$def.neigh
+    }
+    
+    if (dominant == 'bw' & length(bw) == 0){
       bw <- outTable[which(delta_J_NG == outTable[NG_Class == 'Significant',
                                                   max(delta_J_NG,na.rm = TRUE)]),bw] 
+    } 
+    
+    if (dominant == 'def.neigh' & length(def.neigh) == 0){
+      def.neigh <- outTable[which(delta_J_NG == outTable[NG_Class == 'Significant',
+                                                         max(delta_J_NG,na.rm = TRUE)]),def.neigh] 
     }
   }
   
-  out <- list(index = lid$index,
-              bw = bw,
-              stats = outTable[,c(1:7,11)])
+  if (dominant == 'bw'){
+    out <- list(index = lid$index,
+                bw = bw,
+                stats = outTable[,c(1:9,13)])
+  } else if (dominant == 'def.neigh'){
+    out <- list(index = lid$index,
+                def.neigh = def.neigh,
+                stats = outTable[,c(1:9,13)])
+  }
+  
   if (pb) setTxtProgressBar(pb1,i)
   return(out)
 }
-

@@ -1,4 +1,3 @@
-
 #' Infer whether there exists more or less within- and between-group
 #' local and global inequality than would be expected versus if for all observations
 #' the values of all other observations were permuted. This tests if local values
@@ -36,9 +35,9 @@
 #' the number of observations approaches \code{sqrt(.Machine$integer.max)}--usually
 #' about 2^31 for most systems. Lower values result in a greater number of chunks
 #' thus allowing larger data.sets to be calculated.
-#' @param pb Logical. Should a progress bar be displayed? Default is \code{FALSE}, although
+#' @param pb Logical. Should a progress bar be displayed? Default is \code{pb = FALSE}, although
 #' if a large dataset is processed that requires adjusting \code{max.cross} this can
-#' be useful
+#' be useful. Ignored if \code{multicore = TRUE}.
 #' @param clear.mem Logical. Should \code{\link[base]{gc}} be run in the middle of the 
 #' calculation? Default is \code{clear.mem} but set as \code{TRUE} if memory limits are a concern. 
 #' @importFrom data.table fifelse
@@ -131,8 +130,8 @@ inferLID <- function(lid, w, ntrials = 999, alpha = 0.05,
     # Shuffling your neighbors but keeping the locations as the only
     # possible places is effectively shuffling the matrix row-wise while
     # keeping the diagonal constant
-    w <- row(w) != col(w)
-    w[w] <- stats::ave(w[w], row(w)[w], FUN = sample)
+    w_mask <- row(w) != col(w)
+    w[w_mask] <- stats::ave(w[w_mask], row(w)[w_mask], FUN = sample)
     
     # Perform the LID analysis on the randomized weights
     xrand <- data.table(id = x$id,

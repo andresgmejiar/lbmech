@@ -16,6 +16,7 @@ incrementalLID(
   mode = "adaptive",
   weighting = "membership",
   FUN = NULL,
+  offset = 0,
   inf.val = NULL,
   row.stand = "fuzzy",
   minval = 50,
@@ -62,19 +63,23 @@ weighs neighbors according to \code{FUN} with the raw distance matrix providing 
 distance; or \code{'rank'} which uses the rank-distance (i.e. 1 for nearest neighbor,
 2 for second nearest...) as the distance variable.}
 
-\item{FUN}{The distance function. Default is \code{NULL} for \code{membership}, and
-\code{function(x) 1/x} otherwise.}
+\item{FUN}{The distance function. Default is \code{NULL} for \code{'membership'}, and
+\code{function(x) 1/(offset + x)} otherwise. Ignored if \code{x} is a vector.}
 
-\item{inf.val}{When singularities arise (e.g. whenever the value is 1/0 or 
-\code{Inf}, what is the value by which they are replaced? Default \code{NULL} uses the
-value of the smallest neighbor pair from the entire dataset.}
+\item{offset}{What value is added to the denominator to prevent singularities from arising
+(e.g. whenever the value is 1/0)? Larger values imply smaller distance-decay. 
+Default is \code{offset = 0}. Ignored if \code{x} is a vector.}
+
+\item{inf.val}{When singularities arise, (i.e. whenever the value is 1/0), by what value are
+they replaced? Default is the \code{FUN} of the lowest non-\code{minval} value.
+Ignored if \code{x} is a vector.}
 
 \item{row.stand}{Logical or \code{'fuzzy'}. If \code{TRUE} (the default), rows are standardized such 
 that they sum to one. If \code{'fuzzy'}, rows are standardized as a proportion of the 
 largest value.}
 
 \item{minval}{When distances are raw, what is the minimum allowable distance?
-Default is 50.}
+Default is \code{0}. Ignored if \code{x}. Use this if you don't want to offset values otherwise.}
 
 \item{var.stand}{Logical. Should the standards be permuted if a matrix was 
 provided? Default is \code{FALSE}.}

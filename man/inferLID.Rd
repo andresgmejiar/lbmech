@@ -11,6 +11,8 @@ inferLID(
   alpha = 0.05,
   standard = NULL,
   expect = NULL,
+  multicore = FALSE,
+  ncores = parallel::detectCores() - 1,
   var.stand = FALSE,
   var.exp = FALSE,
   ng.invert = TRUE,
@@ -36,6 +38,11 @@ required.}
 when calculating \code{lid}. Ignored if none had been originally provided, otherwise
 required.}
 
+\item{multicore}{Should multithreading be used? Default is \code{FALSE}.}
+
+\item{ncores}{If \code{multicore = TRUE}, how many cores should be used? Default
+is \code{ncores = parallel::detectCores() - 1}.}
+
 \item{var.stand}{Logical. Should the standards be permuted if a matrix was 
 provided? Default is \code{FALSE}.}
 
@@ -52,9 +59,9 @@ the number of observations approaches \code{sqrt(.Machine$integer.max)}--usually
 about 2^31 for most systems. Lower values result in a greater number of chunks
 thus allowing larger data.sets to be calculated.}
 
-\item{pb}{Logical. Should a progress bar be displayed? Default is \code{FALSE}, although
+\item{pb}{Logical. Should a progress bar be displayed? Default is \code{pb = FALSE}, although
 if a large dataset is processed that requires adjusting \code{max.cross} this can
-be useful}
+be useful. Ignored if \code{multicore = TRUE}.}
 
 \item{clear.mem}{Logical. Should \code{\link[base]{gc}} be run in the middle of the 
 calculation? Default is \code{clear.mem} but set as \code{TRUE} if memory limits are a concern.}

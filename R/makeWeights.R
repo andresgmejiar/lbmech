@@ -11,7 +11,8 @@
 #' @param bw A number representing the bandwidth within neighbors are considered.
 #' If \code{mode = 'adaptive'}, \code{bw} is the number of nearest neighbors. 
 #' If \code{mode = 'fixed'}, \code{bw} is the radius of the window in the map units.
-#' Ignored if \code{x} is a vector, required otherwise.
+#' Ignored if \code{x} is a vector, required if \code{weighting = 'membership'}, 
+#' and assumed to be \code{bw = Inf} otherwise.
 #' @param mode One of \code{'adaptive'}, which considers a \code{bw} number of nearest 
 #' neighbors; or \code{'fixed'}, which considers a fixed bandwidth window of radius \code{bw}.
 #' Ignored if \code{x} is a vector.
@@ -21,7 +22,7 @@
 #' distance; or \code{'rank'} which uses the rank-distance (i.e. 1 for nearest neighbor,
 #' 2 for second nearest...) as the distance variable. Ignored if \code{x} is a vector.
 #' @param FUN The distance function. Default is \code{NULL} for \code{'membership'}, and
-#' \code{function(x) 1/(offset + x)} otherwise. Ignored if \code{x} is a vector.
+#' \code{function(x) offset/(offset + x)} otherwise. Ignored if \code{x} is a vector.
 #' @param inf.val When singularities arise, (i.e. whenever the value is 1/0), by what value are
 #' they replaced? Default is the \code{FUN} of the lowest non-\code{minval} value.
 #' Ignored if \code{x} is a vector.
@@ -74,6 +75,7 @@ makeWeights <- function(x, ID = NULL, bw = NULL,
                         mode = 'adaptive', weighting = 'membership', 
                         FUN = NULL, offset = 0, inf.val = NA, minval = 0, 
                         def.neigh = 0, row.stand = FALSE, clear.mem = FALSE) {
+  
   # First do group membership vectors, then do distance matrices 
   if (is.vector(x)){
     # Deal with IDs. If not provided create them. If they are, check to make
@@ -108,11 +110,13 @@ makeWeights <- function(x, ID = NULL, bw = NULL,
     return(cj[as.character(ID),
               as.character(ID)])
   } else {
-    if (is.null(bw)){
+    if (!is.null(bw) & is.infinite(bw)) bw <- NULL
+    
+    if (is.null(bw) & weighting == 'membership'){
       stop("argument 'bw' is missing, with no default")
     }
     if (is.null(FUN)){
-      FUN <- function(x) 1/(offset + x)
+      FUN <- function(x) offset/(offset + x)
     }
     
     # Coerce inputs to matrix
@@ -136,9 +140,9 @@ makeWeights <- function(x, ID = NULL, bw = NULL,
       if (weighting == 'rank'){
         x <- y
         rm(y)
-        x[x >= bw+1] <- NA 
+        if (!is.null(bw)) x[x >= bw+1] <- NA 
       } else {
-        y[y >= bw+1] <- NA 
+        if (!is.null(bw)) y[y >= bw+1] <- NA 
         x <- x * y/y
         rm(y)
       }
@@ -146,10 +150,10 @@ makeWeights <- function(x, ID = NULL, bw = NULL,
       if (weighting == 'rank'){
         # Convert distances to ranks of distances; only need for rank
         y <- matrixStats::colRanks(x, ties.method = "min")
-        x[x >= bw] <- NA
+        if (!is.null(bw)) x[x >= bw] <- NA
         x <- y * x/x
         rm(y)
-      } else {
+      } else if (!is.null(bw)) {
         x[x >= bw] <- NA
       }
     }
