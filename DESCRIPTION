@@ -1,9 +1,9 @@
 Package: lbmech
 Type: Package
 Title: A Package to Study the Mechanics of Landscape and Behavior
-Version: 0.5.1
+Version: 0.5.2
 Author: Andres G. Mejia Ramon
-Maintainer: Andres G. Mejia Ramon <Andres.Mejia@OIST.jp>
+Maintainer: Andres G. Mejia Ramon <Andres.Mejia@UAB.cat>
 Description: A geospatial package to study the adaptive mechanics of landscape and behavior, including at present: (1) energetic and efficient least-cost analysis; (2) local indicators of dispersion; and (3) interpolation of agricultural productivity data. 
 License: CC BY-NC 4.0
 Encoding: UTF-8
@@ -32,7 +32,8 @@ Imports:
         cowplot,
         leaflet,
         archive,
-        parallel
+        parallel,
+        zoo
 Depends:
     terra,
     data.table,

@@ -7,7 +7,9 @@
 incrementalLID(
   x,
   dist,
-  bws,
+  bws = Inf,
+  def.neigh = 0,
+  offset = function(x) 2 * x,
   n = rep(1, length(x)),
   ntrials = 50,
   alpha = 0.05,
@@ -16,7 +18,6 @@ incrementalLID(
   mode = "adaptive",
   weighting = "membership",
   FUN = NULL,
-  offset = 0,
   inf.val = NULL,
   row.stand = "fuzzy",
   minval = 50,
@@ -37,6 +38,16 @@ distances need not be symmetrical.}
 \item{bws}{A vector containing the representing the bandwidth within neighbors 
 are considered. If \code{mode = 'adaptive'}, \code{bw} is the number of nearest neighbors. 
 If \code{mode = 'fixed'}, \code{bw} is the radius of the window in the map units.}
+
+\item{def.neigh}{Numeric. At what distance (in the map units) are observations definitely neighbors?
+All distances are subtracted by this value, and all resulting distances less than zero are reassigned
+to \code{minval}.}
+
+\item{offset}{What value is added to the denominator to prevent singularities from arising
+(e.g. whenever the value is 1/0)? Larger values imply smaller distance-decay. This should be
+a numeric of length one or \code{length(def.neigh)}. Alternatively, \code{offset} can be expressed
+as a function of \code{def.neigh}. Default is \code{offset = function(x) 2 * x}. 
+Default is \code{offset = 0}. Ignored if \code{x} is a vector.}
 
 \item{n}{A vector representing population weights. How much of an impact does a given 
 observation have on any other observation regardless of its influence as provided
@@ -64,11 +75,7 @@ distance; or \code{'rank'} which uses the rank-distance (i.e. 1 for nearest neig
 2 for second nearest...) as the distance variable.}
 
 \item{FUN}{The distance function. Default is \code{NULL} for \code{'membership'}, and
-\code{function(x) 1/(offset + x)} otherwise. Ignored if \code{x} is a vector.}
-
-\item{offset}{What value is added to the denominator to prevent singularities from arising
-(e.g. whenever the value is 1/0)? Larger values imply smaller distance-decay. 
-Default is \code{offset = 0}. Ignored if \code{x} is a vector.}
+\code{function(x) offset/(offset + x)} otherwise. Ignored if \code{x} is a vector.}
 
 \item{inf.val}{When singularities arise, (i.e. whenever the value is 1/0), by what value are
 they replaced? Default is the \code{FUN} of the lowest non-\code{minval} value.

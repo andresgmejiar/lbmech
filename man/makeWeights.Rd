@@ -29,7 +29,8 @@ representing pairwise distances. The distances need not be symmetrical.}
 \item{bw}{A number representing the bandwidth within neighbors are considered.
 If \code{mode = 'adaptive'}, \code{bw} is the number of nearest neighbors. 
 If \code{mode = 'fixed'}, \code{bw} is the radius of the window in the map units.
-Ignored if \code{x} is a vector, required otherwise.}
+Ignored if \code{x} is a vector, required if \code{weighting = 'membership'}, 
+and assumed to be \code{bw = Inf} otherwise.}
 
 \item{mode}{One of \code{'adaptive'}, which considers a \code{bw} number of nearest 
 neighbors; or \code{'fixed'}, which considers a fixed bandwidth window of radius \code{bw}.
@@ -42,7 +43,7 @@ distance; or \code{'rank'} which uses the rank-distance (i.e. 1 for nearest neig
 2 for second nearest...) as the distance variable. Ignored if \code{x} is a vector.}
 
 \item{FUN}{The distance function. Default is \code{NULL} for \code{'membership'}, and
-\code{function(x) 1/(offset + x)} otherwise. Ignored if \code{x} is a vector.}
+\code{function(x) offset/(offset + x)} otherwise. Ignored if \code{x} is a vector.}
 
 \item{offset}{What value is added to the denominator to prevent singularities from arising
 (e.g. whenever the value is 1/0)? Larger values imply smaller distance-decay. 

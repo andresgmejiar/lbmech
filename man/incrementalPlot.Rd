@@ -7,14 +7,15 @@
 incrementalPlot(inc)
 }
 \arguments{
-\item{inc}{The list output of the \code{\link[lbmech]{incrementalLID}} function}
+\item{inc}{The list output of the \code{\link[lbmech]{incrementalLID}} function
+This does not work when both \code{bw} and \code{def.neigh} were permuted.}
 }
 \value{
 A ggplot object
 }
 \description{
 Plot the difference in the non-group component of inequality at increasing
-bandwidth sizes
+bandwidth sizes.
 }
 \examples{
 
