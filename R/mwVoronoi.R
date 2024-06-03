@@ -65,7 +65,7 @@
 mwVoronoi <- function(xy, w, tolerance = 7, prec = 72, clip = NULL,
                       topology = 'geoid', pb = FALSE){
   spat <- c('SpatVector','SpatialPoints','SpatialPointsDataFrame')
-  if (class(xy) %in% spat){
+  if (any(class(xy) %in% spat)){
     xy <- geom(vect(xy))
   }
   
