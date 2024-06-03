@@ -61,6 +61,7 @@
 #'                   N = runif(25, 0, 100))
 #'                   
 #' mwv <- mwVoronoi(obs[,1:2], w = obs$N)
+#' @export
 mwVoronoi <- function(xy, w, tolerance = 7, prec = 72, clip = NULL,
                       topology = 'geoid', pb = FALSE){
   spat <- c('SpatVector','SpatialPoints','SpatialPointsDataFrame')
