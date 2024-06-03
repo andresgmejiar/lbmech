@@ -65,12 +65,12 @@
 mwVoronoi <- function(xy, w, tolerance = 7, prec = 72, clip = NULL,
                       topology = 'geoid', pb = FALSE){
   spat <- c('SpatVector','SpatialPoints','SpatialPointsDataFrame')
-  if (class(obs) %in% spat){
-    obs <- geom(vect(obs))
+  if (class(xy) %in% spat){
+    xy <- geom(vect(xy))
   }
   
   # Start by ordering them based on weight
-  obs <- as.data.table(obs)
+  obs <- as.data.table(xy)
   obs$N <- w
   obs$Orig_Order <- 1:nrow(obs)
   
