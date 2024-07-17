@@ -22,7 +22,7 @@
 #' distance; or \code{'rank'} which uses the rank-distance (i.e. 1 for nearest neighbor,
 #' 2 for second nearest...) as the distance variable. Ignored if \code{x} is a vector.
 #' @param FUN The distance function. Default is \code{NULL} for \code{'membership'}, and
-#' \code{function(x) offset/(offset + x)} otherwise. Ignored if \code{x} is a vector.
+#' \code{function(x) 1/(offset + x)} otherwise. Ignored if \code{x} is a vector.
 #' @param inf.val When singularities arise, (i.e. whenever the value is 1/0), by what value are
 #' they replaced? Default is the \code{FUN} of the lowest non-\code{minval} value.
 #' Ignored if \code{x} is a vector.
@@ -110,13 +110,15 @@ makeWeights <- function(x, ID = NULL, bw = NULL,
     return(cj[as.character(ID),
               as.character(ID)])
   } else {
-    if (!is.null(bw) & is.infinite(bw)) bw <- NULL
+    if (!is.null(bw)){
+      if (is.infinite(bw)) bw <- NULL
+    } 
     
     if (is.null(bw) & weighting == 'membership'){
       stop("argument 'bw' is missing, with no default")
     }
     if (is.null(FUN)){
-      FUN <- function(x) offset/(offset + x)
+      FUN <- function(x) 1/(offset + x)
     }
     
     # Coerce inputs to matrix

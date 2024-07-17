@@ -105,7 +105,7 @@ mwVoronoi <- function(xy, w, tolerance = 7, prec = 72, clip = NULL,
                                                         b = theta, 
                                                         d = ell))]
     
-    # When weights are equal, radius of pairwise voroni is equal to one-fourth
+    # When weights are equal, radius of pairwise voronoi is equal to one-fourth
     # earth's circumference. Linear decay to zero when one's weight equals zero
     # Start by finding the radius of the ellipsoid along the axis defined by the 
     # Great Circle connecting the two points
