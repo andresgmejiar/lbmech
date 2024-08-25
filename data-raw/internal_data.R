@@ -14,8 +14,11 @@ lid.cols <-  data.table::data.table(
   Color = c("#FF00FF", "#FF0000", "#FF9F00", 
                      "#FFFD9C", "#ade567", "#63FFD5", 
                      "#0080FF", "#4B0076", "#FFFFFF"),
-                     x = c(0, 1, 1, 1, 0, -1, -1, -1, 0),
-  y = c(1, 1, 0, -1, -1, -1, 0, 1, 0)
+  x = c(0, 1, 1, 1, 0, -1, -1, -1, 0),
+  y = c(1, 1, 0, -1, -1, -1, 0, 1, 0),
+  Arrow = c(sprintf("\u2191"), sprintf("\u2197"), sprintf("\u2192"),
+            sprintf("\u2198"), sprintf("\u2193"), sprintf("\u2199"),
+            sprintf("\u2190"), sprintf("\u2196"), sprintf("\u2022"))
 )
 
 
