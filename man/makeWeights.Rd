@@ -43,7 +43,7 @@ distance; or \code{'rank'} which uses the rank-distance (i.e. 1 for nearest neig
 2 for second nearest...) as the distance variable. Ignored if \code{x} is a vector.}
 
 \item{FUN}{The distance function. Default is \code{NULL} for \code{'membership'}, and
-\code{function(x) offset/(offset + x)} otherwise. Ignored if \code{x} is a vector.}
+\code{function(x) 1/(offset + x)} otherwise. Ignored if \code{x} is a vector.}
 
 \item{offset}{What value is added to the denominator to prevent singularities from arising
 (e.g. whenever the value is 1/0)? Larger values imply smaller distance-decay. 

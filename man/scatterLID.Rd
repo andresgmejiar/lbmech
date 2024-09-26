@@ -11,11 +11,12 @@ scatterLID(
   log.scale = FALSE,
   key = TRUE,
   only.key = FALSE,
+  arrows = FALSE,
   x.lim = NULL,
   y.lim = NULL
 )
 
-colorLID(x = NULL, table = FALSE)
+colorLID(x = NULL, table = FALSE, arrows = FALSE)
 }
 \arguments{
 \item{lid}{The list output of the \code{\link[lbmech]{LID}} function.}
@@ -31,6 +32,10 @@ If \code{TRUE}, log transformation is \code{log(1+x,10)}.}
 \item{only.key}{Logical. If \code{only.key = TRUE}, only a color key will be output and all
 other parameters will be ignored.}
 
+\item{arrows}{Logical. Should the points be displayed as arrows pointing to the appropriate
+quadrant according to the key? Default is \code{arrows = FALSE}. Ignored if \code{table = TRUE} in 
+colorLID.}
+
 \item{x.lim}{One of \code{NULL} to determine the x-range automatically (the default), 
 a numeric vector of length two providing the x boundaries, or a function that accepts
 the automatic boundaries and returns new limits (see \code{\link[ggplot2]{scale_x_continuous}}).}
@@ -43,7 +48,7 @@ the automatic boundaries and returns new limits (see \code{\link[ggplot2]{scale_
 Ignored if \code{table = TRUE}.}
 
 \item{table}{Logical. Should the function convert character strings of classes
-to hex codes of colors (\code{table = FALSE}, the default),
+to hex codes of colors (\code{table = FALSE}, the default) or arrows (when \code{arrows = TRUE})
 or should it return the conversion table itself?}
 }
 \value{

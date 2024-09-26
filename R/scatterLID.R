@@ -22,6 +22,9 @@
 #' \code{FALSE} if you wish to further manipulate the ggplot object
 #' @param only.key Logical. If \code{only.key = TRUE}, only a color key will be output and all
 #' other parameters will be ignored. 
+#' @param arrows Logical. Should the points be displayed as arrows pointing to the appropriate
+#' quadrant according to the key? Default is \code{arrows = FALSE}. Ignored if \code{table = TRUE} in 
+#' colorLID (Cairo may be needed to export images and PDFs). 
 #' @return A ggplot object with two elements---the LID Scatter plot and its scale.
 #' @examples 
 #' 
@@ -49,18 +52,18 @@
 #' scatterLID(lid, inference)
 #' @export
 scatterLID <- function(lid = NULL, inference = NULL, log.scale = FALSE, key = TRUE, 
-                       only.key = FALSE, x.lim = NULL, y.lim = NULL){
+                       only.key = FALSE, arrows = FALSE, x.lim = NULL, y.lim = NULL){
   # CRAN Check silencing bit
   J_Gi=J_NGi=Class=x=y=NULL
   
   # lid.cols is an internal variable
   
-
-    # Create a color assignment function
-    colvect <- lid.cols$Color
-    names(colvect) <- lid.cols$Class
-    if (!only.key){
-        
+  
+  # Create a color assignment function
+  colvect <- lid.cols$Color
+  names(colvect) <- lid.cols$Class
+  if (!only.key){
+    
     # Perform a log transformation if needed
     if (!log.scale){
       xlab <- bquote("In-group Inequality (J "["G"]^.(lid$index) * " )")
@@ -72,12 +75,19 @@ scatterLID <- function(lid = NULL, inference = NULL, log.scale = FALSE, key = TR
       FUN <- function(x) log(1 + x, 10)
     }
     
-    
+    if (arrows) {
+      windowsFonts <- grDevices::windowsFonts
+      pdfFonts <- grDevices::pdfFonts
+      postscriptFonts <- grDevices::postscriptFonts
+      extrafont::loadfonts(quiet = TRUE)
+    }
     # LID plot, transforming the values if needed
     gglid <- ggplot2::ggplot(cbind(lid$local,inference$local), ggplot2::aes(x = FUN(J_Gi),
                                                                             y = FUN(J_NGi),
                                                                             color = Class)) + 
-      ggplot2::geom_point() + 
+      {if (!arrows) ggplot2::geom_point()} + 
+      {if (arrows) ggplot2::geom_text(label = colorLID(inference$local$Class, 
+                                                       arrows = TRUE))} + 
       ggplot2::scale_color_manual(values = colvect) + 
       ggplot2::ggtitle(paste0("Local Indicators of Dispersion\n",names(lid$index)," Scatterplot")) +
       ggplot2::theme_dark() + 
@@ -120,19 +130,22 @@ scatterLID <- function(lid = NULL, inference = NULL, log.scale = FALSE, key = TR
 #' @param x A character string or vector containing a LID significance class. 
 #' Ignored if \code{table = TRUE}.
 #' @param table Logical. Should the function convert character strings of classes
-#' to hex codes of colors (\code{table = FALSE}, the default),
+#' to hex codes of colors (\code{table = FALSE}, the default) or arrows (when \code{arrows = TRUE})
 #' or should it return the conversion table itself?
+#' @param arrows Logical. Should the points be displayed as arrows pointing to the appropriate
+#' quadrant according to the key? Default is \code{arrows = FALSE}. Ignored if \code{table = TRUE} in 
+#' colorLID.
 #' @export
-colorLID <- function(x = NULL, table = FALSE){
+colorLID <- function(x = NULL, table = FALSE, arrows = FALSE){
   # This bit to silence CRAN warnings
-  Class=Color=NULL
-  
+  Class=Color=Arrow=NULL
   if (table){
-    return(lid.cols[,.(Class,Color)])
+    return(lid.cols[,.(Class,Color,Arrow)])
   } else if (!table){
-    return(
-      leaflet::colorFactor(lid.cols$Color,levels = lid.cols$Class,ordered=FALSE)(x))
+    if (!arrows){
+      return(lid.cols$Color[match(x, lid.cols$Class)])
+    } else{
+      return(lid.cols$Arrow[match(x,lid.cols$Class)])
+    }
   }
 }
-
-

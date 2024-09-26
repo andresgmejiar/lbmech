@@ -8,7 +8,7 @@ Description: A geospatial package to study the adaptive mechanics of landscape a
 License: CC BY-NC 4.0
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.2
 Imports:
         stringr,
         igraph,
@@ -30,10 +30,11 @@ Imports:
         matrixStats,
         ggplot2,
         cowplot,
-        leaflet,
         archive,
         parallel,
-        zoo
+        zoo,
+        extrafont,
+        grDevices
 Depends:
     terra,
     data.table,
