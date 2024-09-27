@@ -47,7 +47,7 @@ to \code{minval}.}
 (e.g. whenever the value is 1/0)? Larger values imply smaller distance-decay. This should be
 a numeric of length one or \code{length(def.neigh)}. Alternatively, \code{offset} can be expressed
 as a function of \code{def.neigh}. Default is \code{offset = function(x) 2 * x}. 
-Default is \code{offset = 0}. Ignored if \code{x} is a vector.}
+Ignored if \code{x} is a vector.}
 
 \item{n}{A vector representing population weights. How much of an impact does a given 
 observation have on any other observation regardless of its influence as provided
@@ -130,10 +130,10 @@ Determine the bandwidth that maximizes the non-group component of inequality.
 x <- runif(10, 1, 100)
 
 # Get distance matrix
-dists <- dist(x)
+dists <- dist(x, upper = TRUE, diag = TRUE)
 
 # Bandwidth sizes from 3 to 5
-bws <- 3:5
+bws <- 3:6
 
 inc <- incrementalLID(x, dist = dists, bws = bws, index = 'gini', type = 'local',
                       weighting = 'distance', FUN = function(x) 1/x^2, minval = 1)

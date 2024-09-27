@@ -58,7 +58,7 @@
 #' World Bank DataBank. \url{https://databank.worldbank.org/}
 #' 
 #' World Trade Organization, Organization for Economic Co-Operation and Development. (2023).
-#' WTO-OECD Balanced Trade in Services Dataset (BaTiS) — BPM6.
+#' WTO-OECD Balanced Trade in Services Dataset (BaTiS) - BPM6.
 #' \url{https://www.wto.org/english/res_e/statis_e/trade_datasets_e.htm#BaTis6}
 #' 
 #' @examples 
@@ -72,14 +72,14 @@ getData <- function(data, name = NULL, dir = tempdir(), timeout = 999){
   
   if (data == 'baleares-currents'){
     message("Clementi, Emanuela; Ali Aydogdu; Ana Chiara Goglio; Jenny Pistoia; Romain Escudier; Massimiliano Drudi; Alessandro Grandi; et al.\n(2021) Ocean Surface Currents around Mallorca, Menorca, and Cabrera, 13 June 2022. Mediterranean Sea Physics Analysis and Forecast, CMEMS MED-Currents EAS6 system. European Union Copernicus Marine Service, https://marine.copernicus.eu/\n")
-
+    
     return(importRST(baleares.currents))
   } else if (data %in% c('baleares-gps','baleares-gpx')){
     
     if (is.null(name)) name <- 'gpx'
     message("Lera, Isaac; Toni Perez; Carlos Guerrero; Victor M. Eguiluz; and Carlos Juiz \n(2017) Dataset of Human Hiking GPS Trajectories on Balearic Islands. Supplemental material to \"Analysing human mobility patterns of hiking activities through complex network theory,\" PLoS ONE 12(5): e0177712. https://doi.org/10.1371/journal.pone.0177712\n")
     message("Dataset will be downloaded and uncompressed but will not be imported.\nPlease use 'importGPX()' for that.") 
-
+    
     timeout.orig <- getOption('timeout')
     options(timeout=timeout)
     gpxDir <- normalizePath(paste0(dir, "/",name),mustWork = FALSE)
@@ -110,9 +110,9 @@ getData <- function(data, name = NULL, dir = tempdir(), timeout = 999){
                               mustWork = FALSE)
     
     if (!file.exists(filePath)){
-    utils::download.file("https://github.com/andresgmejiar/world_trade_data/blob/main/GDP.gz?raw=TRUE",
-                         destfile = filePath,
-                         mode = 'wb')
+      utils::download.file("https://github.com/andresgmejiar/world_trade_data/blob/main/GDP.gz?raw=TRUE",
+                           destfile = filePath,
+                           mode = 'wb')
     }
     return(readRDS(filePath))
     
@@ -133,7 +133,7 @@ getData <- function(data, name = NULL, dir = tempdir(), timeout = 999){
     return(readRDS(filePath))
     
   } else if (tolower(data) == "trade") {
-    message("Organization for Economic Co-Operation and Development\n(2022) Bilateral Trade Database by Industry and End-Use (BTDIxE). \nhttps://www.oecd.org/sti/ind/bilateraltradeingoodsbyindustryandend-usecategory.htm\n\nWorld Trade Organization; Organization for Economic Co-Operation and Development \n(2023) WTO-OECD Balanced Trade in Services Dataset (BaTiS) — BPM6. \nhttps://www.wto.org/english/res_e/statis_e/trade_datasets_e.htm#BaTis6\n")
+    message("Organization for Economic Co-Operation and Development\n(2022) Bilateral Trade Database by Industry and End-Use (BTDIxE). \nhttps://www.oecd.org/sti/ind/bilateraltradeingoodsbyindustryandend-usecategory.htm\n\nWorld Trade Organization; Organization for Economic Co-Operation and Development \n(2023) WTO-OECD Balanced Trade in Services Dataset (BaTiS) - BPM6. \nhttps://www.wto.org/english/res_e/statis_e/trade_datasets_e.htm#BaTis6\n")
     
     if (is.null(name)) name <- "trade.gz"
     if (stringr::str_sub(name,-3) != ".gz") name <- paste0(name,".gz")

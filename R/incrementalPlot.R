@@ -23,6 +23,7 @@
 #' incrementalPlot(inc)
 #' @export
 incrementalPlot<- function(inc){
+  plotme=NULL
   # This bit to silence CRAN check warnings
   bw=delta_J_NG=NG_Class=NULL
   

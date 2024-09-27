@@ -75,7 +75,8 @@ makeWeights <- function(x, ID = NULL, bw = NULL,
                         mode = 'adaptive', weighting = 'membership', 
                         FUN = NULL, offset = 0, inf.val = NA, minval = 0, 
                         def.neigh = 0, row.stand = FALSE, clear.mem = FALSE) {
-  
+  # Silence CRAN warnings
+  i=j=i_id=j_id=Weight=NULL
   # First do group membership vectors, then do distance matrices 
   if (is.vector(x)){
     # Deal with IDs. If not provided create them. If they are, check to make
@@ -123,7 +124,7 @@ makeWeights <- function(x, ID = NULL, bw = NULL,
     
     # Coerce inputs to matrix
     x <- as.matrix(x)
-    if (minval != 0) x[x <= minval] <- minval
+    if (minval != 0) suppressWarnings(x[x <= minval] <- minval)
     
     # Adjust based on definite neighbor value
     if (def.neigh > 0) {
@@ -173,7 +174,7 @@ makeWeights <- function(x, ID = NULL, bw = NULL,
         if (def.neigh > 0){
           inf.val <- 1/def.neigh
         } else {
-          inf.val <-  FUN(min(x[x > minval],na.rm=TRUE))
+          suppressWarnings(inf.val <-  FUN(min(x[x > minval],na.rm=TRUE)))
         }
         x[is.infinite(x)] <- inf.val
         

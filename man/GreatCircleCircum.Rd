@@ -22,5 +22,5 @@ from that point
 }
 \examples{
 
-circum <- GreatCircleCircum(19.693, 98.844, b = 175.8)
+circum <- GreatCircleCircum(-98.844, 19.693, , b = 175.8)
 }

@@ -37,7 +37,7 @@
 #' (e.g. whenever the value is 1/0)? Larger values imply smaller distance-decay. This should be
 #' a numeric of length one or \code{length(def.neigh)}. Alternatively, \code{offset} can be expressed
 #' as a function of \code{def.neigh}. Default is \code{offset = function(x) 2 * x}. 
-#' Default is \code{offset = 0}. Ignored if \code{x} is a vector.
+#' Ignored if \code{x} is a vector.
 #' @param minval When distances are raw, what is the minimum allowable distance?
 #' Default is \code{0}. Ignored if \code{x}. Use this if you don't want to offset values otherwise. 
 #' @param row.stand Logical or \code{'fuzzy'}. If \code{TRUE} (the default), rows are standardized such 
@@ -77,10 +77,10 @@
 #' x <- runif(10, 1, 100)
 #' 
 #' # Get distance matrix
-#' dists <- dist(x)
+#' dists <- dist(x, upper = TRUE, diag = TRUE)
 #' 
 #' # Bandwidth sizes from 3 to 5
-#' bws <- 3:5
+#' bws <- 3:6
 #' 
 #' inc <- incrementalLID(x, dist = dists, bws = bws, index = 'gini', type = 'local',
 #'                       weighting = 'distance', FUN = function(x) 1/x^2, minval = 1)
@@ -96,8 +96,8 @@ incrementalLID <- function(x, dist, bws = Inf, def.neigh = 0,
   # This bit to silence CRAN warnings
   delta_J_NG=dt_plus=dt_minus=d2t=NG_Class=`p J_NG`=NULL
   
-  if (class(offset) == 'function'){
-    offset = offset(def.neigh)
+  if (methods::is(offset, 'function')){
+    offset = offset(rep(def.neigh,max(length(def.neigh),length(bws))))
   } else {
     offset = rep(offset,length(def.neigh))
   }
@@ -172,7 +172,7 @@ incrementalLID <- function(x, dist, bws = Inf, def.neigh = 0,
     i <- i + 1
   }
   
-  outTable[, names(outTable) := lapply(.SD,as.numeric)]
+  suppressWarnings(outTable[, names(outTable) := lapply(.SD,as.numeric)])
   
   # Calculate second derivative (ish)
   outTable[, `:=`(dt_minus = shift(delta_J_NG) -delta_J_NG , dt_plus = shift(delta_J_NG,type='lead') - delta_J_NG)
@@ -185,13 +185,13 @@ incrementalLID <- function(x, dist, bws = Inf, def.neigh = 0,
   
   if ((stand != 'self' & expct != 'self') | 
       ((stand == 'matrix' | expct == 'matrix') & ng.invert)){
-    if (dominant == 'bw') {
+    if (dominant == 'bws') {
       bw <- outTable[d2t == 2 & NG_Class == 'Significant', ]$bw
     } else if (dominant == 'def.neigh'){
       def.neigh <- outTable[d2t == 2 & NG_Class == 'Significant', ]$def.neigh
     }
     
-    if (dominant == 'bw' & length(bw) == 0){
+    if (dominant == 'bws' & length(bw) == 0){
       bw <- outTable[which(delta_J_NG == outTable[NG_Class == 'Significant',
                                                   min(delta_J_NG,na.rm = TRUE)]),bw]
     } 
@@ -201,13 +201,13 @@ incrementalLID <- function(x, dist, bws = Inf, def.neigh = 0,
     }
   } else if ((stand == 'self' | expct == 'self') | 
              ((stand == 'matrix' | expct == 'matrix') & !ng.invert)){
-    if (dominant == 'bw'){
+    if (dominant == 'bws'){
       bw <- outTable[d2t == -2  & NG_Class == 'Significant',]$bw
     } else if (dominant == 'def.neigh'){
       def.neigh <- outTable[d2t == -2 & NG_Class == 'Significant', ]$def.neigh
     }
     
-    if (dominant == 'bw' & length(bw) == 0){
+    if (dominant == 'bws' & length(bw) == 0){
       bw <- outTable[which(delta_J_NG == outTable[NG_Class == 'Significant',
                                                   max(delta_J_NG,na.rm = TRUE)]),bw] 
     } 
@@ -218,7 +218,7 @@ incrementalLID <- function(x, dist, bws = Inf, def.neigh = 0,
     }
   }
   
-  if (dominant == 'bw'){
+  if (dominant == 'bws'){
     out <- list(index = lid$index,
                 bw = bw,
                 stats = outTable[,c(1:9,13)])

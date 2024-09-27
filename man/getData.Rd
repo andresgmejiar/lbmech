@@ -77,6 +77,6 @@ World Bank (2022).
 World Bank DataBank. \url{https://databank.worldbank.org/}
 
 World Trade Organization, Organization for Economic Co-Operation and Development. (2023).
-WTO-OECD Balanced Trade in Services Dataset (BaTiS) — BPM6.
+WTO-OECD Balanced Trade in Services Dataset (BaTiS) - BPM6.
 \url{https://www.wto.org/english/res_e/statis_e/trade_datasets_e.htm#BaTis6}
 }

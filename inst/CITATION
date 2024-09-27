@@ -1,12 +1,12 @@
 citHeader("To cite lbmech in publications use:")
 
-bibentry(
+citEntry(
   entry    = "Manual",
   title    = "lbmech: A package to Study the Mechanics of Landscape and Behavior",
   author   = "Andres G. Mejia Ramon",
-  year     = "2022",
+  year     = 2024,
   url      = "https://andresgmejiar.github.io/lbmech",
-  note     = "R package version 0.2.0",
-  textVersion = paste("Mejia Ramon, Andres G. (2022). lbmech: A package to study the Mechanics of Landscape and Behavior. R package version 0.2.0. https://andresgmejiar.github.io/lbmech/"
+  textVersion = paste(
+  "Mejia Ramon, Andres G. (2024). lbmech: A package to study the Mechanics of Landscape and Behavior. R package version 0.5.2.     https://andresgmejiar.github.io/lbmech/"
   )
 )

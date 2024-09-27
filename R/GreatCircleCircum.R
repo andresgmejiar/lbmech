@@ -10,9 +10,11 @@
 #' @importFrom data.table data.table
 #' @examples 
 #' 
-#' circum <- GreatCircleCircum(19.693, 98.844, b = 175.8)
+#' circum <- GreatCircleCircum(-98.844, 19.693, , b = 175.8)
 #' @export
 GreatCircleCircum <- function(lon,lat,b,n = 72){
+  # To silence CRAN warnings
+  first=NULL
   # The Geosphere package returns NAs if the bearing is zero, since it relies
   # on interpolating the coordinates along longitudes. Filter out vertical cases
   if (!(b %% 360 == 0)){

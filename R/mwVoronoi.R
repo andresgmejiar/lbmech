@@ -51,6 +51,7 @@
 #' @importFrom data.table melt
 #' @importFrom data.table fifelse
 #' @importFrom data.table shift
+#' @importFrom data.table first
 #' @return A SpatVector containing the Voronoi polygons for each input observation
 #' @examples 
 #' 
@@ -64,6 +65,9 @@
 #' @export
 mwVoronoi <- function(xy, w, tolerance = 7, prec = 72, clip = NULL,
                       topology = 'geoid', pb = FALSE){
+  # Silence CRAN warnings
+  N=Rank=.I=d=..p=lon=lat=ell=theta=r_e=w_ratio=r=p1_lon=p1_lat=x0=y0=..segs=NULL
+  ..seg=V1=V2=dLon=LonTest=.N=SegID=Hemi_Init=.GRP=y=x=NULL
   spat <- c('SpatVector','SpatialPoints','SpatialPointsDataFrame')
   if (any(class(xy) %in% spat)){
     xy <- geom(vect(xy))
@@ -172,7 +176,7 @@ mwVoronoi <- function(xy, w, tolerance = 7, prec = 72, clip = NULL,
     
     # What's the initial hemisphere
     cells[SegID %in% lplus, Hemi_Init := lon/abs(lon)
-    ][, Hemi_Init := unique(na.omit(Hemi_Init)),by = 'Rank'
+    ][, Hemi_Init := unique(stats::na.omit(Hemi_Init)),by = 'Rank'
     ][is.na(Hemi_Init), Hemi_Init := first(lon)/abs(first(lon)),by = 'Rank']
     
     # Switch those signs
@@ -372,7 +376,7 @@ mwVoronoi <- function(xy, w, tolerance = 7, prec = 72, clip = NULL,
   obs_vect <- vect(obs, crs = '+proj=lonlat')
   
   # Crop extent if needed
-  if (class(clip) == 'logical'){
+  if (methods::is(clip, 'logical')){
     if (clip) shp <- crop(shp, ext(obs_vect))
   } else if (stringr::str_detect(class(clip),'^Spat')){
     shp <- terra::crop(shp, clip)
