@@ -169,7 +169,7 @@ energyCosts <- function(DT, method = 'kuo', m = NULL, BMR = NULL, g = 9.81,
     } else if (method == 'pontzer'){
       # Pontzer's cross-bridge method 
       DT[, dK_l := (8 * ..m^(-0.34) + 
-           100 * (1 + sin(2 * atan(dz/dl) - 74 * 3.14159/180)) * ..m^(-0.12)) * 
+           50 * (1 + sin(2 * atan(dz/dl) - 74 * 3.14159/180)) * ..m^(-0.12)) * 
            dl / ..l_s]
     }
     
