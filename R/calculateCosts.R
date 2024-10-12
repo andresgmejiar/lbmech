@@ -201,7 +201,7 @@ calculateCosts <- function(tiles = NULL, costFUN = energyCosts, dir = tempdir(),
             
             flowdir <- tryCatch(mask(flowdir,water), error =function(x) flowdir)
           } else if (waterHere == 2 & uv){
-            # If there's two layers and they're uv form, calculate distance and
+            # If there's two layers and they're uv form, calculate direction and
             # speed rasters
             
             

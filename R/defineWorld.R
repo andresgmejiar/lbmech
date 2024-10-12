@@ -197,7 +197,8 @@ defineWorld <- function(source, source_id = 'TILEID', z_min = NULL,
   dir <- normalizePath(paste0(dir,"/World"), mustWork = FALSE)
   subdirs <- c("/Raw","/Local","/Diff")
   if (overwrite != TRUE & dir.exists(dir)){
-    stop(paste(dir,"already exists. To overwrite, use 'overwrite=TRUE'. Carefuly ensure that this is the desired behavior."))
+    warning(paste(dir,"already exists, inputs ignored.\nTo overwrite, use 'overwrite=TRUE'. Carefuly ensure that this is the desired behavior."))
+    return()
   } else if (overwrite == TRUE & dir.exists(dir)){
     unlink(dir,recursive=TRUE)
   }
