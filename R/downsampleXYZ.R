@@ -80,8 +80,8 @@ downsampleXYZ <- function(data, t_step, t_cut = t_step * 10,
   # Any leg that belongs to a high-res track must be downsampled
   whichlegs <- legs[ID %in% upsamp, LegID]
   
-  # Add modified data to this blank data.table
-  newData <- data.table()
+  # Add modified data to this blank list
+  newData <- list()
   pb <- utils::txtProgressBar(min = 0 , max = max(whichlegs),style=3)
   i = 0
   
@@ -125,13 +125,15 @@ downsampleXYZ <- function(data, t_step, t_cut = t_step * 10,
           LegID = track
         )
       }
-      newData <- rbind(newData,points)
+      newData[[track]] <- points
     }, error = function(x) {
       1
     })
     i <- i + 1
     utils::setTxtProgressBar(pb,val = i)
   }
+  utils::setTxtProgressBar(pb,val = max(whichlegs))
+  newData <- rbindlist(newData)
   changed <- unique(newData$ID)
   return(
     if (is.null(z)){

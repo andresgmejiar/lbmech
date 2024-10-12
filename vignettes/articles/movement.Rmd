@@ -21,7 +21,7 @@ knitr::opts_chunk$set(
 options('digits' = 3)
 ```
 
-In this chapter, I introduce the `lbmech` package for R's cost distance tools, originally the core of the `lbmech` package's functionality. I derive cost functions for the movement of an arbitrary animal from first principles of energetics and mechanical physics---not from regressed functions of energetic expenditure with limited applicability across taxa and behavioral modes. This allows us to ensure that the cost model is generalizable, and allows us to separate out three independent types of energy expenditure involved in locomotive transport: (1) kinematic/mechanical work for moving things; (2) kinematic/mechanical work against gravity for lifting things; and (3) basal metabolic expenditure required to keep the animal alive. In the second section. Finally, I provide a brief example of the analytical framework using GPS, topographic, and ocean current data from the *Illes Balears* [@Clementi2021;@Farr2007;@Lera2017].
+In this chapter, I introduce the `lbmech` package for R's cost distance tools, originally the core of the `lbmech` package's functionality. I derive cost functions for the movement of an arbitrary animal from first principles of energetics and mechanical physics---not from regressed functions of energetic expenditure with limited applicability across taxa and behavioral modes. This allows us to ensure that the cost model is generalizable, and allows us to separate out three independent types of energy expenditure involved in locomotive transport: (1) kinematic/mechanical work for moving things; (2) kinematic/mechanical work against gravity for lifting things; and (3) basal metabolic expenditure required to keep the animal alive. In the second section. I provide a brief example of the analytical framework using GPS, topographic, and ocean current data from the *Illes Balears* [@Clementi2021;@Farr2007;@Lera2017].
 
 ## 1.1 Computational Considerations
 
@@ -125,25 +125,27 @@ The GPS dataset consists of 15,296 usable GPX tracks obtained from <https://wiki
 
 
 ```{r, message=FALSE,warning=FALSE,eval=FALSE}
+dir = tempdir()
 getData('baleares-gps', dir = dir)
-
 
 # Detect files with 'gpx' extension in working directory
 gpx <- list.files(dir, recursive = TRUE, full.names = TRUE, pattern = ".gpx$")
+name <- stringr::str_extract(gpx,'(?<=/)[A-Za-z0-9]+(?=.gpx)')
 
-# Import with lbmech::importGPX()
+# Import with lbmech::importGPX(), this will take a while
 gpx <- lapply(gpx,importGPX)
+names(gpx) <- name
 
 # Join into a single object
-gpx <- rbindlist(gpx)
+gpx <- rbindlist(gpx,idcol = TRUE)
 ```
 
-Since GPS tracks can be sampled at a per-length rate smaller than the size of even the smallest raster pixels we might employ, GPS tracks are downsampled to a comparable rate---about a pixel length per GPS sample. For an expected pixel size of 50 m and an approximate maximum speed of 1.5 m/s, `t_step = 50/1.5`. We can use the `lbmech::downsampleXYZ()` function for this:
+Since GPS tracks can be sampled at a per-length rate smaller than the size of even the smallest raster pixels we might employ, GPS tracks are downsampled to a comparable rate---about a pixel length per GPS sample. For an expected pixel size of 50 m and an approximate maximum speed of 1.5 m/s, `t_step = 50/1.5`. We can use the `lbmech::downsampleXYZ()` function for this, applying it on all GPS observations with an associated time stamp (filtering for `!is.na(t)`):
 
 ```{r, message=FALSE,warning=FALSE, eval = FALSE}
-gpx <- downsampleXYZ(gpx, t_step = 50/1.5,
+gpx <- downsampleXYZ(gpx[!is.na(t)], t_step = 50/1.5,
      t = 't', x = 'long', y = 'lat', z = 'z',
-     ID = 'TrackID')
+     ID = '.id')
 ```
 
 
@@ -158,11 +160,11 @@ The xyz data is then passed to `lbmech::getVelocity()`, which for each sequence 
 to get a function of the form Tobler, which returns a list with the nonlinear model, the model parameters, and the transformed data.
 
 ```{r, message=FALSE,warning=FALSE,fig.align='center'}
-velocity_gps <- getVelocity(data = gpx[y < 90], # Filter for y
-            degs = TRUE,        # Lat/Long; geodesic correction
-            tau_vmax = 0.95,    # Quantile for v_max
-            tau_nlrq = 0.50,    # Quantile for nlrq
-            v_lim = 3)          # Filter for dl/dt
+velocity_gps <- getVelocity(data = gpx[y < 90], # Filter for y,
+                            degs = TRUE,        # Lat/Long; geodesic correction
+                            tau_vmax = 0.95,    # Quantile for v_max
+                            tau_nlrq = 0.50,    # Quantile for nlrq
+                            v_lim = 3)          # Filter for dl/dt
 
 print(velocity_gps[1:(length(velocity_gps)-1)])
 ```
@@ -189,13 +191,12 @@ dir.create(rd)
 
 
 ```{r, eval=FALSE}
+# Projection will be UTM 31N WGS1984
+proj <- "EPSG:32631"
+
 # Import an ocean water surface velocity dataset
 currents <- project(getData('baleares-currents'),
     proj)
-
-
-# Projection will be UTM 31N WGS1984
-proj <- "EPSG:32631"
 
 # Define region of maximum possible movement
 region <- as.polygons(ext(currents),proj)
@@ -385,7 +386,7 @@ As with any raster operation, a consistent projection and grid needs to be defin
 ```{r, eval = TRUE}
 # Define the raster properties
 z_fix <- fix_z(proj = proj,
-res = 50)
+               res = 50)
 ```
 
 Although a `world` can be defined directly based on a digital elevation model, generally it is easier to define a polygon coincident with the coverage of a digital elevation model and an attribute pointing to a URL/filepath with the source. The `lbmech::makeGrid()` can make such a polygon for a raster or filepath input, while using a polygon will induce future functions to download SRTM data as-needed. Similar polygons are frequently distributed by state GIS agencies (e.g. [Pennsylvania](https://www.pasda.psu.edu/download/pamap/); [Massachusetts](https://www.mass.gov/info-details/massgis-data-lidar-terrain-data-index)):
@@ -399,7 +400,7 @@ grid <- makeGrid(dem = region,     # Input; here polygon for SRTM
  overlap = 0.05)   # Fraction overlap between adjacent tiles
 ```
 
-A `world` is formally defined as a directory containing all possible constraints on movement, fixed to a particular spatial projection. Given the very large areas and relatively-small spatial resolutions often employed, the data can rapidly become too large to compute all at once in the memory. the `defineWorld()` function divides the potential world of movement into individual, slightly-overlapping sectorss that are  calculated and read-in only as needed. It itself generally is not used to perform calculations.
+A `world` is formally defined as a directory containing all possible constraints on movement, fixed to a particular spatial projection. Given the very large areas and relatively-small spatial resolutions often employed, the data can rapidly become too large to compute all at once in the memory. the `defineWorld()` function divides the potential world of movement into individual, slightly-overlapping sectors that are  calculated and read-in only as needed. It itself generally is not used to perform calculations.
 
 ```{r, eval = FALSE}
 # Define world of motion within a workspace
