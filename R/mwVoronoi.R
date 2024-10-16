@@ -6,7 +6,8 @@
 #' corresponding to earth's radius. The circle is positioned such that (1) it 
 #' encompasses the point of interest and (2) the point immediately between \eqn{p} 
 #' and \eqn{q} lies at \eqn{\ell_{pq} \left(\frac{w_p}{w_p + w_q}\right)} units away 
-#' from \eqn{p} with \eqn{\ell_{pq}} being the distance between \eqn{p} and {q}
+#' from \eqn{p} with \eqn{\ell_{pq}} being the distance between \eqn{p} and {q}, and 
+#' (3) oriented with this point normal to the geodesic between \eqn{p} and {q}.
 #' 
 #' At present, only calculations on the Earth geoid
 #' according to WGS 1984 are supported using the \code{\link[geosphere]{geosphere}}

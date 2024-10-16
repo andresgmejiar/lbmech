@@ -25,6 +25,11 @@ reference:
   - regionMask
   - whichTiles
   - writeRST
+- title: Influence
+  - GreatCircleCircum
+  - makeWeights
+  - mwVoronoi
+  - normMDS
 - title: Inequality
   desc: Functions to measure spatial dispersion in datasets. 
 - contents: 
@@ -34,7 +39,6 @@ reference:
   - incrementalPlot
   - inferLID
   - LID
-  - makeWeights
   - scatterLID
 - title: Productivity
   desc: Functions to interpolate agricultural productivity data across space

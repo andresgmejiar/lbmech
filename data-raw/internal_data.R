@@ -35,6 +35,8 @@ baleares.places <- data.table::fread("data-raw/baleares_places.csv")
 # system(command, intern = TRUE)
 
 baleares.currents <- terra::rast("data-raw/Ocean_Currents.nc")
+baleares.currents <- terra::shift(baleares.currents, 
+                                  dy = -res(baleares.currents)[2]*1.25)
 baleares.currents <- writeRST(baleares.currents,object=TRUE)
 
 ### Export objects

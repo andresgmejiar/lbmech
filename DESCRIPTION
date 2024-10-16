@@ -33,7 +33,8 @@ Imports:
         parallel,
         zoo,
         extrafont,
-        grDevices
+        grDevices,
+        MASS
 Depends:
     terra,
     data.table,

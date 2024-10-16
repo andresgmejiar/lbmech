@@ -241,7 +241,7 @@ getCosts <- function(region, from, to = NULL, id = 'ID', dir = tempdir(),
     from[[y]] <- as.data.table(geom(from))[,y]
   }
   
-  # Coerce to data,.table
+  # Coerce to data.table
   from <- as.data.table(from)[,.(ID = get(..id), x = get(..x), y = get(..y))]
   from$Cell <- getCoords(from, z_fix = z_fix, precision = precision)
   if ('file' %in% output){
@@ -327,12 +327,18 @@ getCosts <- function(region, from, to = NULL, id = 'ID', dir = tempdir(),
                     w)
     rm(w)
   }
-  
+
   
   # If direction is set to both, we'll need to create a "to"
   # and "from" category
   if (all(direction == "both")){
     direction <- c("in","out")
+  }
+  
+  # If destination is 'pairs', we only want 'out' since that will be the path
+  # from 'from' to 'to'. 
+  if (destination == 'pairs') {
+    direction <- 'out'
   }
   
   # Create a list object to which we'll append either the matrices or
@@ -389,8 +395,11 @@ getCosts <- function(region, from, to = NULL, id = 'ID', dir = tempdir(),
                            on="Cell",allow.cartesian=TRUE)[, Cell := NULL][]
         
         # Convert to distance matrix with xtabs,
-        # Add to the output list
-        outList[[paste0(cost,"_",d)]] <- stats::xtabs(value~.,Distances)
+        # Add to the output list. Name depends on whether it's a matrix or 
+        # a cost raster
+        outname <- cost
+        if (destination != 'pairs') outname <- paste0(cost,'_',d)
+        outList[[outname]] <- stats::xtabs(value~.,Distances)
         
       }
       

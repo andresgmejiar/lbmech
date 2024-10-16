@@ -1,5 +1,5 @@
 ---
-title: "Raw Cost Analysis Code"
+title: "1. Movement and Influence Models"
 author: "Andres G. Mejia Ramon"
 bibliography: "D:/lbmech/Package/lbmech/inst/REFERENCES.bib"
 date: "June 6, 2023"
@@ -119,9 +119,9 @@ One final consideration that to date no other least-cost toolkit rigorously asse
 ```
 where $\vec{v}_\textrm{travel}(x,y) = v_\textrm{travel} \hat{\ell}$ is the travel speed of the method of travel (such as swimming or rowing a boat) over still water, and $\hat{\ell}$ the intended direction of travel. If $\vec{v} < 0$, then travel in that direction is impossible. For the purposes of simplicity, we assume that the caloric cost is proportional to $v_\textrm{travel}^2$.
 
-## 1.3 Estimating Velocity from GPS Data
+## 1.3 Estimating Velocity
 
-The GPS dataset consists of 15,296 usable GPX tracks obtained from <https://wikiloc.com>, and was first described by @Lera2017 who used it to identify seasonal variability in hiking trail activity and network organization. Given a directory with `.gpx` files, the tracks can be imported as a data.table using `lbmech::importGPX()`:
+The GPS dataset consists of 15,370 usable GPX tracks obtained from <https://wikiloc.com>, and was first described by @Lera2017 who used it to identify seasonal variability in hiking trail activity and network organization. Given a directory with `.gpx` files, the tracks can be imported as a data.table using `lbmech::importGPX()`:
 
 
 ```{r, message=FALSE,warning=FALSE,eval=FALSE}
@@ -224,8 +224,23 @@ proj <- "EPSG:32631"
 
 # Import Ocean current data
 currents <- rast(paste0(rd,"/Ocean_Currents.nc"))
-currents[is.na(currents)] <- 0       # No data == no velocity
 currents <- project(currents,proj)
+
+currentU_vals <- values(currents[[1]])
+currentV_vals <- values(currents[[2]])
+
+i <- !is.na(currentU_vals)
+coords <- as.data.table(xyFromCell(currents, 1:ncell(currents)))
+coords <- coords[as.logical(i)]
+
+currentU_vals <- currentU_vals[as.logical(i)]
+currentV_vals <- currentV_vals[as.logical(i)]
+
+tpsU <- fields::Tps(coords, currentU_vals)
+tpsV <- fields::Tps(coords, currentV_vals)
+
+currents[[1]] <- terra::interpolate(rast(currents[[1]]),tpsU)
+currents[[2]] <- terra::interpolate(rast(currents[[2]]),tpsV)
 
 # Define region of maximum possible movement
 region <- as.polygons(ext(currents),proj)
@@ -308,11 +323,17 @@ field <- as.data.table(rastToTable(field))
 names(field)[1:2] <- c("u","v")
 field <- na.omit(field)
 
+dem[dem == 0] <- NA
+hill[is.na(dem)] <- NA
+
 topo <- ggplot() +
-geom_spatraster(data= dem) +
+geom_quiver(field, mapping = aes(x=x,y=y,u=u,v=v),center=TRUE, linewidth = 0.75,
+col = 'lightblue', inherit.aes=FALSE) +
+geom_spatraster(data= dem, na.value = NULL) +
 scale_fill_gradientn(" \nElevació\n(m)",
-       colours = hypso.colors(15,'dem_poster'), na.value='#005EB8',
-       limits = c(0,unlist(global(dem,'max',na.rm=TRUE)))) +
+       colours = hypso.colors(15,'dem_poster'),
+       limits = c(0,unlist(global(dem,'max',na.rm=TRUE))),
+       na.value = "transparent") +
 theme_bw() +
 theme(legend.position = "top",
 legend.text = element_text(angle = 45, size = 15),
@@ -320,20 +341,19 @@ legend.title = element_text(size=20),
 strip.text = element_blank(),
 strip.background =element_rect(fill=NA,linewidth=NA),
 panel.grid.major = element_blank(),
-panel.grid.minor = element_blank()
+panel.grid.minor = element_blank(),
+panel.background = element_rect(fill = '#005EB8')
 ) +
 guides(fill = guide_colorbar(barwidth = 60, barheight = 1.5, alpha = 0.7,
                label.position = "top",
                override.aes = list(alpha = 0.7))) +
 geom_spatraster(data = hill, fill = pal_greys[as.matrix(hill)],
   alpha=0.4,
-  maxcell = Inf) +
+  maxcell = Inf, na.value = NULL) +
 geom_spatvector(data = muns, fill=NA,
   size=1,col = '#EEEEEE') +
 geom_spatvector(data = islands,
   linewidth = 2.5, col = '#454545',fill=NA) +
-geom_quiver(field, mapping = aes(x=x,y=y,u=u,v=v),center=TRUE, linewidth = 0.75,
-col = 'lightblue', inherit.aes=FALSE) +
 geom_spatvector(data = pobles, color = 'red', size = 5) +
 ggrepel::geom_label_repel(data = pobles, mapping = aes(x = geom(pobles)[,'x'],
                                          y = geom(pobles)[,'y'],
@@ -380,7 +400,7 @@ gg
 ```
 
 
-### 1.4.2 `lbmech` Least-Cost Workflow
+### 1.4.2 Defining a 'world'
 As with any raster operation, a consistent projection and grid needs to be defined to snap/fix all sources. However, unlike most raster packages `lbmech` does not require foreknowledge of the spatial extents; only the resolution and offsets. A raster can be provided, or one can be made with the `lbmech::fix_z()` function:
 
 ```{r, eval = TRUE}
@@ -400,16 +420,24 @@ grid <- makeGrid(dem = region,     # Input; here polygon for SRTM
  overlap = 0.05)   # Fraction overlap between adjacent tiles
 ```
 
-A `world` is formally defined as a directory containing all possible constraints on movement, fixed to a particular spatial projection. Given the very large areas and relatively-small spatial resolutions often employed, the data can rapidly become too large to compute all at once in the memory. the `defineWorld()` function divides the potential world of movement into individual, slightly-overlapping sectors that are  calculated and read-in only as needed. It itself generally is not used to perform calculations.
+A `world` is formally defined as a directory containing all possible constraints on movement, fixed to a particular spatial projection. Given the very large areas and relatively-small spatial resolutions often employed, the data can rapidly become too large to compute all at once in the memory. The `defineWorld()` function divides the potential world of movement into individual, slightly-overlapping sectors that are  calculated and read-in only as needed. It itself generally is not used to perform calculations.
 
 ```{r, eval = FALSE}
+# Resample currents so they're at a more realistic resolution
+currents_high <- project(currents,
+                    disagg(currents, ceiling(res(currents)/50)),
+                    method = 'cubicspline')
+
+
+
+
 # Define world of motion within a workspace
 defineWorld(source = grid,            # Elevation source, like makeGrid() output
 grid = grid,              # How to divide up the world
 directions = 8,           # How adjacency between cells are defined
 neighbor_distance = 10,   # Overlap between tiles in addition to ^
 cut_slope = 0.5,          # Maximum traversible slope
-water = currents,         # Water velocity source
+water = currents_high,         # Water velocity source
 priority = 'land',        # If data for land or water, who wins
 z_min = 0,                # Minimum elevation, below NA in land
 z_fix = z_fix,            # Grid with defined projection, resolution
@@ -417,6 +445,8 @@ dist = 'karney',          # Geodesic correction method
 dir = rd,                 # Working directory
 overwrite=FALSE)
 ```
+
+### 1.4.3 Estmiating Costs
 
 Once a world has been defined, a cost function can be applied using the `lbmech::calculateCosts()` function. The `lbmech::energyCosts()` function is provided to perform least-time, least-work, and least-energy analyses as in the above sections of this manuscript. As with `lbmech::defineWorld()`, it itself is not generally used to perform calculations---just to define the values.
 
@@ -429,7 +459,7 @@ v_max = velocity_gps$vmax,   # Max walking speed (m/s)
 k = velocity_gps$k,          # Slope sensitivity (dimensionless)
 s = velocity_gps$s,          # Slope of fastest motion (dimlss.)
 row_speed = 1.8,             # Speed over water (m/s)
-row_work = 581,              # work over water (J/s)
+row_work = 581,              # Work over water (J/s)
 m = 68,                      # Mass (kg)
 BMR = 72,                    # Basal metabolic rate (J/s)
 l_s = 1.8,                   # Stride length (m)
@@ -440,7 +470,7 @@ For a given (set of) cost function(s) and origin(s)/destination(s), `getCosts()`
 
 ```{r, eval = FALSE}
 # Import locations on Mallorca, Menorca, and Cabrera
-pobles <- getData("baleares-places")
+pobles <- project(getData("baleares-places"), region)
 reg <- as.polygons(ext(buffer(pobles, 10000)),crs = crs(proj))
 
 costs <- getCosts(region = reg,              # Area of maximum movement
@@ -451,6 +481,9 @@ id = 'Location',           # Column with origin names
 dir = rd,                  # Directory with world
 destination = 'all')       # Distance to all points in region
 ```
+
+### 1.4.4 Paths and Corridors
+
 Likewise, least-cost paths can be computed given a set of nodes:
 
 ```{r, eval=FALSE}
@@ -516,7 +549,7 @@ aspect <- terrain(dem,v='aspect',unit='radians')
 hill <- shade(slope,aspect)
 names(hill) <- "shades"
 
-# Get a pallete of greys for hillshading
+# Get a pallette of greys for hillshading
 pal_greys <- hcl.colors(1000, "Grays")
 
 # Round the hillshade values to the nearest factor
@@ -755,6 +788,131 @@ Corridors describe the minimum cost required to take a detour to a given locatio
 corr <- makeCorridor(rasters = costs,
      order = rev(c("Castell de Cabrera","Sa Calobra","Maó")))
 ```
+
+```{r, echo=FALSE,warning=FALSE,message=FALSE, fig.height=12, fig.width=8.5, fig.align='center}
+ggtime_corr <- ggplot(islands) +
+geom_spatraster(data = corr[[1]]/3600) +
+scale_fill_viridis_c(expression("(hrs)"),
+       option='magma',direction = -1,
+       limits = rowMeans(minmax(corr[[1]]))/3600) +
+geom_spatraster(data = hill, fill = pal_greys[as.matrix(hill)],
+  alpha=0.4, maxcell = Inf) +
+geom_quiver(field, mapping = aes(x=x,y=y,u=u,v=v),center=TRUE,
+col = 'white', inherit.aes=FALSE) +
+geom_spatvector(
+linewidth = 1.25, col = '#000000',fill=NA) +
+geom_spatraster_contour(data = corr[[1]]/3600,binwidth = 0.5) +
+geom_spatvector(data = pobles,
+  size = 3, color = 'red') +
+theme_bw() +
+theme(legend.position = "none",
+legend.text = element_text(angle = 45, size = 10),
+legend.title = element_text(size=12, hjust=0),
+strip.text.x = element_blank(),
+axis.title.y = element_blank(),
+strip.background =element_rect(fill=NA,linewidth=NA),
+panel.grid.major = element_blank(),
+panel.grid.minor = element_blank()
+) + ylab("") +
+xlab(expression(paste("Temps de desviació — ",italic("Time of detour")))) +
+scale_x_continuous(position = 'top', expand=c(0,0)) +
+scale_y_continuous(position = 'right', expand=c(0,0))
+
+ggwork_corr <- ggplot(islands) +
+geom_spatraster(data = corr[[2]]/4.184/1000) +
+scale_fill_viridis_c(expression("(kcal)"),
+       option='magma',direction = -1,
+       limits = rowMeans(minmax(corr[[2]]/4.184/1000))) +
+geom_spatraster(data = hill, fill = pal_greys[as.matrix(hill)],
+  alpha=0.4, maxcell = Inf) +
+geom_quiver(field, mapping = aes(x=x,y=y,u=u,v=v),center=TRUE,
+col = 'white', inherit.aes=FALSE) +
+geom_spatvector(
+linewidth = 1.25, col = '#000000',fill=NA) +
+geom_spatraster_contour(data = corr[[2]]/4.184/1000,binwidth = 500) +
+geom_spatvector(data = pobles,
+  size = 3, color = 'red') +
+theme_bw() +
+theme(legend.position = "none",
+legend.text = element_text(angle = 45, size = 10),
+legend.title = element_text(size=12, hjust=0),
+strip.text.x = element_blank(),
+axis.title.y = element_blank(),
+strip.background =element_rect(fill=NA,linewidth=NA),
+panel.grid.major = element_blank(),
+panel.grid.minor = element_blank()
+) + ylab("") +
+xlab(expression(paste("Treball de desviació — ",italic("Work of detour")))) +
+scale_x_continuous(position = 'top', expand=c(0,0)) +
+scale_y_continuous(position = 'right', expand=c(0,0))
+
+ggenergy_corr <- ggplot(islands) +
+geom_spatraster(data = corr[[3]]/4.184/1000) +
+scale_fill_viridis_c(expression("(kcal)"),
+       option='magma',direction = -1,
+       limits = rowMeans(minmax(corr[[3]]/4.184/1000))) +
+geom_spatraster(data = hill, fill = pal_greys[as.matrix(hill)],
+  alpha=0.4, maxcell = Inf) +
+geom_quiver(field, mapping = aes(x=x,y=y,u=u,v=v),center=TRUE,
+col = 'white', inherit.aes=FALSE) +
+geom_spatvector(
+linewidth = 1.25, col = '#000000',fill=NA) +
+geom_spatraster_contour(data = corr[[3]]/4.184/1000,binwidth = 1000) +
+geom_spatvector(data = pobles,
+  size = 3, color = 'red') +
+theme_bw() +
+theme(legend.position = "none",
+legend.text = element_text(angle = 45, size = 10),
+legend.title = element_text(size=12, hjust=0),
+strip.text.x = element_blank(),
+axis.title.y = element_blank(),
+strip.background =element_rect(fill=NA,linewidth=NA),
+panel.grid.major = element_blank(),
+panel.grid.minor = element_blank()
+) + ylab("") +
+xlab(expression(paste("Energia de desviació — ",italic("Work of detour")))) +
+scale_x_continuous(position = 'top', expand=c(0,0)) +
+scale_y_continuous(position = 'right', expand=c(0,0))
+
+cowplot::plot_grid(ggtime_corr, ggwork_corr, ggenergy_corr,
+                   ncol = 1)
+
+
+```
+## 1.5 Influence
+
+Various measures of distance in different topologies are often taken to be measures of influence. In other words, nearer things are more likely to influence an observation than farther things. `LBMech` provides tools to represent these relationships as various types of neighbor weights (for influence between observations) and Voronoi polygons (for the relative influence of observations everywhere else in space).
+
+### 1.5.1 Neighbor Weights
+
+Distance matrices can be obtained from the `getCosts()` function by setting the `destination` parameter to `'pairs'`:
+
+```{r}
+
+dists <- getCosts(region = reg,              # Area of maximum movement
+from = pobles,             # Origins
+costname = 'energyCosts',  # Name of costFUN above
+costFUN = energyCosts,
+id = 'Location',           # Column with origin names
+dir = rd,                  # Directory with world
+destination = 'pairs')       # Distance to all points in region
+
+```
+
+We can try and visually compare the different topologies using the `normMDS()` function, which performs a multidimensional scaling on each distance matrix and rescales/orients them so they are in units of and directionally relative to a common path:
+
+```{r}
+
+
+
+```
+
+
+
+
+
+
+### 1.5.2 Voronoi Polygons
 
 
 ## References

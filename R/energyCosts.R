@@ -48,16 +48,17 @@
 #'  mechanics of terrestrial locomotion. III. Energy changes of the centre of
 #'  mass as a function of speed and body size in birds and mammals." 
 #'  \emph{Journal of Experimental Biology} 97(1):41-56. 
-#'  \doi{10.1242/jeb.97.1.41}.
+#'  \doi{10.1242/jeb.97.1.41}. \cr \cr
 #'  
 #'  Kuo, Arthur D. (2007). "The six determinants of gait and the inverted 
 #'  pendulum analogy: A dynamic walking perspective." \emph{Human Movement Science}
 #'  26(4):617-656. 
-#'  \doi{10.1016/j.humov.2007.04.003}.
+#'  \doi{10.1016/j.humov.2007.04.003}. \cr \cr
 #'  
-#'  Pontzer, Herman (2016). "A unified theory for the energy cost of legged locomotion"
-#'  \emph{Biology Letters} 12(2):20150935.
-#'  \doi{10.1098/rsbl.2015.0935}
+#'  Pontzer, Herman (2023). "Correction: 'A unified theory for the energy cost of 
+#'  legged locomotion' (2016), by Pontzer"
+#'  \emph{Biology Letters} 19(12): 20230492.
+#'  \doi{10.1098/rsbl.2023.0492}
 #'  }
 #' @return For \code{timeCosts}, A data.table object with two columns:
 #'
