@@ -34,9 +34,10 @@
 #' @param def.neigh Numeric. At what distance (in the map units) are observations definitely neighbors?
 #' All distances are subtracted by this value, and all resulting distances less than zero are reassigned
 #' to \code{minval}.
-#' @param row.stand Logical or \code{'fuzzy'}. If \code{TRUE} (the default), rows are standardized such 
+#' @param row.stand Logical or \code{'fuzzy'}. If \code{TRUE}, rows are standardized such 
 #' that they sum to one. If \code{'fuzzy'}, rows are standardized as a proportion of the 
 #' largest value. If \code{x} is a vector, \code{row.stand} must be logical. 
+#' Default is \code{row.stand = FALSE}
 #' @param clear.mem Logical. Should \code{\link[base]{gc}} be run in the middle of the 
 #' calculation? Default is \code{clear.mem == FALSE} but set as \code{TRUE} if 
 #' memory limits are a concern. Ignored if \code{x} is a vector.
@@ -121,6 +122,7 @@ makeWeights <- function(x, ID = NULL, bw = NULL,
     if (is.null(FUN)){
       FUN <- function(x) 1/(offset + x)
     }
+    ID <- colnames(x)
     
     # Coerce inputs to matrix
     x <- as.matrix(x)
@@ -190,6 +192,8 @@ makeWeights <- function(x, ID = NULL, bw = NULL,
         # of the maximum
         x[is.na(x)] <- 0
         x <- t(apply(x,1,scales::rescale,to=c(0,1)))
+        colnames(x) <- ID
+        rownames(x) <- ID
       }
     }
     x[is.na(x)] <- 0

@@ -903,14 +903,121 @@ We can try and visually compare the different topologies using the `normMDS()` f
 
 ```{r}
 
+uv <- normMDS(dists, xy = pobles, id = 'Location',
+              ax = c('Palma de Mallorca','Inca'), chir = 'Sa Calobra')
+
+
+```
+```{r, fig.height = 6, fig.width = 9}
+
+colors <- c(ref = 'black', dt = 'blue', dW_t = 'darkgreen', dE_t = 'darkred')
+
+uvplot <- rbindlist(uv, idcol = TRUE)
+
+
+axplot <- uvplot[Location %in% ax & .id == 'ref']
+uvplot[Location %in% ax & .id != 'ref', Location := '']
+
+ggplot(data = uvplot, mapping = aes(x = u, y = v, label = Location, color = .id)) + 
+  scale_color_manual('Distance', values = colors) + 
+  geom_point() + 
+  ggrepel::geom_text_repel(size = 2.5) + 
+  geom_point(data = axplot, mapping = aes(x = u, y = v), 
+             color = 'black', fill = 'yellow', shape = 23, size = 2.5) + 
+  ggtitle('Different implied 2D topologies based on different costs',
+          subtitle = 'MDS output aligned and scaled such that\nthe paths between Palma and Inca are equivalent') + 
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5)) +
+  coord_equal()
+  
+
+```
+
+`lbmech` provides `makeWeights` which can convert any distance matrix (geographic, or cost distance-based) into various types of spatial weights matrices. At present, it supports:
+
+* Cutoff distances and distance-decay formulas for determining group membership
+* Any arbitrary distance-decay formula
+* Rank-distance in lieu of raw distance
+* Tools to deal with singularities arising from distance-decay
+* Row standardization (where all rows sum to one) 
+* Fuzzy row standardization (where entries are a proportion of the largest value of a row)
+* Binary weights matrices depending on group membership if provided only a vector of group IDs
+
+```{r}
+
+weights <- list()
+# The three nearest neighbors time-wise are definitely neighbors to an observation
+weights[[1]] <- makeWeights(dists$dt, bw = 3)
+
+# All observations within 20 MJ of work are neighbors, with row-standardized weights 
+# based on inverse distance, assuming self-weights are equivalent to 20 MJ
+weights[[2]] <- makeWeights(dists$dW_t, bw = 2e7, offset = 2e7,
+                  mode = 'fixed', 
+                  weighting = 'distance',
+                  row.stand = TRUE)
+
+# All observations might be neighbors. The weights represent the probability that they're neighbors.
+# The probability is based on the inverse distance square of the rank of the energy distance
+weights[[3]] <- makeWeights(dists$dE_t, 
+                  weighting = 'rank',
+                  FUN = function(x) 1/x^2,
+                  row.stand = 'fuzzy')
+
+# Neighbors are those locations on the same island
+weights[[4]] <- makeWeights(pobles$Island, ID = pobles$Location)
 
 
 ```
 
+```{r, fig.height=7.5, fig.width = 9.5} 
+library(ggraph)
+
+set.seed(43884)
+w <- as.matrix(weights[[1]])
+w <- igraph::graph_from_adjacency_matrix(w, mode = 'directed', weighted = TRUE)
+w <- igraph::set_vertex_attr(w, 'name',value = names(igraph::V(w)))
+
+ggw1 <- ggraph(w, algorithm = 'graphopt', 'igraph') +
+  geom_point(aes(x = x, y = y)) + 
+  geom_edge_link0() + 
+  ggrepel::geom_label_repel(aes(x = x, y = y, label = name), size = 3) 
 
 
+w <- as.matrix(weights[[2]])
+
+w <- igraph::graph_from_adjacency_matrix(w, mode = 'directed', weighted = TRUE)
+w <- igraph::set_vertex_attr(w, 'name',value = names(igraph::V(w)))
 
 
+ggw2 <- ggraph(w, algorithm = 'kk', 'igraph') +
+  geom_point(aes(x = x, y = y)) + 
+  geom_edge_link0() + 
+  ggrepel::geom_label_repel(aes(x = x, y = y, label = name), size = 3) 
+
+w <- as.matrix(weights[[3]])
+
+w <- igraph::graph_from_adjacency_matrix(w, mode = 'directed', weighted = TRUE)
+w <- igraph::set_vertex_attr(w, 'name',value = names(igraph::V(w)))
+
+ggw3 <- ggraph(w, algorithm = 'gem', 'igraph') +
+  geom_point(aes(x = x, y = y)) + 
+  geom_edge_link0(edge_alpha = igraph::as_data_frame(w)$weight) + 
+  ggrepel::geom_label_repel(aes(x = x, y = y, label = name), size = 3)
+
+w <- as.matrix(weights[[4]])
+
+w <- igraph::graph_from_adjacency_matrix(w, mode = 'directed', weighted = TRUE)
+w <- igraph::set_vertex_attr(w, 'name',value = names(igraph::V(w)))
+
+ggw4 <- ggraph(w, algorithm = 'gem', 'igraph') +
+  geom_point(aes(x = x, y = y)) + 
+  geom_edge_link0() + 
+  ggrepel::geom_label_repel(aes(x = x, y = y, label = name), size = 3)
+
+
+cowplot::plot_grid(ggw1,ggw2,ggw3,ggw4,ncol=2)
+```
+Note that in the top-left subplot, only edges that exist in both directions are plotted. 
 
 ### 1.5.2 Voronoi Polygons
 

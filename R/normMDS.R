@@ -87,7 +87,7 @@ normMDS <- function(dists, xy = NULL, id = 'ID', ax = 1:2, chir = 3,
     iternames <- iternames[2:length(iternames)]
   } else if (is(xy, 'SpatialPointsDataFrame') | is(xy,'SpatVector')){
     # If a spatial object is provided, coerce to data.table
-    xy <- vect(x)
+    if (!is(xy,'SpatVector')) xy <- vect(xy)
     if (geomtype(xy) != 'points') stop("'xy' can only be point locations.")
     
     xy <- data.table('id' = xy[[id]], geom(xy))
@@ -180,7 +180,6 @@ normMDS <- function(dists, xy = NULL, id = 'ID', ax = 1:2, chir = 3,
                v = v / ..S)]
     
     # We need to check for chirality. 
-    
     if (q[2]$v == 0){
       # If the chosen axis is a vertical line see if the chiral reference point is 
       # on the same side of the reference axis.

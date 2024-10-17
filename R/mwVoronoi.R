@@ -30,8 +30,12 @@
 #' input points, while passing an object with a SpatExtent will crop them by such
 #' an extent. 
 #' @param topology One of \code{'geoid'}, \code{'spherical'}, or \code{'planar'},
-#' corresponding to the underlying topology. At present, only \code{'geoid'} is 
-#' supported assuming the WGS 1984 geoid. 
+#' corresponding to the underlying topology. At present, \code{'planar'}
+#' is not supported. . Ignored if \code{topology} is
+#' not \code{'geoid'}.
+#' @param a Equatorial radius. Default is for WGS84. Ignored if \code{topology} is
+#' not \code{'geoid'}.
+#' @param f Ellipsoidal flattening. Default is for WGS84
 #' @param pb Logical. Should a progress bar be displayed? 
 #' Default is \code{pb = FALSE}
 #' @importFrom terra vect
@@ -65,7 +69,8 @@
 #' mwv <- mwVoronoi(obs[,1:2], w = obs$N)
 #' @export
 mwVoronoi <- function(xy, w, tolerance = 7, prec = 72, clip = NULL,
-                      topology = 'geoid', pb = FALSE){
+                      topology = 'geoid', a = 6378137, 
+                      f = 1/298.257223563, pb = FALSE){
   # Silence CRAN warnings
   N=Rank=.I=d=..p=lon=lat=ell=theta=r_e=w_ratio=r=p1_lon=p1_lat=x0=y0=..segs=NULL
   ..seg=V1=V2=dLon=LonTest=.N=SegID=Hemi_Init=.GRP=y=x=NULL
@@ -74,6 +79,10 @@ mwVoronoi <- function(xy, w, tolerance = 7, prec = 72, clip = NULL,
     xy <- geom(vect(xy))
   }
   
+  if (topology == 'sphere'){
+    f <- 0
+    topology <- 'geoid'
+  }
   # Start by ordering them based on weight
   obs <- as.data.table(xy)
   obs$N <- w
@@ -97,25 +106,27 @@ mwVoronoi <- function(xy, w, tolerance = 7, prec = 72, clip = NULL,
     cells <- obs[Rank > i]
     
     # Find the distance between lowest-ranking point and those above it
-    cells[,d := geosphere::distGeo(..p,data.table(lon,lat))]
+    cells[,d := geosphere::distGeo(..p,data.table(lon,lat), a = a, f = f)]
     
     # Distance to Point 1 is the distance between p and q times the weights ratio
     cells[,ell := d * ..p$N / (N + ..p$N)]
     
     # Get the initial bearings between the points
-    cells[,theta := geosphere::bearing(..p, data.table(lon,lat))]
+    cells[,theta := geosphere::bearing(..p, data.table(lon,lat), a = a, f = f)]
     
     # And now find the location of Point 1
     nms <- c('p1_lon','p1_lat')
     cells[, (nms) := as.data.table(geosphere::destPoint(..p, 
                                                         b = theta, 
-                                                        d = ell))]
+                                                        d = ell,
+                                                        a = a, f = f))]
     
     # When weights are equal, radius of pairwise voronoi is equal to one-fourth
     # earth's circumference. Linear decay to zero when one's weight equals zero
     # Start by finding the radius of the ellipsoid along the axis defined by the 
     # Great Circle connecting the two points
-    cells[, r_e := GreatCircleCircum(p[1],p[2], theta[1], n = prec) / 4,
+    cells[, r_e := GreatCircleCircum(p[1],p[2], theta[1], n = prec,
+                                     a = a, f = f) / 4,
           by = 'Rank']
     cells[, w_ratio := ..p$N /(..p$N + N)
     ][, r := r_e * w_ratio]
@@ -124,7 +135,7 @@ mwVoronoi <- function(xy, w, tolerance = 7, prec = 72, clip = NULL,
     cells[, (c('x0','y0')) := as.data.table(
       geosphere::destPoint(data.table(p1_lon, p1_lat),
                 b = geosphere::bearing(data.table(p1_lon, p1_lat),
-                            ..p),
+                            ..p, a = a, f = f),
                 d = abs(r))),
       by = 'Rank']
     
@@ -140,7 +151,10 @@ mwVoronoi <- function(xy, w, tolerance = 7, prec = 72, clip = NULL,
       cells[, (snames) := as.data.table(geosphere::destPoint(
         data.table(x0,y0),
         b = ..segs[..seg],
-        d = w_ratio  * GreatCircleCircum(x0,y0,b = ..segs[..seg], n = prec) / 4
+        d = w_ratio  * GreatCircleCircum(x0,y0,b = ..segs[..seg], n = prec,
+                                         a = a, f = f) / 4,
+        a = ..a,
+        f = ..f
       )), by = 'Rank']
     }
     
