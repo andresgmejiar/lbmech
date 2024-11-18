@@ -9,14 +9,11 @@
 #' from \eqn{p} with \eqn{\ell_{pq}} being the distance between \eqn{p} and {q}, and 
 #' (3) oriented with this point normal to the geodesic between \eqn{p} and {q}.
 #' 
-#' At present, only calculations on the Earth geoid
-#' according to WGS 1984 are supported using the \code{\link[geosphere]{geosphere}}
-#' package.
-#' 
 #' @title Multiplicatively-weighted Voronoi Polygons
-#' @param xy Something coercible to a SpatVect points object, with xy units in
-#' lonlat and at least two observations. 
-#' The point locations of interest. In the future lines and polygons will be 
+#' @param xy Something coercible to a SpatVect points object and with at least 
+#' two observations. The point locations of interest. Units must be degrees longitude for 
+#' \code{x} and degrees latitude for \code{y} when \code{topology} is either 
+#' \code{'geoid'} or \code{'sphere'}.  In the future lines and polygons will be 
 #' supported
 #' @param w A vector of equal length to xy. The weights corresponding to each 
 #' point
@@ -34,8 +31,7 @@
 #' input points, while passing an object with a SpatExtent will crop them by such
 #' an extent. 
 #' @param topology One of \code{'geoid'}, \code{'spherical'}, or \code{'planar'},
-#' corresponding to the underlying topology. At present, \code{'planar'}
-#' is not supported. . Ignored if \code{topology} is
+#' corresponding to the underlying topology. Ignored if \code{topology} is
 #' not \code{'geoid'}.
 #' @param a Equatorial radius. Default is for WGS84. Ignored if \code{topology} is
 #' not \code{'geoid'}.
@@ -73,15 +69,17 @@
 #' mwv <- mwVoronoi(obs[,1:2], w = obs$N)
 #' @export
 mwVoronoi <- function(xy, w, tolerance = 7, prec = 72, clip = NULL,
-                      x = 'lat', y = 'lon',
+                      x = 'lon', y = 'lat',
                       topology = 'geoid', a = 6378137, 
                       f = 1/298.257223563, pb = FALSE){
   # Silence CRAN warnings
   N=Rank=.I=d=..p=lon=lat=ell=theta=r_e=w_ratio=r=p1_lon=p1_lat=x0=y0=..segs=NULL
-  ..seg=V1=V2=dLon=LonTest=.N=SegID=Hemi_Init=.GRP=y=x=NULL
+  ..seg=V1=V2=dLon=LonTest=.N=SegID=Hemi_Init=.GRP=NULL
+  ..x=..y=ell1=ell2=x_c=y_c=b=m=finite_m=y_left=y_right=x_bottom=x_top=points=NULL
+  valid_x_vert=x_vert=plon=plat=..a=..f=pN=NULL
   spat <- c('SpatVector','SpatialPoints','SpatialPointsDataFrame')
   if (any(class(xy) %in% spat)){
-    if (!is(xy,'SpatVector')) xy <- vect(xy)
+    if (!methods::is(xy,'SpatVector')) xy <- vect(xy)
     proj <- crs(xy)
     xy <- geom(xy)
     x <- colnames(xy)[3]
@@ -89,7 +87,7 @@ mwVoronoi <- function(xy, w, tolerance = 7, prec = 72, clip = NULL,
   } else {
     proj <- ''
   }
-  
+
   if (topology == 'sphere'){
     f <- 0
     topology <- 'geoid'
@@ -108,10 +106,9 @@ mwVoronoi <- function(xy, w, tolerance = 7, prec = 72, clip = NULL,
   iter = 0
   
   if (pb) pb1 <- txtProgressBar(min = 0, max = (nrow(obs)^2 / 2 - 1), style = 3)
-  
-  
+
   if (topology == 'planar'){
-    obs_vect <- vect(obs[,.(x,y)],
+    obs_vect <- vect(obs[,.(x = get(..x),y = get(..y))],
                      geom = c('x','y'),
                      crs = proj)
     if (stringr::str_detect(class(clip),'^Spat')){
@@ -131,7 +128,7 @@ mwVoronoi <- function(xy, w, tolerance = 7, prec = 72, clip = NULL,
       cells <- obs[Rank > i & N != p$N, .(x = get(..x), y = get(..y), N)]  
       
       # Find distance between lowest-ranking point and those above it
-      cells[, d := sqrt((p$x - x)^2 + (p$y - y)^2)]
+      cells[, d := sqrt((..p$x - x)^2 + (..p$y - y)^2)]
       
       # Distance to Point 1 is the distance between p and q times the weights ratio
       cells[, ell1 := d * ..p$N / (N + ..p$N)]
@@ -152,9 +149,10 @@ mwVoronoi <- function(xy, w, tolerance = 7, prec = 72, clip = NULL,
       # Generate circle polygons
       cells_vect <- vect(cells[,.(x = x_c, y = y_c)],
                          crs = '',
-                         geom = c(x,y))
-      suppressWarnings(cells_vect <- buffer(cells_vect, width = cells$r))
-      crs(cells_vect) <- proj
+                         geom = c('x','y'))
+      suppressWarnings(cells_vect <- buffer(cells_vect,
+                                            width = cells$r,
+                                            quadsegs = prec))
       
       # Now deal with ties. 
       ties <- obs[Rank > i & N == p$N, .(x,y,Rank)]
@@ -258,114 +256,135 @@ mwVoronoi <- function(xy, w, tolerance = 7, prec = 72, clip = NULL,
       if (pb) setTxtProgressBar(pb1, iter)
     }
   } else {
+
+    # Find all unique combinations of points, sorted such that the one with the 
+    # lower weight goes first. Ignore ties
+    cells <- CJ(p = obs$Rank, q = obs$Rank
+                )[p <q
+                  ][obs[,.(p = Rank, plon = get(..x), plat = get(..y), pN = N)], 
+                    on = 'p'
+                    ][obs[,.(q = Rank, lon = get(..x), lat = get(..y), N)], 
+                      on = 'q'
+                      ][order(q)
+                        ][order(p)]
+    cells <- stats::na.omit(cells)
+
+    # Calculate the distance between the points
+    cells[, d := geosphere::distGeo(data.table(lon = plon, lat = plat),
+                                    data.table(lon, lat),
+                                    a = ..a,
+                                    f = ..f)]
+    
+    # Distance to Point 1 is the distance between p and q times the weights ratio
+    cells[, ell := d * pN / (N + pN)]
+
+    # Get the initial bearings between the points
+    cells[,theta := geosphere::bearing(data.table(lon = plon, lat = plat), 
+                                       data.table(lon,lat),
+                                       a = ..a,
+                                       f = ..f)]
+
+    # And now find the location of Point 1
+    nms <- c('p1_lon','p1_lat')
+    cells[, (nms) := as.data.table(geosphere::destPoint(data.table(lon = plon,
+                                                                   lat = plat), 
+                                                        b = theta, 
+                                                        d = ell,
+                                                        a = ..a,
+                                                        f = ..f))]
+
+    # When weights are equal, radius of pairwise voronoi is equal to one-fourth
+    # earth's circumference. Linear decay to zero when one's weight equals zero
+    # Start by finding the radius of the ellipsoid along the axis defined by the 
+    # Great Circle connecting the two points
+    cells[, r_e := GreatCircleCircum(plon,plat, theta, n = prec,
+                                     a = ..a, 
+                                     f = ..f) / 4,
+          by = c('p','q')]
+    cells[, w_ratio := pN /(pN + N)
+    ][, r := r_e * w_ratio]
+
+    # Find origin
+    cells[, (c('x0','y0')) := as.data.table(
+      geosphere::destPoint(data.table(p1_lon, p1_lat),
+                           b = geosphere::bearing(data.table(p1_lon, p1_lat),
+                                                  data.table(lon = plon,
+                                                             lat = plat), 
+                                                  a = ..a, 
+                                                  f = ..f),
+                           d = abs(r),
+                           a = ..a,
+                           f = ..f))]
+    
+    # At what bearings from the Voronoi ellipsoid centroid are we going to calculate
+    # the location of the border?
+    segs <- seq(from = 0, to = 360, length.out = prec)
+    segNames <- paste0('Seg',1:(prec))
+
+    cells <- cells[rep(1:nrow(cells), each = prec)]
+    cells$SegID <- paste0(cells$p,'-',cells$q,'_Seg',rep(1:prec,nrow(cells)/length(segs)))
+    cells[, b := rep(segs, nrow(cells)/length(segs))
+    ][, (c('lon','lat')) := as.data.table(geosphere::destPoint(
+      data.table(x0,y0),
+      b = b,
+      d = w_ratio  * mapply(GreatCircleCircum, x0, y0 , b = b, n = prec,
+                                       a = ..a, 
+                            f = ..f) / 4,
+      a = ..a,
+      f = ..f
+    ))
+    ]
+    
+    # If the longitude changes signs and the difference is more than 90, then it
+    # crossed the international date line
+    cells[, dLon := shift(lon) - lon, by = c('p','q')]
+    
+    # Find the shapes that have points meeting the above conditions
+    lonchange <- cells[abs(dLon) > 90
+    ][, LonTest := unlist(fifelse(.N != 0, list(1:.N), list(integer(0)))),
+      by = c('p','q')
+    ]
+    
+    # If it changes signs, to ensure that the shape is drawn as a single part
+    # and contiguity is followed add (or subtract, depending on which hemisphere
+    # bearing of 0 gets you) 360 to all values after the sign change, unless
+    # the sign changes again
+    lplus <- lonchange[LonTest == 1]$SegID
+    lminus <- lonchange[LonTest == 2]$SegID
+    
+    # What's the initial hemisphere
+    cells[SegID %in% lplus, Hemi_Init := lon/abs(lon)
+    ][, Hemi_Init := unique(stats::na.omit(Hemi_Init)),by = c('p','q')
+    ][is.na(Hemi_Init), Hemi_Init := first(lon)/abs(first(lon)),by = c('p','q')]
+    
+    # Switch those signs
+    cells[, dLon := fifelse(SegID %in% lplus, 
+                            TRUE, 
+                            NA)][, dLon := zoo::na.locf(dLon, 
+                                                        na.rm = FALSE),
+                                 by = c('p','q')
+                            ][dLon == TRUE ,
+                              lon := lon - 360 * Hemi_Init 
+                            ][,dLon := NULL
+                            ]
+    
+    # And switch back those if there were two sign changes
+    cells[, dLon := fifelse(SegID %in% lminus, 
+                            TRUE, 
+                            NA)][, dLon := zoo::na.locf(dLon, 
+                                                        na.rm = FALSE),
+                                 by = c('p','q')
+                            ][dLon == TRUE,
+                              lon := lon + 360 * Hemi_Init
+                            ][,dLon := NULL
+                            ]
+    cells_dt <- copy(cells)
+    rm(cells)
     for (i in 1:(nrow(obs)-1)){
-      # Select lowest-ranking point. We need to find the point immediately between that
-      # point and all higher-ranking ones (q) that lies along the Voronoi border (Point 1),
-      # and the radius of the Voronoi sphere
-      p <- obs[Rank == i, .(lon = get(..x), lat = get(..y), N)]
-      cells <- obs[Rank > i, .(lon = get(..x), lat = get(..y), N, Rank)]  
-      
-      # Find the distance between lowest-ranking point and those above it
-      cells[,d := geosphere::distGeo(..p,data.table(lon,lat), a = a, f = f)]
-      
-      # Distance to Point 1 is the distance between p and q times the weights ratio
-      cells[,ell := d * ..p$N / (N + ..p$N)]
-      
-      # Get the initial bearings between the points
-      cells[,theta := geosphere::bearing(..p, data.table(lon,lat), a = a, f = f)]
-      
-      # And now find the location of Point 1
-      nms <- c('p1_lon','p1_lat')
-      cells[, (nms) := as.data.table(geosphere::destPoint(..p, 
-                                                          b = theta, 
-                                                          d = ell,
-                                                          a = a, f = f))]
-      
-      # When weights are equal, radius of pairwise voronoi is equal to one-fourth
-      # earth's circumference. Linear decay to zero when one's weight equals zero
-      # Start by finding the radius of the ellipsoid along the axis defined by the 
-      # Great Circle connecting the two points
-      cells[, r_e := GreatCircleCircum(p$lon,p$lat, theta, n = prec,
-                                       a = a, f = f) / 4,
-            by = 'Rank']
-      cells[, w_ratio := ..p$N /(..p$N + N)
-      ][, r := r_e * w_ratio]
-      
-      # Find origin
-      cells[, (c('x0','y0')) := as.data.table(
-        geosphere::destPoint(data.table(p1_lon, p1_lat),
-                             b = geosphere::bearing(data.table(p1_lon, p1_lat),
-                                                    ..p[,.(lon,lat)], a = ..a, f = ..f),
-                             d = abs(r),
-                             a = ..a,
-                             f = ..f)),
-        by = 'Rank']
-      
-      # At what bearings from the Voronoi ellipsoid centroid are we going to calculate
-      # the location of the border?
-      segs <- seq(from = 0, to = 360, length.out = prec)
-      segNames <- paste0('Seg',1:(prec))
-      
-      cells <- cells[rep(1:nrow(cells), each = prec)]
-      cells$SegID <- paste0(i,'-',cells$Rank,'_Seg',rep(1:prec,nrow(cells)/length(segs)))
-      cells[, b := rep(segs, nrow(cells)/length(segs))
-      ][, (c('lon','lat')) := as.data.table(geosphere::destPoint(
-        data.table(x0,y0),
-        b = b,
-        d = w_ratio  * GreatCircleCircum(x0,y0,b = b, n = prec,
-                                         a = a, f = f) / 4,
-        a = ..a,
-        f = ..f
-      )), by = 'SegID'
-      ]
-      
-      # If the longitude changes signs and the difference is more than 90, then it
-      # crossed the international date line
-      cells[, dLon := shift(lon) - lon, by = 'Rank']
-      
-      # Find the shapes that have points meeting the above conditions
-      lonchange <- cells[abs(dLon) > 90
-      ][, LonTest := unlist(fifelse(.N != 0, list(1:.N), list(integer(0)))),
-        by = 'Rank'
-      ]
-      
-      # If it changes signs, to ensure that the shape is drawn as a single part
-      # and contiguity is followed add (or subtract, depending on which hemisphere
-      # bearing of 0 gets you) 360 to all values after the sign change, unless
-      # the sign changes again
-      lplus <- lonchange[LonTest == 1]$SegID
-      lminus <- lonchange[LonTest == 2]$SegID
-      
-      # What's the initial hemisphere
-      cells[SegID %in% lplus, Hemi_Init := lon/abs(lon)
-      ][, Hemi_Init := unique(stats::na.omit(Hemi_Init)),by = 'Rank'
-      ][is.na(Hemi_Init), Hemi_Init := first(lon)/abs(first(lon)),by = 'Rank']
-      
-      # Switch those signs
-      cells[, dLon := fifelse(SegID %in% lplus, 
-                              TRUE, 
-                              NA)][, dLon := zoo::na.locf(dLon, 
-                                                          na.rm = FALSE),
-                                   by = 'Rank'
-                              ][dLon == TRUE ,
-                                lon := lon - 360 * Hemi_Init 
-                              ][,dLon := NULL
-                              ]
-      
-      # And switch back those if there were two sign changes
-      cells[, dLon := fifelse(SegID %in% lminus, 
-                              TRUE, 
-                              NA)][, dLon := zoo::na.locf(dLon, 
-                                                          na.rm = FALSE),
-                                   by = 'Rank'
-                              ][dLon == TRUE,
-                                lon := lon + 360 * Hemi_Init
-                              ][,dLon := NULL
-                              ]
-      
       # Convert back to SpatVector
-      cells_vect <- vect(as.matrix(cells[,.(.GRP,.GRP,lon,lat,FALSE), 
-                                         by = 'Rank'][,-1]),
+      p <- obs[Rank == i, .(lon = get(..x), lat = get(..y), N)]
+      cells_vect <- vect(as.matrix(cells_dt[p == i,.(.GRP,.GRP,lon,lat,FALSE), 
+                                         by = 'q'][,-1]),
                          type = 'polygons',
                          crs = '+proj=lonlat')
       cells_vect$Index <- 1:nrow(cells_vect)
@@ -524,7 +543,7 @@ mwVoronoi <- function(xy, w, tolerance = 7, prec = 72, clip = NULL,
     obs_vect <- vect(obs, crs = '+proj=lonlat', geom = c(x,y))
     wrld <- vect(ext(-180,180,-90,90), crs = '+proj=lonlat') 
   }
-  
+  if (pb) setTxtProgressBar(pb1, nrow(obs)^2 / 2 - 1)
   # The highest-ranked observation has everything that hasn't been taken
   largest <- erase(wrld,taken)
   values(largest) <- data.table(ID = i + 1)
@@ -545,5 +564,7 @@ mwVoronoi <- function(xy, w, tolerance = 7, prec = 72, clip = NULL,
   shp <- shp[order(shp$Orig_Order)]
   values(shp) <- data.table(Order = 1:nrow(shp))
   
+  crs(shp) <- proj
   return(shp)
 }
+

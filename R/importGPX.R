@@ -33,6 +33,9 @@
 #' @export
 importGPX <- function(track){
   tryCatch({
+    # Silence CRAN warnings
+    hour=time=hdiff=PID=long=lat=z=NULL
+    
     suppressWarnings(gpx <- readLines(track))
 
     gpx <- paste(gpx,collapse = '')

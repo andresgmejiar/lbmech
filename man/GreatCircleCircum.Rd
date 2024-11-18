@@ -4,7 +4,7 @@
 \alias{GreatCircleCircum}
 \title{Great Circle Circumference}
 \usage{
-GreatCircleCircum(lon, lat, b, n = 72)
+GreatCircleCircum(lon, lat, b, n = 72, a = 6378137, f = 1/298.257223563)
 }
 \arguments{
 \item{lon}{Numeric. A known longitude along a Great Circle.}
@@ -15,6 +15,10 @@ GreatCircleCircum(lon, lat, b, n = 72)
 
 \item{n}{How many points along the great circle should be modeled? More points
 results in higher precision. Default is \code{n = 72}}
+
+\item{a}{Equatorial radius. Default is for WGS84}
+
+\item{f}{Ellipsoidal flattening. Default is for WGS84}
 }
 \description{
 Get the circumference of the earth given a known point and initial bearing

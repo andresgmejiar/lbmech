@@ -60,9 +60,10 @@ Default is \code{0}. Ignored if \code{x}. Use this if you don't want to offset v
 All distances are subtracted by this value, and all resulting distances less than zero are reassigned
 to \code{minval}.}
 
-\item{row.stand}{Logical or \code{'fuzzy'}. If \code{TRUE} (the default), rows are standardized such 
+\item{row.stand}{Logical or \code{'fuzzy'}. If \code{TRUE}, rows are standardized such 
 that they sum to one. If \code{'fuzzy'}, rows are standardized as a proportion of the 
-largest value. If \code{x} is a vector, \code{row.stand} must be logical.}
+largest value. If \code{x} is a vector, \code{row.stand} must be logical. 
+Default is \code{row.stand = FALSE}}
 
 \item{clear.mem}{Logical. Should \code{\link[base]{gc}} be run in the middle of the 
 calculation? Default is \code{clear.mem == FALSE} but set as \code{TRUE} if 

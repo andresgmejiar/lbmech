@@ -70,6 +70,9 @@
 #' @export
 normMDS <- function(dists, xy = NULL, id = 'ID', ax = 1:2, chir = 3, 
                     x = 'x', y = 'y', ...){
+  # Silence CRAN warnings
+  ..x=..y-..p=l=theta=u=v=..dtheta=..S=..m=up=b=a=NULL
+  
   # Deal with missing names
   if (is.null(names(dists))){
     names(dists) <- 1:length(dists)
@@ -85,9 +88,9 @@ normMDS <- function(dists, xy = NULL, id = 'ID', ax = 1:2, chir = 3,
     })
     names(xy) <- c(id,x,y) 
     iternames <- iternames[2:length(iternames)]
-  } else if (is(xy, 'SpatialPointsDataFrame') | is(xy,'SpatVector')){
+  } else if (methods::is(xy, 'SpatialPointsDataFrame') | methods::is(xy,'SpatVector')){
     # If a spatial object is provided, coerce to data.table
-    if (!is(xy,'SpatVector')) xy <- vect(xy)
+    if (!methods::is(xy,'SpatVector')) xy <- vect(xy)
     if (geomtype(xy) != 'points') stop("'xy' can only be point locations.")
     
     xy <- data.table('id' = xy[[id]], geom(xy))
@@ -98,12 +101,12 @@ normMDS <- function(dists, xy = NULL, id = 'ID', ax = 1:2, chir = 3,
   xy <- xy[, `:=`(x = get(..x), y = get(..y))][]  
   
   # Get the names of the reference axes if indexes were provided
-  if (is(ax,'numeric')){
+  if (methods::is(ax,'numeric')){
     ax <- xy[ax, get(id)]
   }
   
   # And likewise for chiral reference
-  if (is(chir,'numeric')){
+  if (methods::is(chir,'numeric')){
     chir <- xy[chir, get(id)]
   }
   

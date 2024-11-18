@@ -4,14 +4,11 @@
 \alias{importGPX}
 \title{Import GPX tracks}
 \usage{
-importGPX(tracks, verbose = FALSE)
+importGPX(track)
 }
 \arguments{
-\item{tracks}{A character string or vector with filepaths pointing to
-the location of the GPX files}
-
-\item{verbose}{Should a progress bar be printed? Default is \code{verbose = FALSE},
-recommended particularly when used inside \code{\link[base]{lapply}}}
+\item{track}{A character string the filepaths pointing to
+the location of the GPX file}
 }
 \value{
 A data.table with five or six columns:
@@ -20,7 +17,8 @@ A data.table with five or six columns:
 
 (2) \code{$PID} The order that point appeared in the GPX file
 
-(3) \code{$t} The timestamp
+(3) \code{$t} The time stamp, with a starting date of January 1st, 1900 if no
+day is listed
 
 (4) \code{$long} The longitude in decimal degrees
 
@@ -39,6 +37,8 @@ to be used in functions other than \code{\link[lbmech]{getVelocity}},
 # Get a list of GPX tracks in a directory
 gpx <-  list.files(pattern = ".gpx$")
 
-# Convert to data.table
-gpx <- importGPX(gpx)
+## Convert the first file to data.table (not run)
+# gpx <- importGPX(gpx[1])
+# Convert all the files to data.tables
+gpx <- lapply(gpx, importGPX)
 }

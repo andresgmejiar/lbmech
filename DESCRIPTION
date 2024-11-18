@@ -1,7 +1,7 @@
 Package: lbmech
 Type: Package
 Title: A Package to Study the Mechanics of Landscape and Behavior
-Version: 0.5.2
+Version: 0.5.3
 Author: Andres G. Mejia Ramon
 Maintainer: Andres G. Mejia Ramon <Andres.Mejia@UAB.cat>
 Description: A geospatial package to study the adaptive mechanics of landscape and behavior, including at present: (1) distance, movement, and influence; (2) dispersion and inequality; and (3) agricultural productivity. 

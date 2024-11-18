@@ -10,14 +10,19 @@ mwVoronoi(
   tolerance = 7,
   prec = 72,
   clip = NULL,
+  x = "lat",
+  y = "lon",
   topology = "geoid",
+  a = 6378137,
+  f = 1/298.257223563,
   pb = FALSE
 )
 }
 \arguments{
-\item{xy}{Something coercible to a SpatVect points object, with xy units in
-lonlat and at least two observations. 
-The point locations of interest. In the future lines and polygons will be 
+\item{xy}{Something coercible to a SpatVect points object and with at least 
+two observations. The point locations of interest. Units must be degrees longitude for 
+\code{x} and degrees latitude for \code{y} when \code{topology} is either 
+\code{'geoid'} or \code{'sphere'}.  In the future lines and polygons will be 
 supported}
 
 \item{w}{A vector of equal length to xy. The weights corresponding to each 
@@ -35,9 +40,20 @@ Should the output polygons encompass the whole world (the default,
 input points, while passing an object with a SpatExtent will crop them by such
 an extent.}
 
+\item{x}{A character vector indicating the column with 'x' coordinates. Ignored
+if \code{xy} is a SpatVect points object.}
+
+\item{y}{A character vector indicating the column with 'y' coordinates. Ignored
+if \code{xy} is a SpatVect points object.}
+
 \item{topology}{One of \code{'geoid'}, \code{'spherical'}, or \code{'planar'},
-corresponding to the underlying topology. At present, only \code{'geoid'} is 
-supported assuming the WGS 1984 geoid.}
+corresponding to the underlying topology. Ignored if \code{topology} is
+not \code{'geoid'}.}
+
+\item{a}{Equatorial radius. Default is for WGS84. Ignored if \code{topology} is
+not \code{'geoid'}.}
+
+\item{f}{Ellipsoidal flattening. Default is for WGS84}
 
 \item{pb}{Logical. Should a progress bar be displayed? 
 Default is \code{pb = FALSE}}
@@ -54,12 +70,8 @@ with equal weights exist), with the radii of the circles corresponding to
 corresponding to earth's radius. The circle is positioned such that (1) it 
 encompasses the point of interest and (2) the point immediately between \eqn{p} 
 and \eqn{q} lies at \eqn{\ell_{pq} \left(\frac{w_p}{w_p + w_q}\right)} units away 
-from \eqn{p} with \eqn{\ell_{pq}} being the distance between \eqn{p} and {q}
-}
-\details{
-At present, only calculations on the Earth geoid
-according to WGS 1984 are supported using the \code{\link[geosphere]{geosphere}}
-package.
+from \eqn{p} with \eqn{\ell_{pq}} being the distance between \eqn{p} and {q}, and 
+(3) oriented with this point normal to the geodesic between \eqn{p} and {q}.
 }
 \examples{
 
