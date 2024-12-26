@@ -9,6 +9,8 @@
 #' from \eqn{p} with \eqn{\ell_{pq}} being the distance between \eqn{p} and {q}, and 
 #' (3) oriented with this point normal to the geodesic between \eqn{p} and {q}.
 #' 
+#' See also \code{\link[lbmech]{makeCatchment}}
+#' 
 #' @title Multiplicatively-weighted Voronoi Polygons
 #' @param xy Something coercible to a SpatVect points object and with at least 
 #' two observations. The point locations of interest. Units must be degrees longitude for 
@@ -31,11 +33,11 @@
 #' input points, while passing an object with a SpatExtent will crop them by such
 #' an extent. 
 #' @param topology One of \code{'geoid'}, \code{'spherical'}, or \code{'planar'},
-#' corresponding to the underlying topology. Ignored if \code{topology} is
-#' not \code{'geoid'}.
+#' corresponding to the underlying topology. 
 #' @param a Equatorial radius. Default is for WGS84. Ignored if \code{topology} is
 #' not \code{'geoid'}.
-#' @param f Ellipsoidal flattening. Default is for WGS84
+#' @param f Ellipsoidal flattening. Default is for WGS84. Ignored if \code{topology} is
+#' not \code{'geoid'}.
 #' @param pb Logical. Should a progress bar be displayed? 
 #' Default is \code{pb = FALSE}
 #' @importFrom terra vect
@@ -68,7 +70,7 @@
 #'                   
 #' mwv <- mwVoronoi(obs[,1:2], w = obs$N)
 #' @export
-mwVoronoi <- function(xy, w, tolerance = 7, prec = 72, clip = NULL,
+mwVoronoi <- function(xy, w, tolerance = 7, prec = 100, clip = NULL,
                       x = 'lon', y = 'lat',
                       topology = 'geoid', a = 6378137, 
                       f = 1/298.257223563, pb = FALSE){
@@ -81,6 +83,10 @@ mwVoronoi <- function(xy, w, tolerance = 7, prec = 72, clip = NULL,
   if (any(class(xy) %in% spat)){
     if (!methods::is(xy,'SpatVector')) xy <- vect(xy)
     proj <- crs(xy)
+    if (any(topology) %in% c('geoid','spherical')){
+      xy <- project(xy, 
+                    '+proj=lonlat')
+    }
     xy <- geom(xy)
     x <- colnames(xy)[3]
     y <- colnames(xy)[4]

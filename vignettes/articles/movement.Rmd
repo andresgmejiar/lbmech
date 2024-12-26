@@ -1029,4 +1029,13 @@ Voronoi polyogns allocate all land to the nearest observation. These are most co
 v <- voronoi(pobles)
 ```
 
+Often times the assumption of equal influence does not hold. There exist [a number of ways](https://en.wikipedia.org/wiki/Weighted_Voronoi_diagram) to differentially weight the influence any one point has versus another. Multiplicatively-weighted diagrams are particularly useful when a point's ability to influence space versus a different point is constant. For example, if we wanted to allocate land to two towns based on who can get to each point the fastest---with Town 1 possessing a car capable of traveling twice as fast as Town 2---we might consider a Multiplicatively Weighed Voronoi diagram giving Town 1 a weight of $w_1 = 2$ and Town 2 a weight of $w_2 = 1$. In short, Multiplicatively Weighted Voronoi diagrams transform distance to each point such that:
+
+```{=tex}
+D = w_i * \ell_i
+```
+where $D$ is the modified distance, $w_i$ the weight of point $i$, and $\ell$ the raw distance to point $i$. `lbmech` provides a fully vectorized function to calculate such polygons for planar, spherical, and geodesic topologies through the `mwVoronoi` function:
+
+
+
 ## References

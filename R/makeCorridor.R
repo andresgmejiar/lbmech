@@ -12,9 +12,6 @@
 #' practices you will have to change it to your output directory. If multilayer
 #' SpatRaster, it should be the output (or identical in form) to
 #' the \code{\link[lbmech]{getCosts}} function with \code{"object" \%in\% output}.
-#' Note that if files have been generated for two different \code{from} objects in
-#' the \code{\link[lbmech]{getCosts}} sharing an attribute with the same ID name
-#' the function may throw an error. 
 #' @param order A character vector containing the desired path in
 #' order of visited nodes. For example, to visit "A" then "B" then "C" then "A"
 #' the vector would be \code{c("A","B","C","A")}. Note that these MUST correspond
@@ -27,12 +24,12 @@
 #' \code{costs = 'all'} is shorthand for \code{costs = c("dt","dW_l","dE_l")}
 #' while \code{costs = 'energetics'} is shorthand for \code{c("dW_l","dE_l")}.
 #' Default is \code{'all'}. Note that these must have previously been calculated.
-#' @return Rasters representing cost corridors.
 #' @param name A character vector representing the \code{outname} in
 #' \code{\link[lbmech]{getCosts}}. If none is provided, it will be the name of the
 #' variable passed to the function in the \code{from} slot.
 #' If \code{length(costs) == 1}, a Raster* If \code{length(costs) > 1}
 #' a list of Raster* with one slot for each \code{cost}.
+#' @return Rasters representing cost corridors.
 #' @importFrom terra rast
 #' @importFrom terra global
 #' @examples 

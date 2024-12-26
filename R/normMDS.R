@@ -71,7 +71,7 @@
 normMDS <- function(dists, xy = NULL, id = 'ID', ax = 1:2, chir = 3, 
                     x = 'x', y = 'y', ...){
   # Silence CRAN warnings
-  ..x=..y-..p=l=theta=u=v=..dtheta=..S=..m=up=b=a=NULL
+  ..x=..y=..p=l=theta=u=v=..dtheta=..S=..m=up=b=a=NULL
   
   # Deal with missing names
   if (is.null(names(dists))){

@@ -188,7 +188,7 @@ getCosts <- function(region, from, to = NULL, id = 'ID', dir = tempdir(),
   
   if(file.exists(normalizePath(paste0(dir,"/CostRasters/",
                                       outname,'.gpkg'),
-                               mustWork=FALSE)) & !overwrite){
+                               mustWork=FALSE)) & !overwrite & 'file' %in% output){
     stop(paste(outname,"already exists. To overwrite, use 'overwrite=TRUE'. 
              Alternatively, set output = 'object' to ignore file creation.
              Carefuly ensure that this is the desired behavior."))
@@ -197,9 +197,19 @@ getCosts <- function(region, from, to = NULL, id = 'ID', dir = tempdir(),
   id2 <- 1
   # If no Unique ID column is given, make one
   if (is.null(id)){
-    from$Node_ID <- seq(1,nrow(from))
+    from$Node_ID <- paste0(outname,'_',seq(1,nrow(from)))
     id <- "Node_ID"
     id2 <- NULL
+  }
+  
+  # Check to make sure there are no conflicting ID names in other files
+  f <- list.files(normalizePath(paste0(dir,'/CostRasters/')),
+                  pattern = '.gpkg$', full.names = TRUE)
+  f <- unique(unlist(lapply(f, function(x) vect(f)$ID)))
+  if (any(unlist(from[[eval(id)]]) %in% f) & 'file' %in% output){
+    reps <- unlist(from[[eval(id)]])[unlist(from[[eval(id)]]) %in% f]
+    names(reps) <- NULL
+    stop(paste('Encountered previously-defined ID names ---',paste(reps, collapse = '; ')))
   }
 
   region_shp <- region
@@ -258,7 +268,7 @@ getCosts <- function(region, from, to = NULL, id = 'ID', dir = tempdir(),
       if (methods::is(to,"SpatVector")){
         # If no column ID is provided, make one as above
         if (is.null(id2)){
-          to$Node_ID <- seq(1,nrow(to))
+          to$Node_ID <- paste0(deparse(substitute(to)),"_",seq(1,nrow(to)))
         }
         if (geomtype(from) == 'polygons'){
           toMask <- regionMask(to, z_fix = z_fix, id = id)
