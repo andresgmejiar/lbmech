@@ -474,12 +474,13 @@ pobles <- project(getData("baleares-places"), region)
 reg <- as.polygons(ext(buffer(pobles, 10000)),crs = crs(proj))
 
 costs <- getCosts(region = reg,              # Area of maximum movement
-from = pobles,             # Origins
-to = NULL,                 # Destinations
-costname = 'energyCosts',  # Name of costFUN above
-id = 'Location',           # Column with origin names
-dir = rd,                  # Directory with world
-destination = 'all')       # Distance to all points in region
+from = pobles,                               # Origins
+to = NULL,                                   # Destinations
+costname = 'energyCosts',                    # Name of costFUN above
+id = 'Location',                             # Column with origin names
+dir = rd,                                    # Directory with world
+output = c('object','file'),                 # Save files
+destination = 'all')                         # Distance to all points in region
 ```
 
 ### 1.4.4 Paths and Corridors
@@ -870,7 +871,7 @@ theme(legend.position = "none",
      panel.grid.major = element_blank(),
      panel.grid.minor = element_blank()
 ) + ylab("") +
-xlab(expression(paste("Energia de desviació — ",italic("Work of detour")))) +
+xlab(expression(paste("Energia de desviació — ",italic("Energy of detour")))) +
 scale_x_continuous(position = 'top', expand=c(0,0)) +
 scale_y_continuous(position = 'right', expand=c(0,0))
 
@@ -881,7 +882,7 @@ cowplot::plot_grid(ggtime_corr, ggwork_corr, ggenergy_corr,
 ```
 ## 1.5 Influence
 
-Various measures of distance in different topologies are often taken to be measures of influence. In other words, nearer things are more likely to influence an observation than farther things. `LBMech` provides tools to represent these relationships as various types of neighbor weights (for influence between observations) and Voronoi polygons (for the relative influence of observations everywhere else in space).
+Different measures of distance in different topologies are often taken to be measures of influence. In other words, nearer things are more likely to influence an observation than farther things. `LBMech` provides tools to represent these relationships as various types of neighbor weights (for influence between observations) and Voronoi polygons (for the relative influence of observations everywhere else in space).
 
 ### 1.5.1 Neighbor Weights
 
@@ -899,26 +900,29 @@ dists <- getCosts(region = reg,              # Area of maximum movement
 
 ```
 
-We can try and visually compare the different topologies using the `normMDS()` function, which performs a multidimensional scaling on each distance matrix and rescales/orients them so they are in units of and directionally relative to a common path:
+We can try and visually compare the different topologies using the `normMDS()` function, which performs multidimensional scaling on each distance matrix and rescales/orients them so they are in units of---and directionally relative to---a common path:
 
 ```{r}
 
-uv <- normMDS(dists, xy = pobles, id = 'Location',
-           ax = c('Palma de Mallorca','Inca'), chir = 'Sa Calobra')
+uv <- normMDS(dists,                              # List of distance matrices
+              xy = pobles,                        # Cartesian coordinates (optional)
+              id = 'Location',                    # Unique ID column
+              ax = c('Palma de Mallorca','Inca'), # Reference path
+              chir = 'Sa Calobra')                # Third location to preserve chirality
 
 
 ```
 ```{r, fig.height = 6, fig.width = 9}
 
-colors <- c(ref = 'black', dt = 'blue', dW_t = 'darkgreen', dE_t = 'darkred')
+colors <- c(ref = 'black', dt = 'blue', dW_l = 'darkgreen', dE_l = 'darkred')
 
 uvplot <- rbindlist(uv, idcol = TRUE)
-
+ax <- c('Palma de Mallorca','Inca')
 
 axplot <- uvplot[Location %in% ax & .id == 'ref']
 uvplot[Location %in% ax & .id != 'ref', Location := '']
 
-ggplot(data = uvplot, mapping = aes(x = u, y = v, label = Location, color = .id)) + 
+ggplot(data = uvplot, mapping = aes(x = u, y = v, label = Location, color = as.factor(.id))) + 
 scale_color_manual('Distance', values = colors) + 
 geom_point() + 
 ggrepel::geom_text_repel(size = 2.5) + 
@@ -952,7 +956,7 @@ weights[[1]] <- makeWeights(dists$dt, bw = 3)
 
 # All observations within 20 MJ of work are neighbors, with row-standardized weights 
 # based on inverse distance, assuming self-weights are equivalent to 20 MJ
-weights[[2]] <- makeWeights(dists$dW_t, bw = 2e7, offset = 2e7,
+weights[[2]] <- makeWeights(dists$dW_l, bw = 2e7, offset = 2e7,
                          mode = 'fixed', 
                          weighting = 'distance',
                          row.stand = TRUE)
@@ -960,7 +964,7 @@ weights[[2]] <- makeWeights(dists$dW_t, bw = 2e7, offset = 2e7,
 # All observations might be neighbors. 
 # The weights represent the probability that they're neighbors.
 # The probability is based on the inverse distance square of the rank of the energy distance
-weights[[3]] <- makeWeights(dists$dE_t, 
+weights[[3]] <- makeWeights(dists$dE_l, 
                          weighting = 'rank',
                          FUN = function(x) 1/x^2,
                          row.stand = 'fuzzy')
@@ -1023,18 +1027,26 @@ Note that in the top-left subplot, only edges that exist in both directions are 
 
 ### 1.5.2 Catchments and Voronoi Polygons
 
-Voronoi polyogns allocate all land to the nearest observation. These are most commonly employed using planar geographic distance as the metric and generally assume equal influence between all observations, such as with the `voronoi()` function from `terra`:
+Voronoi polygons allocate all land to the nearest observation. These are most commonly employed using planar geographic distance as the metric and generally assume equal influence between all observations, such as with the `voronoi()` function from `terra`:
 
 ```{r}
 v <- voronoi(pobles)
 ```
 
-Often times the assumption of equal influence does not hold. There exist [a number of ways](https://en.wikipedia.org/wiki/Weighted_Voronoi_diagram) to differentially weight the influence any one point has versus another. Multiplicatively-weighted diagrams are particularly useful when a point's ability to influence space versus a different point is constant. For example, if we wanted to allocate land to two towns based on who can get to each point the fastest---with Town 1 possessing a car capable of traveling twice as fast as Town 2---we might consider a Multiplicatively Weighed Voronoi diagram giving Town 1 a weight of $w_1 = 2$ and Town 2 a weight of $w_2 = 1$. In short, Multiplicatively Weighted Voronoi diagrams transform distance to each point such that:
+Sometimes the assumption of equal influence does not hold. There exist [a number of ways](https://en.wikipedia.org/wiki/Weighted_Voronoi_diagram) to differentially weight the influence any one point has versus another. Multiplicatively-weighted diagrams are particularly useful when a point's ability to influence space versus a different point is constant. For example, if we wanted to determine the catchment of two towns based on who can get to each point the fastest---with Town 1 possessing a car capable of traveling twice as fast as Town 2---we might consider a Multiplicatively Weighed Voronoi diagram giving Town 1 a weight of $w_1 = 2$ and Town 2 a weight of $w_2 = 1$. In short, Multiplicatively Weighted Voronoi diagrams transform distance to each point such that:
 
 ```{=tex}
 D = w_i * \ell_i
 ```
-where $D$ is the modified distance, $w_i$ the weight of point $i$, and $\ell$ the raw distance to point $i$. `lbmech` provides a fully vectorized function to calculate such polygons for planar, spherical, and geodesic topologies through the `mwVoronoi` function:
+where $D$ is the modified distance, $w_i$ the weight of point $i$, and $\ell$ the raw distance to point $i$. `lbmech` provides a fully vectorized function to calculate such catchments for planar, spherical, and Earth-geoid topologies through the `lbmech::mwVoronoi` function:
+
+
+While `lbmech::mwVoronoi` is marginally less efficient thant `terra::voronoi` for equal weighting schemes, it is capable of employing multiplicative weights and performing geodesic corrections. 
+
+Likewise, the Voronoi concept can be extended to any arbitrary topology---such as the time-, work- and energy-based distances obtained above. These are often known as 'catchments' in the literature. As long as we have previously calculated the cost rasters for the desired locations and costs, we can obtain the catchments with the `lbmech::makeCatchment` function:
+
+
+
 
 
 

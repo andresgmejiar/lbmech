@@ -83,7 +83,7 @@
 #' # Calculate catchments for work
 #' catchments <- makeCatchment(costRasters,
 #'                             cost = 'dW_l')
-
+#' @export
 makeCatchment <- function(rasters = tempdir(), cost, direction = "both",
                           ids = NULL, name = NULL, w = NULL){
   

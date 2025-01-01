@@ -8,10 +8,10 @@ mwVoronoi(
   xy,
   w,
   tolerance = 7,
-  prec = 72,
+  prec = 100,
   clip = NULL,
-  x = "lat",
-  y = "lon",
+  x = "lon",
+  y = "lat",
   topology = "geoid",
   a = 6378137,
   f = 1/298.257223563,
@@ -47,13 +47,13 @@ if \code{xy} is a SpatVect points object.}
 if \code{xy} is a SpatVect points object.}
 
 \item{topology}{One of \code{'geoid'}, \code{'spherical'}, or \code{'planar'},
-corresponding to the underlying topology. Ignored if \code{topology} is
-not \code{'geoid'}.}
+corresponding to the underlying topology.}
 
 \item{a}{Equatorial radius. Default is for WGS84. Ignored if \code{topology} is
 not \code{'geoid'}.}
 
-\item{f}{Ellipsoidal flattening. Default is for WGS84}
+\item{f}{Ellipsoidal flattening. Default is for WGS84. Ignored if \code{topology} is
+not \code{'geoid'}.}
 
 \item{pb}{Logical. Should a progress bar be displayed? 
 Default is \code{pb = FALSE}}
@@ -72,6 +72,9 @@ encompasses the point of interest and (2) the point immediately between \eqn{p}
 and \eqn{q} lies at \eqn{\ell_{pq} \left(\frac{w_p}{w_p + w_q}\right)} units away 
 from \eqn{p} with \eqn{\ell_{pq}} being the distance between \eqn{p} and {q}, and 
 (3) oriented with this point normal to the geodesic between \eqn{p} and {q}.
+}
+\details{
+See also \code{\link[lbmech]{makeCatchment}}
 }
 \examples{
 
