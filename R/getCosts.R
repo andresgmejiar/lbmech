@@ -186,6 +186,11 @@ getCosts <- function(region, from, to = NULL, id = 'ID', dir = tempdir(),
   grid <- vect(normalizePath(paste0(dir,"/z_grid.gpkg"),mustWork=FALSE))
   z_fix <- importRST(normalizePath(paste0(dir,"/z_fix"),mustWork=FALSE))
   
+  if(!dir.exists(normalizePath(paste0(dir,"/CostRasters/"),
+                               mustWork=FALSE))){
+    dir.create(normalizePath(paste0(dir,"/CostRasters/"),
+                             mustWork=FALSE))
+  }
   if(file.exists(normalizePath(paste0(dir,"/CostRasters/",
                                       outname,'.gpkg'),
                                mustWork=FALSE)) & !overwrite & 'file' %in% output){

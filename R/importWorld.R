@@ -26,6 +26,8 @@
 #' desired output variables as the only column names. Constants can be passed in the 
 #' \code{...} slot. Default is 
 #' \code{costFUN = \link[lbmech]{energyCosts}}.
+#' @param costname A name to save the cost call parametrs. Default is the name 
+#' of the costFUN variable.
 #' @param ... Additional arguments to pass to \code{\link[lbmech]{calculateCosts}}
 #' and \code{costFUN}. 
 #' @return An object of class data.table containing at least three columns:
@@ -75,7 +77,8 @@
 #' L = 0.8)
 #' @export
 importWorld <- function(region, banned = NULL, dir = tempdir(), 
-                        vars = NULL,  costFUN = energyCosts, ...){
+                        vars = NULL,  costFUN = energyCosts,
+                        costname = deparse(substitute(costFUN)), ...){
   # This bit is to silence the CRAN check warnings for literal column names
   from=to=dz=x_f=x_i=y_f=y_i=z_f=z_i=x=y=long_f=lat_f=long_i=lat_i=NULL
   
@@ -105,6 +108,7 @@ importWorld <- function(region, banned = NULL, dir = tempdir(),
   } else {
     calculateCosts(tiles,
                    costFUN = costFUN, 
+                   costname = costname,
                    dir = normalizePath(stringr::str_remove(dir,'World$'),mustWork=FALSE),
                    ...)
   }
