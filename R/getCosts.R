@@ -208,7 +208,7 @@ getCosts <- function(region, from, to = NULL, id = 'ID', dir = tempdir(),
   }
   
   # Check to make sure there are no conflicting ID names in other files
-  f <- list.files(normalizePath(paste0(dir,'/CostRasters/')),
+  f <- list.files(normalizePath(paste0(dir,'/CostRasters/'), mustWork = FALSE),
                   pattern = '.gpkg$', full.names = TRUE)
   f <- unique(unlist(lapply(f, function(x) vect(f)$ID)))
   if (any(unlist(from[[eval(id)]]) %in% f) & 'file' %in% output){
@@ -403,11 +403,11 @@ getCosts <- function(region, from, to = NULL, id = 'ID', dir = tempdir(),
         # Append the appropriate names/ID
         Distances <- merge(Distances[,.(Var2,value,Cell = Var1)],
                            from[,.(Cell,From_ID = ID)],
-                           on="Cell",allow.cartesian=TRUE)[, Cell := NULL][]
+                           by="Cell",allow.cartesian=TRUE)[, Cell := NULL][]
         
         Distances <- merge(Distances[,.(From_ID,value,Cell = Var2)],
                            to[,.(Cell,To_ID = ID)],
-                           on="Cell",allow.cartesian=TRUE)[, Cell := NULL][]
+                           by="Cell",allow.cartesian=TRUE)[, Cell := NULL][]
         
         # Convert to distance matrix with xtabs,
         # Add to the output list. Name depends on whether it's a matrix or 
@@ -433,7 +433,7 @@ getCosts <- function(region, from, to = NULL, id = 'ID', dir = tempdir(),
         # then get the x,y coordinates from the cell name
         Distances <- merge(Distances[,.(Var2,value,Cell = Var1)],
                            from[,.(Cell,ID = ID)],
-                           on="Cell", allow.cartesian=TRUE)[, Cell := NULL
+                           by="Cell", allow.cartesian=TRUE)[, Cell := NULL
                            ][,.(ID,Cell = Var2, Cost = ..cost,
                                 Direction = ..d,Value = value)]
         Distances[, c("x","y") := tstrsplit(Cell,",")
